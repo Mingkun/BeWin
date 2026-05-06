@@ -1,0 +1,112 @@
+body {
+  margin: 0;
+  font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f5f7fb;
+  color: #1f2937;
+}
+
+.page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+header h1 {
+  margin-bottom: 8px;
+}
+
+header p {
+  margin-top: 0;
+  color: #6b7280;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.feature-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.feature-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.feature-header h2 {
+  margin: 0 0 8px 0;
+}
+
+.meta {
+  color: #4b5563;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.summary {
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.timeline-grid {
+  display: grid;
+  grid-template-columns: 120px repeat(12, minmax(64px, 1fr));
+}
+
+.timeline-header {
+  font-weight: 700;
+  background: #eef2ff;
+}
+
+.timeline-row:nth-child(even) {
+  background: #fafafa;
+}
+
+.stage-cell, .month-cell {
+  border: 1px solid #e5e7eb;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.stage-cell {
+  font-weight: 600;
+  background: #f9fafb;
+}
+
+.month-cell.active {
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+  color: #fff;
+  font-weight: 600;
+}
+
+.empty {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+}
+
+@media (max-width: 1100px) {
+  .page {
+    padding: 16px;
+  }
+
+  .feature-header {
+    flex-direction: column;
+  }
+
+  .timeline-grid {
+    overflow-x: auto;
+  }
+}

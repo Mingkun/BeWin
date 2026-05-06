@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReleasePlan 路标图</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>特性交付路标图</h1>
+      <p>基于项目表，按关键特性展示启动开发、实现、集成测试、上线交付的年度路标。</p>
+    </header>
+
+    {% if features %}
+      <div class="feature-list">
+        {% for feature in features %}
+          <section class="feature-card">
+            <div class="feature-header">
+              <div>
+                <h2>{{ feature.feature_name }}</h2>
+                <div class="meta">项目：{{ feature.project_name or '未填写' }} | 项目经理：{{ feature.project_manager or '未填写' }} | 交付PM：{{ feature.delivery_pm or '未填写' }}</div>
+                <div class="meta">L4服务/服务组：{{ feature.service_group or '未填写' }}</div>
+                <div class="meta">重点工作：{{ feature.focus_work or '未填写' }}</div>
+              </div>
+              <div class="summary">
+                <span>起始：{{ feature.start or '未排期' }}</span>
+                <span>结束：{{ feature.end or '未排期' }}</span>
+              </div>
+            </div>
+
+            <div class="timeline-grid timeline-header">
+              <div class="stage-cell">阶段</div>
+              {% for month in months %}
+                <div class="month-cell">{{ month }}</div>
+              {% endfor %}
+            </div>
+
+            {% for stage in feature.stages %}
+              <div class="timeline-grid timeline-row">
+                <div class="stage-cell">{{ stage }}</div>
+                {% for month in feature.months %}
+                  <div class="month-cell {% if month.active %}active{% endif %}">
+                    {% if month.active %}
+                      <span>{{ month.value }}</span>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </section>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">当前还没有项目数据，请先在 <code>docs/project_table.csv</code> 中补充内容。</div>
+    {% endif %}
+  </div>
+</body>
+</html>
