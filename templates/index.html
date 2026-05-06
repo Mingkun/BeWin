@@ -37,13 +37,13 @@
               {% endfor %}
             </div>
 
-            {% for stage in feature.stages %}
+            {% for stage in feature.stage_rows %}
               <div class="timeline-grid timeline-row">
-                <div class="stage-cell">{{ stage }}</div>
-                {% for month in feature.months %}
-                  <div class="month-cell {% if month.active %}active{% endif %}">
+                <div class="stage-cell">{{ stage.name }}</div>
+                {% for month in stage.months %}
+                  <div class="month-cell {% if month.active %}active {{ month.class_name }}{% endif %}">
                     {% if month.active %}
-                      <span>{{ month.value }}</span>
+                      <span>{{ month.value or stage.name }}</span>
                     {% endif %}
                   </div>
                 {% endfor %}

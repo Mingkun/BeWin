@@ -110,3 +110,37 @@ header p {
     overflow-x: auto;
   }
 }
+
+
+.month-cell {
+  position: relative;
+  min-height: 44px;
+}
+
+.month-cell.active {
+  color: #fff;
+  font-weight: 600;
+}
+
+.month-cell.active span {
+  display: inline-block;
+  padding: 4px 6px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.stage-kickoff {
+  background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+}
+
+.stage-build {
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+}
+
+.stage-test {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+}
+
+.stage-release {
+  background: linear-gradient(135deg, #16a34a, #4ade80);
+}
