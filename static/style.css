@@ -144,3 +144,139 @@ header p {
 .stage-release {
   background: linear-gradient(135deg, #16a34a, #4ade80);
 }
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.button.secondary {
+  background: #64748b;
+}
+
+.button.warning {
+  background: #d97706;
+}
+
+.button.danger {
+  background: #dc2626;
+}
+
+.button.small {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  font-size: 14px;
+}
+
+.data-table th {
+  background: #f8fafc;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.form-page {
+  max-width: 1100px;
+}
+
+.project-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.form-grid label,
+.month-grid-form label,
+.block-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.form-grid input,
+.month-grid-form input,
+.block-field textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.inner-card h3 {
+  margin-top: 0;
+}
+
+.month-grid-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .toolbar,
+  .form-grid,
+  .month-grid-form {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+}

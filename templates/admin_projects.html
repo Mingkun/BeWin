@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目数据维护</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <div>
+        <h1>项目数据维护</h1>
+        <p>在这里维护数据库中的项目数据，也可以用 CSV 覆盖导入。</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('index') }}">返回路标图</a>
+        <a class="button" href="{{ url_for('admin_project_new') }}">新增项目</a>
+        <form method="post" action="{{ url_for('admin_projects_import_csv') }}" onsubmit="return confirm('确认用 docs/project_table.csv 覆盖导入数据库吗？');">
+          <button class="button warning" type="submit">用 CSV 覆盖导入</button>
+        </form>
+      </div>
+    </header>
+
+    {% if projects %}
+      <div class="table-wrap card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>项目名称</th>
+              <th>项目经理</th>
+              <th>工作量（人月）</th>
+              <th>关键特性</th>
+              <th>重点工作</th>
+              <th>L4服务/服务组</th>
+              <th>交付PM</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for project in projects %}
+              <tr>
+                <td>{{ project.id }}</td>
+                <td>{{ project.project_name or '' }}</td>
+                <td>{{ project.project_manager or '' }}</td>
+                <td>{{ project.workload_person_month or '' }}</td>
+                <td>{{ project.feature_name or '' }}</td>
+                <td>{{ project.focus_work or '' }}</td>
+                <td>{{ project.service_group or '' }}</td>
+                <td>{{ project.delivery_pm or '' }}</td>
+                <td>
+                  <div class="inline-actions">
+                    <a class="button small" href="{{ url_for('admin_project_edit', project_id=project.id) }}">编辑</a>
+                    <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" onsubmit="return confirm('确认删除这条项目数据吗？');">
+                      <button class="button danger small" type="submit">删除</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">当前数据库还没有项目数据。你可以先新增，或者用 CSV 覆盖导入。</div>
+    {% endif %}
+  </div>
+</body>
+</html>

@@ -8,9 +8,14 @@
 </head>
 <body>
   <div class="page">
-    <header>
-      <h1>特性交付路标图</h1>
-      <p>基于项目表，按关键特性展示启动开发、实现、集成测试、上线交付的年度路标。</p>
+    <header class="toolbar">
+      <div>
+        <h1>特性交付路标图</h1>
+        <p>基于项目表，按关键特性展示启动开发、实现、集成测试、上线交付的年度路标。</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('admin_projects') }}">维护项目数据</a>
+      </div>
     </header>
 
     {% if features %}

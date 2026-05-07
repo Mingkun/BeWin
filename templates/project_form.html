@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if mode == 'edit' %}编辑项目{% else %}新增项目{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page form-page">
+    <header class="toolbar">
+      <div>
+        <h1>{% if mode == 'edit' %}编辑项目{% else %}新增项目{% endif %}</h1>
+        <p>维护项目基础信息和每个月排期内容。</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('admin_projects') }}">返回列表</a>
+      </div>
+    </header>
+
+    <form method="post" class="card project-form">
+      <div class="form-grid">
+        <label>项目名称<input type="text" name="project_name" value="{{ project.project_name or '' }}"></label>
+        <label>项目经理<input type="text" name="project_manager" value="{{ project.project_manager or '' }}"></label>
+        <label>工作量（人月）<input type="text" name="workload_person_month" value="{{ project.workload_person_month or '' }}"></label>
+        <label>服务交付PM<input type="text" name="delivery_pm" value="{{ project.delivery_pm or '' }}"></label>
+        <label>关键特性<input type="text" name="feature_name" value="{{ project.feature_name or '' }}"></label>
+        <label>L4服务或服务组<input type="text" name="service_group" value="{{ project.service_group or '' }}"></label>
+      </div>
+
+      <label class="block-field">重点工作
+        <textarea name="focus_work" rows="4">{{ project.focus_work or '' }}</textarea>
+      </label>
+
+      <div class="card inner-card">
+        <h3>月度排期</h3>
+        <div class="month-grid-form">
+          {% for month in months %}
+            <label>{{ month }}<input type="text" name="{{ month }}" value="{{ project[month] if project and month in project else '' }}"></label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="toolbar-actions">
+        <button class="button" type="submit">保存</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
