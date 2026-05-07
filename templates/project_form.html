@@ -14,6 +14,10 @@
         <p>维护项目基础信息和每个月排期内容。</p>
       </div>
       <div class="toolbar-actions">
+        {% if saml_enabled and saml_user %}
+          <span class="user-chip">已登录</span>
+          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+        {% endif %}
         <a class="button secondary" href="/releaseplan/roadmap">返回路标图</a>
       </div>
     </header>

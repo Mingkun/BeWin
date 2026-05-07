@@ -14,6 +14,10 @@
         <p>在这里维护数据库中的项目数据，也可以用 CSV 覆盖导入。</p>
       </div>
       <div class="toolbar-actions">
+        {% if saml_enabled and saml_user %}
+          <span class="user-chip">已登录</span>
+          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+        {% endif %}
         <a class="button secondary" href="/releaseplan/">返回路标图</a>
         <a class="button" href="{{ url_for('admin_project_new') }}">新增项目</a>
         <form method="post" action="{{ url_for('admin_projects_import_csv') }}" onsubmit="return confirm('确认用 docs/project_table.csv 覆盖导入数据库吗？');">
