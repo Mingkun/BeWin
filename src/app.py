@@ -168,13 +168,11 @@ def build_project_roadmap(rows):
             end_index = active_indexes[-1]
             start_percent = start_index / 12 * 100
             width_percent = (end_index - start_index + 1) / 12 * 100
-            milestone_labels = [month_values[i] for i in active_indexes if month_values[i]]
         else:
             start_index = None
             end_index = None
             start_percent = 0
             width_percent = 0
-            milestone_labels = []
 
         feature = {
             "id": row.get("id"),
@@ -189,7 +187,6 @@ def build_project_roadmap(rows):
             "width_percent": width_percent,
             "month_values": month_values,
             "active_indexes": active_indexes,
-            "milestone_labels": milestone_labels,
         }
 
         if project_name not in grouped:

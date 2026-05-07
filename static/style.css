@@ -88,6 +88,37 @@ header p {
   gap: 16px;
 }
 
+.project-tab-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.project-tab-button {
+  border: 0;
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.project-tab-button.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+.project-tab-panel {
+  display: none;
+}
+
+.project-tab-panel.active {
+  display: block;
+}
+
 .roadmap-header-grid {
   display: grid;
   grid-template-columns: 360px 1fr;
