@@ -30,40 +30,39 @@
               </div>
             </div>
 
-            <div class="roadmap-table-wrap">
-              <table class="roadmap-table">
+            <div class="roadmap-board-wrap">
+              <table class="roadmap-board">
                 <thead>
                   <tr>
-                    <th class="sticky-col feature-col">关键特性</th>
-                    <th class="work-col">工作量（人月）</th>
-                    <th class="meta-col">L4服务/服务组</th>
-                    <th class="meta-col">交付PM</th>
+                    <th class="sticky-col feature-info-col">关键特性</th>
+                    <th class="sticky-col feature-meta-col">信息</th>
                     {% for month in months %}
-                      <th class="month-col">{{ month }}</th>
+                      <th class="month-head-col">{{ month }}</th>
                     {% endfor %}
-                    <th class="date-col">开始</th>
-                    <th class="date-col">结束</th>
                   </tr>
                 </thead>
                 <tbody>
                   {% for feature in project.features %}
                     <tr>
-                      <td class="sticky-col feature-col">
+                      <td class="sticky-col feature-info-col">
                         <div class="feature-name">{{ feature.feature_name }}</div>
                         <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
                       </td>
-                      <td class="work-col">{{ feature.workload_person_month or '未填写' }}</td>
-                      <td class="meta-col">{{ feature.service_group or '未填写' }}</td>
-                      <td class="meta-col">{{ feature.delivery_pm or '未填写' }}</td>
+                      <td class="sticky-col feature-meta-col">
+                        <div class="roadmap-meta-item"><span>工作量</span><strong>{{ feature.workload_person_month or '未填写' }}</strong></div>
+                        <div class="roadmap-meta-item"><span>L4服务</span><strong>{{ feature.service_group or '未填写' }}</strong></div>
+                        <div class="roadmap-meta-item"><span>交付PM</span><strong>{{ feature.delivery_pm or '未填写' }}</strong></div>
+                        <div class="roadmap-meta-item"><span>周期</span><strong>{{ feature.start or '-' }} ~ {{ feature.end or '-' }}</strong></div>
+                      </td>
                       {% for month in feature.months %}
-                        <td class="month-col {% if month.active %}month-active{% endif %}">
-                          {% if month.active %}
-                            <span>{{ month.value }}</span>
-                          {% endif %}
+                        <td class="roadmap-month-cell {% if month.active %}roadmap-month-active{% endif %}">
+                          <div class="roadmap-month-lane">
+                            {% if month.active %}
+                              <span class="roadmap-pill">{{ month.value }}</span>
+                            {% endif %}
+                          </div>
                         </td>
                       {% endfor %}
-                      <td class="date-col">{{ feature.start or '-' }}</td>
-                      <td class="date-col">{{ feature.end or '-' }}</td>
                     </tr>
                   {% endfor %}
                 </tbody>
