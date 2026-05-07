@@ -35,6 +35,9 @@
               <th>重点工作</th>
               <th>L4服务/服务组</th>
               <th>交付PM</th>
+              {% for month in months %}
+                <th>{{ month }}</th>
+              {% endfor %}
               <th>操作</th>
             </tr>
           </thead>
@@ -49,6 +52,9 @@
                 <td>{{ project.focus_work or '' }}</td>
                 <td>{{ project.service_group or '' }}</td>
                 <td>{{ project.delivery_pm or '' }}</td>
+                {% for month in months %}
+                  <td>{{ project[month] or '' }}</td>
+                {% endfor %}
                 <td>
                   <div class="inline-actions">
                     <a class="button small" href="{{ url_for('admin_project_edit', project_id=project.id) }}">编辑</a>
