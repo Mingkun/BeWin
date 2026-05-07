@@ -78,6 +78,7 @@ def build_feature_roadmap(rows):
         features.append({
             "project_name": (row.get("项目名称") or "").strip(),
             "project_manager": (row.get("项目经理") or "").strip(),
+            "workload_person_month": (row.get("工作量（人月）") or row.get("工作量(人月)") or row.get("工作量") or "").strip(),
             "feature_name": feature_name,
             "focus_work": (row.get("重点工作") or "").strip(),
             "service_group": (row.get("L4服务或服务组") or "").strip(),
