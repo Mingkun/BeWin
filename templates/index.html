@@ -14,7 +14,7 @@
         <p>按项目 Tab 切换查看各自的关键特性 roadmap。</p>
       </div>
       <div class="toolbar-actions">
-        <a class="button secondary" href="admin/projects">维护项目数据</a>
+        <a class="button secondary" href="/releaseplan/admin/projects">维护项目数据</a>
       </div>
     </header>
 
@@ -58,7 +58,7 @@
                     <div class="feature-info-panel">
                       <div class="feature-info-head">
                         <div class="feature-name">{{ feature.feature_name }}</div>
-                        <a class="feature-edit-link" href="./admin/projects/{{ feature.id }}/edit">编辑</a>
+                        <a class="feature-edit-link" href="/releaseplan/admin/projects/{{ feature.id }}/edit">编辑</a>
                       </div>
                       <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
                       <div class="feature-tags">
