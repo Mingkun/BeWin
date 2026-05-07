@@ -56,7 +56,10 @@
                 {% for feature in project.features %}
                   <div class="feature-lane-row">
                     <div class="feature-info-panel">
-                      <div class="feature-name">{{ feature.feature_name }}</div>
+                      <div class="feature-info-head">
+                        <div class="feature-name">{{ feature.feature_name }}</div>
+                        <a class="feature-edit-link" href="admin/projects/{{ feature.id }}/edit">编辑</a>
+                      </div>
                       <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
                       <div class="feature-tags">
                         <span>工作量：{{ feature.workload_person_month or '未填写' }}</span>
