@@ -7,11 +7,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="page page-wide">
+  <div class="page page-roadmap">
     <header class="toolbar">
       <div>
         <h1>项目 / 关键特性月度进展路标图</h1>
-        <p>按项目分组展示关键特性的月度推进安排，适合看全年节奏和交付窗口。</p>
+        <p>按项目泳道展示关键特性的全年推进节奏。</p>
       </div>
       <div class="toolbar-actions">
         <a class="button secondary" href="admin/projects">维护项目数据</a>
@@ -19,57 +19,73 @@
     </header>
 
     {% if project_groups %}
-      <div class="project-group-list">
-        {% for project in project_groups %}
-          <section class="project-card">
-            <div class="project-card-header">
-              <div>
-                <h2>{{ project.project_name }}</h2>
-                <div class="meta">项目经理：{{ project.project_manager or '未填写' }}</div>
-                <div class="meta">关键特性数：{{ project.features|length }}</div>
-              </div>
+      <div class="roadmap-shell">
+        <div class="roadmap-header-grid">
+          <div class="roadmap-left-header">项目 / 特性</div>
+          <div class="roadmap-time-header">
+            <div class="quarter-row">
+              {% for quarter in quarters %}
+                <div class="quarter-cell" style="width: {{ quarter.span / 12 * 100 }}%;">{{ quarter.name }}</div>
+              {% endfor %}
             </div>
+            <div class="month-row">
+              {% for month in month_labels %}
+                <div class="month-cell-head">{{ month }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
 
-            <div class="roadmap-board-wrap">
-              <table class="roadmap-board">
-                <thead>
-                  <tr>
-                    <th class="sticky-col feature-info-col">关键特性</th>
-                    <th class="sticky-col feature-meta-col">信息</th>
-                    {% for month in months %}
-                      <th class="month-head-col">{{ month }}</th>
-                    {% endfor %}
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for feature in project.features %}
-                    <tr>
-                      <td class="sticky-col feature-info-col">
-                        <div class="feature-name">{{ feature.feature_name }}</div>
-                        <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
-                      </td>
-                      <td class="sticky-col feature-meta-col">
-                        <div class="roadmap-meta-item"><span>工作量</span><strong>{{ feature.workload_person_month or '未填写' }}</strong></div>
-                        <div class="roadmap-meta-item"><span>L4服务</span><strong>{{ feature.service_group or '未填写' }}</strong></div>
-                        <div class="roadmap-meta-item"><span>交付PM</span><strong>{{ feature.delivery_pm or '未填写' }}</strong></div>
-                        <div class="roadmap-meta-item"><span>周期</span><strong>{{ feature.start or '-' }} ~ {{ feature.end or '-' }}</strong></div>
-                      </td>
-                      {% for month in feature.months %}
-                        <td class="roadmap-month-cell {% if month.active %}roadmap-month-active{% endif %}">
-                          <div class="roadmap-month-lane">
-                            {% if month.active %}
-                              <span class="roadmap-pill">{{ month.value }}</span>
-                            {% endif %}
-                          </div>
-                        </td>
-                      {% endfor %}
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        {% endfor %}
+        <div class="project-lane-list">
+          {% for project in project_groups %}
+            <section class="project-lane-card">
+              <div class="project-lane-title">
+                <h2>{{ project.project_name }}</h2>
+                <div class="meta">项目经理：{{ project.project_manager or '未填写' }}，关键特性数：{{ project.features|length }}</div>
+              </div>
+
+              <div class="feature-lane-list">
+                {% for feature in project.features %}
+                  <div class="feature-lane-row">
+                    <div class="feature-info-panel">
+                      <div class="feature-name">{{ feature.feature_name }}</div>
+                      <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
+                      <div class="feature-tags">
+                        <span>工作量：{{ feature.workload_person_month or '未填写' }}</span>
+                        <span>L4：{{ feature.service_group or '未填写' }}</span>
+                        <span>交付PM：{{ feature.delivery_pm or '未填写' }}</span>
+                        <span>周期：{{ feature.start_label }} ~ {{ feature.end_label }}</span>
+                      </div>
+                    </div>
+
+                    <div class="timeline-panel">
+                      <div class="timeline-grid-lines">
+                        {% for month in month_labels %}
+                          <div class="timeline-grid-col"></div>
+                        {% endfor %}
+                      </div>
+
+                      {% if feature.active_indexes %}
+                        <div class="timeline-bar" style="left: {{ feature.start_percent }}%; width: {{ feature.width_percent }}%;">
+                          <div class="timeline-bar-label">{{ feature.feature_name }}</div>
+                        </div>
+                        <div class="timeline-milestones">
+                          {% for idx in feature.active_indexes %}
+                            <div class="timeline-milestone" style="left: {{ (idx + 0.5) / 12 * 100 }}%;">
+                              <span>{{ feature.month_values[idx] }}</span>
+                            </div>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        <div class="timeline-empty">未排期</div>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </section>
+          {% endfor %}
+        </div>
       </div>
     {% else %}
       <div class="empty">当前还没有项目数据，请先初始化数据库中的项目数据。</div>

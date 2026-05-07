@@ -10,7 +10,13 @@ MILESTONE_COLUMNS = [
     "1/31", "2/28", "3/31", "4/30", "5/31", "6/30",
     "7/31", "8/31", "9/30", "10/31", "11/30", "12/31"
 ]
-STAGES = ["启动开发", "实现", "集成测试", "上线交付"]
+MONTH_LABELS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
+QUARTERS = [
+    {"name": "Q1", "start": 0, "span": 3},
+    {"name": "Q2", "start": 3, "span": 3},
+    {"name": "Q3", "start": 6, "span": 3},
+    {"name": "Q4", "start": 9, "span": 3},
+]
 TEXT_COLUMNS = ["项目名称", "项目经理", "工作量（人月）", "重点工作", "关键特性", "L4服务或服务组", "服务交付PM"]
 ALL_COLUMNS = TEXT_COLUMNS + MILESTONE_COLUMNS
 
@@ -148,26 +154,27 @@ def load_project(project_id):
         return dict(row) if row else None
 
 
-def build_months(row):
-    months = []
-    for i, month in enumerate(MILESTONE_COLUMNS):
-        value = (row.get(month) or "").strip()
-        months.append({
-            "label": month,
-            "value": value,
-            "active": bool(value),
-            "index": i,
-        })
-    return months
-
-
 def build_project_roadmap(rows):
     grouped = {}
     for row in rows:
         project_name = (row.get("project_name") or "").strip() or "未命名项目"
         feature_name = (row.get("feature_name") or "").strip() or "未命名关键特性"
-        months = build_months(row)
-        active_labels = [m["label"] for m in months if m["active"]]
+
+        active_indexes = [i for i, month in enumerate(MILESTONE_COLUMNS) if (row.get(month) or "").strip()]
+        month_values = [(row.get(month) or "").strip() for month in MILESTONE_COLUMNS]
+
+        if active_indexes:
+            start_index = active_indexes[0]
+            end_index = active_indexes[-1]
+            start_percent = start_index / 12 * 100
+            width_percent = (end_index - start_index + 1) / 12 * 100
+            milestone_labels = [month_values[i] for i in active_indexes if month_values[i]]
+        else:
+            start_index = None
+            end_index = None
+            start_percent = 0
+            width_percent = 0
+            milestone_labels = []
 
         feature = {
             "id": row.get("id"),
@@ -176,9 +183,13 @@ def build_project_roadmap(rows):
             "service_group": (row.get("service_group") or "").strip(),
             "delivery_pm": (row.get("delivery_pm") or "").strip(),
             "workload_person_month": (row.get("workload_person_month") or "").strip(),
-            "months": months,
-            "start": active_labels[0] if active_labels else "",
-            "end": active_labels[-1] if active_labels else "",
+            "start_label": MONTH_LABELS[start_index] if start_index is not None else "-",
+            "end_label": MONTH_LABELS[end_index] if end_index is not None else "-",
+            "start_percent": start_percent,
+            "width_percent": width_percent,
+            "month_values": month_values,
+            "active_indexes": active_indexes,
+            "milestone_labels": milestone_labels,
         }
 
         if project_name not in grouped:
@@ -211,7 +222,12 @@ def form_to_project_data(form):
 def index():
     rows = load_projects()
     project_groups = build_project_roadmap(rows)
-    return render_template('index.html', project_groups=project_groups, months=MILESTONE_COLUMNS)
+    return render_template(
+        'index.html',
+        project_groups=project_groups,
+        month_labels=MONTH_LABELS,
+        quarters=QUARTERS,
+    )
 
 
 @app.route('/admin/projects')
