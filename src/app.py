@@ -252,7 +252,7 @@ def admin_project_new():
                 values,
             )
             conn.commit()
-        return redirect(url_for('admin_projects'))
+        return redirect('/releaseplan/')
     return render_template('project_form.html', project={}, months=MILESTONE_COLUMNS, mode='new')
 
 
@@ -260,7 +260,7 @@ def admin_project_new():
 def admin_project_edit(project_id):
     project = load_project(project_id)
     if not project:
-        return redirect(url_for('admin_projects'))
+        return redirect('/releaseplan/')
     if request.method == 'POST':
         data = form_to_project_data(request.form)
         set_clause = [
@@ -282,7 +282,7 @@ def admin_project_edit(project_id):
                 values,
             )
             conn.commit()
-        return redirect(url_for('admin_projects'))
+        return redirect('/releaseplan/')
     return render_template('project_form.html', project=project, months=MILESTONE_COLUMNS, mode='edit')
 
 
