@@ -217,6 +217,11 @@ def form_to_project_data(form):
 
 @app.route('/')
 def index():
+    return render_template('home.html')
+
+
+@app.route('/roadmap')
+def roadmap():
     rows = load_projects()
     project_groups = build_project_roadmap(rows)
     return render_template(
@@ -225,6 +230,28 @@ def index():
         month_labels=MONTH_LABELS,
         quarters=QUARTERS,
     )
+
+
+@app.route('/views/<view_key>')
+def view_placeholder(view_key):
+    view_map = {
+        'department-budget-resource': {
+            'title': '部门预算&资源统计视图',
+            'description': '查看部门维度的预算、资源投入与汇总统计。',
+        },
+        'department-pipeline-load': {
+            'title': '部门管道负载视图',
+            'description': '查看部门维度的管道容量、排期分布与负载情况。',
+        },
+        'project-budget-resource': {
+            'title': '项目纬度预算&资源视图',
+            'description': '查看项目维度的预算拆分、资源投入与分布情况。',
+        },
+    }
+    view_config = view_map.get(view_key)
+    if not view_config:
+        return redirect('/releaseplan/')
+    return render_template('view_placeholder.html', **view_config)
 
 
 @app.route('/admin/projects')

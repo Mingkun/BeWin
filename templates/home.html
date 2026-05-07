@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReleasePlan 入口</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page home-page">
+    <header class="toolbar">
+      <div>
+        <h1>ReleasePlan</h1>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button secondary" href="/releaseplan/admin/projects">维护项目数据</a>
+      </div>
+    </header>
+
+    <div class="entry-card-grid">
+      <a class="entry-card" href="/releaseplan/roadmap">
+        <div class="entry-card-title">关键特性路标图</div>
+        <div class="entry-card-desc">查看按项目切换的关键特性 roadmap 视图。</div>
+      </a>
+
+      <a class="entry-card" href="/releaseplan/views/department-budget-resource">
+        <div class="entry-card-title">部门预算&资源统计视图</div>
+        <div class="entry-card-desc">查看部门视角的预算与资源统计信息。</div>
+      </a>
+
+      <a class="entry-card" href="/releaseplan/views/department-pipeline-load">
+        <div class="entry-card-title">部门管道负载视图</div>
+        <div class="entry-card-desc">查看部门管道容量、排期与负载情况。</div>
+      </a>
+
+      <a class="entry-card" href="/releaseplan/views/project-budget-resource">
+        <div class="entry-card-title">项目纬度预算&资源视图</div>
+        <div class="entry-card-desc">查看项目维度的预算与资源分布信息。</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
