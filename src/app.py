@@ -20,7 +20,7 @@ QUARTERS = [
 TEXT_COLUMNS = ["项目名称", "项目经理", "工作量（人月）", "重点工作", "关键特性", "L4服务或服务组", "服务交付PM"]
 ALL_COLUMNS = TEXT_COLUMNS + MILESTONE_COLUMNS
 
-app = Flask(__name__, template_folder=str(BASE_DIR / "templates"), static_folder=str(BASE_DIR / "static"))
+app = Flask(__name__, template_folder=str(BASE_DIR / "templates"), static_folder=str(BASE_DIR / "static"), static_url_path="/releaseplan/static")
 
 
 def get_conn():
