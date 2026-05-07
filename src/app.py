@@ -13,16 +13,6 @@ MILESTONE_COLUMNS = [
 STAGES = ["启动开发", "实现", "集成测试", "上线交付"]
 TEXT_COLUMNS = ["项目名称", "项目经理", "工作量（人月）", "重点工作", "关键特性", "L4服务或服务组", "服务交付PM"]
 ALL_COLUMNS = TEXT_COLUMNS + MILESTONE_COLUMNS
-DB_TO_LABEL = {
-    "project_name": "项目名称",
-    "project_manager": "项目经理",
-    "workload_person_month": "工作量（人月）",
-    "focus_work": "重点工作",
-    "feature_name": "关键特性",
-    "service_group": "L4服务或服务组",
-    "delivery_pm": "服务交付PM",
-}
-LABEL_TO_DB = {v: k for k, v in DB_TO_LABEL.items()}
 
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"), static_folder=str(BASE_DIR / "static"))
 
@@ -129,7 +119,7 @@ def load_projects():
                 delivery_pm,
                 {', '.join([f'"{month}"' for month in MILESTONE_COLUMNS])}
             FROM projects
-            ORDER BY id ASC
+            ORDER BY project_name ASC, id ASC
             """
         ).fetchall()
         return [dict(row) for row in rows]
@@ -158,74 +148,48 @@ def load_project(project_id):
         return dict(row) if row else None
 
 
-def build_feature_roadmap(rows):
-    features = []
-    stage_colors = {
-        "启动开发": "stage-kickoff",
-        "实现": "stage-build",
-        "集成测试": "stage-test",
-        "上线交付": "stage-release",
-    }
-    for row in rows:
-        feature_name = (row.get("feature_name") or row.get("关键特性") or "").strip() or "未命名特性"
-        active_month_indexes = [i for i, m in enumerate(MILESTONE_COLUMNS) if (row.get(m) or "").strip()]
-        months = []
-        for i, month in enumerate(MILESTONE_COLUMNS):
-            value = (row.get(month) or "").strip()
-            months.append({
-                "label": month,
-                "value": value,
-                "active": bool(value),
-                "index": i,
-            })
-
-        if active_month_indexes:
-            total = len(active_month_indexes)
-            stage_ranges = {}
-            for idx, stage in enumerate(STAGES):
-                start_pos = round(idx * total / len(STAGES))
-                end_pos = round((idx + 1) * total / len(STAGES))
-                segment = active_month_indexes[start_pos:end_pos]
-                if not segment and active_month_indexes:
-                    fallback_index = active_month_indexes[min(start_pos, total - 1)]
-                    segment = [fallback_index]
-                stage_ranges[stage] = set(segment)
-            start = MILESTONE_COLUMNS[active_month_indexes[0]]
-            end = MILESTONE_COLUMNS[active_month_indexes[-1]]
-        else:
-            stage_ranges = {stage: set() for stage in STAGES}
-            start = end = ""
-
-        stage_rows = []
-        for stage in STAGES:
-            row_months = []
-            for month in months:
-                active = month["index"] in stage_ranges[stage]
-                row_months.append({
-                    "label": month["label"],
-                    "value": month["value"],
-                    "active": active,
-                    "class_name": stage_colors.get(stage, ""),
-                })
-            stage_rows.append({
-                "name": stage,
-                "months": row_months,
-            })
-
-        features.append({
-            "id": row.get("id"),
-            "project_name": (row.get("project_name") or row.get("项目名称") or "").strip(),
-            "project_manager": (row.get("project_manager") or row.get("项目经理") or "").strip(),
-            "workload_person_month": (row.get("workload_person_month") or row.get("工作量（人月）") or "").strip(),
-            "feature_name": feature_name,
-            "focus_work": (row.get("focus_work") or row.get("重点工作") or "").strip(),
-            "service_group": (row.get("service_group") or row.get("L4服务或服务组") or "").strip(),
-            "delivery_pm": (row.get("delivery_pm") or row.get("服务交付PM") or "").strip(),
-            "stage_rows": stage_rows,
-            "start": start,
-            "end": end,
+def build_months(row):
+    months = []
+    for i, month in enumerate(MILESTONE_COLUMNS):
+        value = (row.get(month) or "").strip()
+        months.append({
+            "label": month,
+            "value": value,
+            "active": bool(value),
+            "index": i,
         })
-    return features
+    return months
+
+
+def build_project_roadmap(rows):
+    grouped = {}
+    for row in rows:
+        project_name = (row.get("project_name") or "").strip() or "未命名项目"
+        feature_name = (row.get("feature_name") or "").strip() or "未命名关键特性"
+        months = build_months(row)
+        active_labels = [m["label"] for m in months if m["active"]]
+
+        feature = {
+            "id": row.get("id"),
+            "feature_name": feature_name,
+            "focus_work": (row.get("focus_work") or "").strip(),
+            "service_group": (row.get("service_group") or "").strip(),
+            "delivery_pm": (row.get("delivery_pm") or "").strip(),
+            "workload_person_month": (row.get("workload_person_month") or "").strip(),
+            "months": months,
+            "start": active_labels[0] if active_labels else "",
+            "end": active_labels[-1] if active_labels else "",
+        }
+
+        if project_name not in grouped:
+            grouped[project_name] = {
+                "project_name": project_name,
+                "project_manager": (row.get("project_manager") or "").strip(),
+                "features": [],
+            }
+        grouped[project_name]["features"].append(feature)
+
+    return list(grouped.values())
 
 
 def form_to_project_data(form):
@@ -246,8 +210,8 @@ def form_to_project_data(form):
 @app.route('/')
 def index():
     rows = load_projects()
-    features = build_feature_roadmap(rows)
-    return render_template('index.html', features=features, months=MILESTONE_COLUMNS)
+    project_groups = build_project_roadmap(rows)
+    return render_template('index.html', project_groups=project_groups, months=MILESTONE_COLUMNS)
 
 
 @app.route('/admin/projects')
