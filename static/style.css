@@ -511,6 +511,12 @@ header p {
   background: #fff;
 }
 
+.readonly-summary {
+  background: #f1f5f9 !important;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
 .inner-card h3 {
   margin-top: 0;
 }

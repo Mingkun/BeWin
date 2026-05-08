@@ -27,15 +27,15 @@
         <label>五层部门<textarea name="five_level_department" rows="2">{{ record.five_level_department or '' }}</textarea></label>
         <label>L4云服务<textarea name="l4_cloud_service" rows="2">{{ record.l4_cloud_service or '' }}</textarea></label>
         <label>功能和用途简介<textarea name="function_description" rows="2">{{ record.function_description or '' }}</textarea></label>
-        <label>汇总（自有）<input name="summary_self_owned" value="{{ record.summary_self_owned or '' }}" readonly></label>
-        <label>汇总（OD）<input name="summary_od" value="{{ record.summary_od or '' }}" readonly></label>
-        <label>汇总（TM）<input name="summary_tm" value="{{ record.summary_tm or '' }}" readonly></label>
-        <label>HC（自有）<input name="hc_self_owned" value="{{ record.hc_self_owned or '' }}"></label>
-        <label>HC（OD）<input name="hc_od" value="{{ record.hc_od or '' }}"></label>
-        <label>HC（TM）<input name="hc_tm" value="{{ record.hc_tm or '' }}"></label>
-        <label>HCS（自有）<input name="hcs_self_owned" value="{{ record.hcs_self_owned or '' }}"></label>
-        <label>HCS（OD）<input name="hcs_od" value="{{ record.hcs_od or '' }}"></label>
-        <label>HCS（TM）<input name="hcs_tm" value="{{ record.hcs_tm or '' }}"></label>
+        <label>汇总（自有）<input class="readonly-summary" name="summary_self_owned" value="{{ record.summary_self_owned or '' }}" readonly tabindex="-1"></label>
+        <label>汇总（OD）<input class="readonly-summary" name="summary_od" value="{{ record.summary_od or '' }}" readonly tabindex="-1"></label>
+        <label>汇总（TM）<input class="readonly-summary" name="summary_tm" value="{{ record.summary_tm or '' }}" readonly tabindex="-1"></label>
+        <label>HC（自有）<input name="hc_self_owned" value="{{ record.hc_self_owned or '' }}" data-summary-target="summary_self_owned"></label>
+        <label>HC（OD）<input name="hc_od" value="{{ record.hc_od or '' }}" data-summary-target="summary_od"></label>
+        <label>HC（TM）<input name="hc_tm" value="{{ record.hc_tm or '' }}" data-summary-target="summary_tm"></label>
+        <label>HCS（自有）<input name="hcs_self_owned" value="{{ record.hcs_self_owned or '' }}" data-summary-target="summary_self_owned"></label>
+        <label>HCS（OD）<input name="hcs_od" value="{{ record.hcs_od or '' }}" data-summary-target="summary_od"></label>
+        <label>HCS（TM）<input name="hcs_tm" value="{{ record.hcs_tm or '' }}" data-summary-target="summary_tm"></label>
       </div>
 
       <div class="toolbar-actions">
@@ -44,5 +44,42 @@
       </div>
     </form>
   </div>
+  <script>
+    (function () {
+      const form = document.querySelector('form');
+      if (!form) return;
+
+      const pairs = [
+        ['hc_self_owned', 'hcs_self_owned', 'summary_self_owned'],
+        ['hc_od', 'hcs_od', 'summary_od'],
+        ['hc_tm', 'hcs_tm', 'summary_tm'],
+      ];
+
+      function toNumber(value) {
+        const n = parseFloat(value);
+        return Number.isFinite(n) ? n : 0;
+      }
+
+      function formatNumber(value) {
+        return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(2)));
+      }
+
+      function recalc() {
+        pairs.forEach(([leftName, rightName, summaryName]) => {
+          const left = form.querySelector(`[name="${leftName}"]`);
+          const right = form.querySelector(`[name="${rightName}"]`);
+          const summary = form.querySelector(`[name="${summaryName}"]`);
+          if (!left || !right || !summary) return;
+          summary.value = formatNumber(toNumber(left.value) + toNumber(right.value));
+        });
+      }
+
+      form.querySelectorAll('input[name^="hc_"], input[name^="hcs_"]').forEach((input) => {
+        input.addEventListener('input', recalc);
+      });
+
+      recalc();
+    })();
+  </script>
 </body>
 </html>
