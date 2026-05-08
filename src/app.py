@@ -289,19 +289,26 @@ def form_to_project_data(form):
 
 
 def form_to_service_resource_data(form):
+    hc_self_owned = (form.get("hc_self_owned") or "").strip()
+    hc_od = (form.get("hc_od") or "").strip()
+    hc_tm = (form.get("hc_tm") or "").strip()
+    hcs_self_owned = (form.get("hcs_self_owned") or "").strip()
+    hcs_od = (form.get("hcs_od") or "").strip()
+    hcs_tm = (form.get("hcs_tm") or "").strip()
+
     return {
         "five_level_department": (form.get("five_level_department") or "").strip(),
         "l4_cloud_service": (form.get("l4_cloud_service") or "").strip(),
         "function_description": (form.get("function_description") or "").strip(),
-        "summary_self_owned": (form.get("summary_self_owned") or "").strip(),
-        "summary_od": (form.get("summary_od") or "").strip(),
-        "summary_tm": (form.get("summary_tm") or "").strip(),
-        "hc_self_owned": (form.get("hc_self_owned") or "").strip(),
-        "hc_od": (form.get("hc_od") or "").strip(),
-        "hc_tm": (form.get("hc_tm") or "").strip(),
-        "hcs_self_owned": (form.get("hcs_self_owned") or "").strip(),
-        "hcs_od": (form.get("hcs_od") or "").strip(),
-        "hcs_tm": (form.get("hcs_tm") or "").strip(),
+        "summary_self_owned": format_number(to_number(hc_self_owned) + to_number(hcs_self_owned)),
+        "summary_od": format_number(to_number(hc_od) + to_number(hcs_od)),
+        "summary_tm": format_number(to_number(hc_tm) + to_number(hcs_tm)),
+        "hc_self_owned": hc_self_owned,
+        "hc_od": hc_od,
+        "hc_tm": hc_tm,
+        "hcs_self_owned": hcs_self_owned,
+        "hcs_od": hcs_od,
+        "hcs_tm": hcs_tm,
     }
 
 
@@ -363,6 +370,12 @@ def to_number(value):
         return float(value or 0)
     except (TypeError, ValueError):
         return 0.0
+
+
+def format_number(value):
+    if float(value).is_integer():
+        return str(int(value))
+    return f"{value:.2f}".rstrip('0').rstrip('.')
 
 
 def build_service_resource_summary(rows):

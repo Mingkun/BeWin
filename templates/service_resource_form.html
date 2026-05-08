@@ -27,9 +27,9 @@
         <label>五层部门<textarea name="five_level_department" rows="2">{{ record.five_level_department or '' }}</textarea></label>
         <label>L4云服务<textarea name="l4_cloud_service" rows="2">{{ record.l4_cloud_service or '' }}</textarea></label>
         <label>功能和用途简介<textarea name="function_description" rows="2">{{ record.function_description or '' }}</textarea></label>
-        <label>汇总（自有）<input name="summary_self_owned" value="{{ record.summary_self_owned or '' }}"></label>
-        <label>汇总（OD）<input name="summary_od" value="{{ record.summary_od or '' }}"></label>
-        <label>汇总（TM）<input name="summary_tm" value="{{ record.summary_tm or '' }}"></label>
+        <label>汇总（自有）<input name="summary_self_owned" value="{{ record.summary_self_owned or '' }}" readonly></label>
+        <label>汇总（OD）<input name="summary_od" value="{{ record.summary_od or '' }}" readonly></label>
+        <label>汇总（TM）<input name="summary_tm" value="{{ record.summary_tm or '' }}" readonly></label>
         <label>HC（自有）<input name="hc_self_owned" value="{{ record.hc_self_owned or '' }}"></label>
         <label>HC（OD）<input name="hc_od" value="{{ record.hc_od or '' }}"></label>
         <label>HC（TM）<input name="hc_tm" value="{{ record.hc_tm or '' }}"></label>
