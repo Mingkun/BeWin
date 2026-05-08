@@ -26,10 +26,20 @@
     <form class="card filter-form" method="get" action="/releaseplan/views/cloud-service-view">
       <div class="form-grid form-grid-3">
         <label>五层部门
-          <input type="text" name="department" value="{{ filters.department if filters else '' }}" placeholder="输入五层部门关键字">
+          <select name="department">
+            <option value="">全部</option>
+            {% for item in filter_options.departments %}
+              <option value="{{ item }}" {% if filters and filters.department == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
         </label>
         <label>L4云服务
-          <input type="text" name="service" value="{{ filters.service if filters else '' }}" placeholder="输入 L4 云服务关键字">
+          <select name="service">
+            <option value="">全部</option>
+            {% for item in filter_options.services %}
+              <option value="{{ item }}" {% if filters and filters.service == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
         </label>
         <label class="filter-actions">
           <span>操作</span>

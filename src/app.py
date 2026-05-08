@@ -398,11 +398,20 @@ def filter_service_resources(rows, department_keyword='', service_keyword=''):
     def matched(row):
         department_value = (row.get('five_level_department') or '').lower()
         service_value = (row.get('l4_cloud_service') or '').lower()
-        department_ok = not department_keyword or department_keyword in department_value
-        service_ok = not service_keyword or service_keyword in service_value
+        department_ok = not department_keyword or department_keyword == department_value
+        service_ok = not service_keyword or service_keyword == service_value
         return department_ok and service_ok
 
     return [row for row in rows if matched(row)]
+
+
+def get_service_resource_filter_options(rows):
+    departments = sorted({(row.get('five_level_department') or '').strip() for row in rows if (row.get('five_level_department') or '').strip()})
+    services = sorted({(row.get('l4_cloud_service') or '').strip() for row in rows if (row.get('l4_cloud_service') or '').strip()})
+    return {
+        'departments': departments,
+        'services': services,
+    }
 
 
 def seed_service_resources_if_empty():
@@ -521,6 +530,7 @@ def view_placeholder(view_key):
         department_keyword = (request.args.get('department') or '').strip()
         service_keyword = (request.args.get('service') or '').strip()
         rows = load_service_resources()
+        filter_options = get_service_resource_filter_options(rows)
         filtered_rows = filter_service_resources(rows, department_keyword=department_keyword, service_keyword=service_keyword)
         summary = build_service_resource_summary(filtered_rows)
         return render_template(
@@ -531,6 +541,7 @@ def view_placeholder(view_key):
                 'department': department_keyword,
                 'service': service_keyword,
             },
+            filter_options=filter_options,
             saml_enabled=saml_enabled(),
             saml_user=session.get('saml_user'),
         )

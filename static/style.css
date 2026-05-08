@@ -500,6 +500,7 @@ header p {
 }
 
 .form-grid input,
+.form-grid select,
 .month-grid-form input,
 .block-field textarea {
   border: 1px solid #d1d5db;
@@ -507,6 +508,7 @@ header p {
   padding: 10px 12px;
   font-size: 14px;
   font-family: inherit;
+  background: #fff;
 }
 
 .inner-card h3 {
