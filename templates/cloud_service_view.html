@@ -68,7 +68,7 @@
                 <td>{{ record.hcs_od or '' }}</td>
                 <td>{{ record.hcs_tm or '' }}</td>
                 <td>
-                  <a class="button small" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}">编辑</a>
+                  <a class="button small" href="{{ url_for('admin_service_resource_edit', record_id=record.id, return_to='/releaseplan/views/cloud-service-view') }}">编辑</a>
                 </td>
               </tr>
             {% endfor %}

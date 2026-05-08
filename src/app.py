@@ -657,8 +657,9 @@ def admin_service_resource_new():
 @login_required
 def admin_service_resource_edit(record_id):
     record = load_service_resource(record_id)
+    return_to = request.args.get('return_to') or '/releaseplan/views/cloud-service-view'
     if not record:
-        return redirect(url_for('admin_service_resources'))
+        return redirect(return_to)
     if request.method == 'POST':
         data = form_to_service_resource_data(request.form)
         with get_conn() as conn:
@@ -688,8 +689,8 @@ def admin_service_resource_edit(record_id):
                 ),
             )
             conn.commit()
-        return redirect(url_for('admin_service_resources'))
-    return render_template('service_resource_form.html', record=record, mode='edit', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+        return redirect(return_to)
+    return render_template('service_resource_form.html', record=record, mode='edit', return_to=return_to, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
 
 
 @app.route('/admin/service-resources/<int:record_id>/delete', methods=['POST'])
