@@ -1,4 +1,5 @@
 from flask import Flask, redirect, render_template, request, session, url_for, Response
+from werkzeug.middleware.proxy_fix import ProxyFix
 import csv
 import json
 import os
@@ -32,6 +33,7 @@ TEXT_COLUMNS = ["项目名称", "项目经理", "工作量（人月）", "重点
 ALL_COLUMNS = TEXT_COLUMNS + MILESTONE_COLUMNS
 
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"), static_folder=str(BASE_DIR / "static"), static_url_path="/releaseplan/static")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 app.secret_key = os.getenv("RELEASEPLAN_SECRET_KEY", "releaseplan-dev-secret-change-me")
 
 
@@ -653,11 +655,12 @@ def admin_service_resource_new():
     return render_template('service_resource_form.html', record={}, mode='new', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
 
 
+@app.route('/releaseplan/admin/service-resources/<int:record_id>/edit', methods=['GET', 'POST'])
 @app.route('/admin/service-resources/<int:record_id>/edit', methods=['GET', 'POST'])
 @login_required
 def admin_service_resource_edit(record_id):
     record = load_service_resource(record_id)
-    return_to = request.args.get('return_to') or url_for('view_placeholder', view_key='cloud-service-view')
+    return_to = request.args.get('return_to') or '/releaseplan/views/cloud-service-view'
     if not record:
         return redirect(return_to)
     if request.method == 'POST':
@@ -702,6 +705,7 @@ def admin_service_resource_delete(record_id):
     return redirect(url_for('admin_service_resources'))
 
 
+@app.route('/releaseplan/views/cloud-service-view/<int:record_id>/edit', methods=['POST'])
 @app.route('/views/cloud-service-view/<int:record_id>/edit', methods=['POST'])
 @login_required
 def cloud_service_view_edit(record_id):
