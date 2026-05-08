@@ -358,6 +358,10 @@ def view_placeholder(view_key):
             'title': '项目纬度预算&资源视图',
             'description': '查看项目维度的预算拆分、资源投入与分布情况。',
         },
+        'cloud-service-view': {
+            'title': '云服务视图',
+            'description': '查看云服务相关项目与规划视图。',
+        },
     }
     view_config = view_map.get(view_key)
     if not view_config:
