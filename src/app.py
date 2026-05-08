@@ -103,6 +103,27 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS service_resource_investment (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                five_level_department TEXT,
+                l4_cloud_service TEXT,
+                function_description TEXT,
+                summary_self_owned TEXT,
+                summary_od TEXT,
+                summary_tm TEXT,
+                hc_self_owned TEXT,
+                hc_od TEXT,
+                hc_tm TEXT,
+                hcs_self_owned TEXT,
+                hcs_od TEXT,
+                hcs_tm TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
         conn.commit()
 
 
@@ -267,6 +288,127 @@ def form_to_project_data(form):
     return data
 
 
+def form_to_service_resource_data(form):
+    return {
+        "five_level_department": (form.get("five_level_department") or "").strip(),
+        "l4_cloud_service": (form.get("l4_cloud_service") or "").strip(),
+        "function_description": (form.get("function_description") or "").strip(),
+        "summary_self_owned": (form.get("summary_self_owned") or "").strip(),
+        "summary_od": (form.get("summary_od") or "").strip(),
+        "summary_tm": (form.get("summary_tm") or "").strip(),
+        "hc_self_owned": (form.get("hc_self_owned") or "").strip(),
+        "hc_od": (form.get("hc_od") or "").strip(),
+        "hc_tm": (form.get("hc_tm") or "").strip(),
+        "hcs_self_owned": (form.get("hcs_self_owned") or "").strip(),
+        "hcs_od": (form.get("hcs_od") or "").strip(),
+        "hcs_tm": (form.get("hcs_tm") or "").strip(),
+    }
+
+
+def load_service_resources():
+    init_db()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                id,
+                five_level_department,
+                l4_cloud_service,
+                function_description,
+                summary_self_owned,
+                summary_od,
+                summary_tm,
+                hc_self_owned,
+                hc_od,
+                hc_tm,
+                hcs_self_owned,
+                hcs_od,
+                hcs_tm
+            FROM service_resource_investment
+            ORDER BY five_level_department ASC, l4_cloud_service ASC, id ASC
+            """
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def load_service_resource(record_id):
+    init_db()
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                id,
+                five_level_department,
+                l4_cloud_service,
+                function_description,
+                summary_self_owned,
+                summary_od,
+                summary_tm,
+                hc_self_owned,
+                hc_od,
+                hc_tm,
+                hcs_self_owned,
+                hcs_od,
+                hcs_tm
+            FROM service_resource_investment
+            WHERE id = ?
+            """,
+            (record_id,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def to_number(value):
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def build_service_resource_summary(rows):
+    return {
+        "count": len(rows),
+        "summary_self_owned": round(sum(to_number(row.get("summary_self_owned")) for row in rows), 2),
+        "summary_od": round(sum(to_number(row.get("summary_od")) for row in rows), 2),
+        "summary_tm": round(sum(to_number(row.get("summary_tm")) for row in rows), 2),
+        "hc_total": round(sum(to_number(row.get("hc_self_owned")) + to_number(row.get("hc_od")) + to_number(row.get("hc_tm")) for row in rows), 2),
+        "hcs_total": round(sum(to_number(row.get("hcs_self_owned")) + to_number(row.get("hcs_od")) + to_number(row.get("hcs_tm")) for row in rows), 2),
+    }
+
+
+def seed_service_resources_if_empty():
+    init_db()
+    with get_conn() as conn:
+        count = conn.execute("SELECT COUNT(*) FROM service_resource_investment").fetchone()[0]
+        if count > 0:
+            return
+        seed_rows = [
+            ("云平台部", "容器云", "提供容器编排与运行环境", "6", "2", "1", "4", "1", "1", "120", "30", "15"),
+            ("云平台部", "对象存储", "提供对象存储与归档能力", "5", "1", "1", "3", "1", "1", "90", "20", "12"),
+            ("基础设施部", "云网络", "提供 VPC、负载均衡与网络连接能力", "7", "2", "1", "5", "1", "1", "140", "35", "18"),
+        ]
+        conn.executemany(
+            """
+            INSERT INTO service_resource_investment (
+                five_level_department,
+                l4_cloud_service,
+                function_description,
+                summary_self_owned,
+                summary_od,
+                summary_tm,
+                hc_self_owned,
+                hc_od,
+                hc_tm,
+                hcs_self_owned,
+                hcs_od,
+                hcs_tm
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            seed_rows,
+        )
+        conn.commit()
+
+
 @app.route('/saml/login')
 def saml_login():
     if not saml_enabled():
@@ -345,6 +487,18 @@ def roadmap():
 @app.route('/views/<view_key>')
 @login_required
 def view_placeholder(view_key):
+    if view_key == 'cloud-service-view':
+        seed_service_resources_if_empty()
+        rows = load_service_resources()
+        summary = build_service_resource_summary(rows)
+        return render_template(
+            'cloud_service_view.html',
+            records=rows,
+            summary=summary,
+            saml_enabled=saml_enabled(),
+            saml_user=session.get('saml_user'),
+        )
+
     view_map = {
         'department-budget-resource': {
             'title': '部门预算&资源统计视图',
@@ -357,10 +511,6 @@ def view_placeholder(view_key):
         'project-budget-resource': {
             'title': '项目纬度预算&资源视图',
             'description': '查看项目维度的预算拆分、资源投入与分布情况。',
-        },
-        'cloud-service-view': {
-            'title': '云服务视图',
-            'description': '查看云服务相关项目与规划视图。',
         },
     }
     view_config = view_map.get(view_key)
@@ -445,6 +595,97 @@ def admin_project_delete(project_id):
 def admin_projects_import_csv():
     import_csv(replace=True)
     return redirect(url_for('admin_projects'))
+
+
+@app.route('/admin/service-resources')
+@login_required
+def admin_service_resources():
+    seed_service_resources_if_empty()
+    rows = load_service_resources()
+    return render_template('service_resource_list.html', records=rows, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+
+
+@app.route('/admin/service-resources/new', methods=['GET', 'POST'])
+@login_required
+def admin_service_resource_new():
+    if request.method == 'POST':
+        data = form_to_service_resource_data(request.form)
+        with get_conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO service_resource_investment (
+                    five_level_department,
+                    l4_cloud_service,
+                    function_description,
+                    summary_self_owned,
+                    summary_od,
+                    summary_tm,
+                    hc_self_owned,
+                    hc_od,
+                    hc_tm,
+                    hcs_self_owned,
+                    hcs_od,
+                    hcs_tm
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    data['five_level_department'], data['l4_cloud_service'], data['function_description'],
+                    data['summary_self_owned'], data['summary_od'], data['summary_tm'],
+                    data['hc_self_owned'], data['hc_od'], data['hc_tm'],
+                    data['hcs_self_owned'], data['hcs_od'], data['hcs_tm'],
+                ),
+            )
+            conn.commit()
+        return redirect(url_for('admin_service_resources'))
+    return render_template('service_resource_form.html', record={}, mode='new', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+
+
+@app.route('/admin/service-resources/<int:record_id>/edit', methods=['GET', 'POST'])
+@login_required
+def admin_service_resource_edit(record_id):
+    record = load_service_resource(record_id)
+    if not record:
+        return redirect(url_for('admin_service_resources'))
+    if request.method == 'POST':
+        data = form_to_service_resource_data(request.form)
+        with get_conn() as conn:
+            conn.execute(
+                """
+                UPDATE service_resource_investment
+                SET five_level_department = ?,
+                    l4_cloud_service = ?,
+                    function_description = ?,
+                    summary_self_owned = ?,
+                    summary_od = ?,
+                    summary_tm = ?,
+                    hc_self_owned = ?,
+                    hc_od = ?,
+                    hc_tm = ?,
+                    hcs_self_owned = ?,
+                    hcs_od = ?,
+                    hcs_tm = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (
+                    data['five_level_department'], data['l4_cloud_service'], data['function_description'],
+                    data['summary_self_owned'], data['summary_od'], data['summary_tm'],
+                    data['hc_self_owned'], data['hc_od'], data['hc_tm'],
+                    data['hcs_self_owned'], data['hcs_od'], data['hcs_tm'], record_id,
+                ),
+            )
+            conn.commit()
+        return redirect(url_for('admin_service_resources'))
+    return render_template('service_resource_form.html', record=record, mode='edit', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+
+
+@app.route('/admin/service-resources/<int:record_id>/delete', methods=['POST'])
+@login_required
+def admin_service_resource_delete(record_id):
+    with get_conn() as conn:
+        conn.execute("DELETE FROM service_resource_investment WHERE id = ?", (record_id,))
+        conn.commit()
+    return redirect(url_for('admin_service_resources'))
 
 
 if __name__ == '__main__':

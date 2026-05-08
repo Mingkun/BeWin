@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if mode == 'edit' %}编辑服务资源记录{% else %}新增服务资源记录{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page form-page service-form-page">
+    <header class="toolbar">
+      <div>
+        <h1>{% if mode == 'edit' %}编辑服务资源记录{% else %}新增服务资源记录{% endif %}</h1>
+        <p>维护服务粒度的人力投入和服务说明。</p>
+      </div>
+      <div class="toolbar-actions">
+        {% if saml_enabled and saml_user %}
+          <span class="user-chip">已登录</span>
+          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+        {% endif %}
+        <a class="button secondary" href="{{ url_for('admin_service_resources') }}">返回列表</a>
+      </div>
+    </header>
+
+    <form method="post" class="card project-form">
+      <div class="form-grid form-grid-3">
+        <label>五层部门<textarea name="five_level_department" rows="2">{{ record.five_level_department or '' }}</textarea></label>
+        <label>L4云服务<textarea name="l4_cloud_service" rows="2">{{ record.l4_cloud_service or '' }}</textarea></label>
+        <label>功能和用途简介<textarea name="function_description" rows="2">{{ record.function_description or '' }}</textarea></label>
+        <label>汇总（自有）<input name="summary_self_owned" value="{{ record.summary_self_owned or '' }}"></label>
+        <label>汇总（OD）<input name="summary_od" value="{{ record.summary_od or '' }}"></label>
+        <label>汇总（TM）<input name="summary_tm" value="{{ record.summary_tm or '' }}"></label>
+        <label>HC（自有）<input name="hc_self_owned" value="{{ record.hc_self_owned or '' }}"></label>
+        <label>HC（OD）<input name="hc_od" value="{{ record.hc_od or '' }}"></label>
+        <label>HC（TM）<input name="hc_tm" value="{{ record.hc_tm or '' }}"></label>
+        <label>HCS（自有）<input name="hcs_self_owned" value="{{ record.hcs_self_owned or '' }}"></label>
+        <label>HCS（OD）<input name="hcs_od" value="{{ record.hcs_od or '' }}"></label>
+        <label>HCS（TM）<input name="hcs_tm" value="{{ record.hcs_tm or '' }}"></label>
+      </div>
+
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('admin_service_resources') }}">取消</a>
+        <button class="button" type="submit">保存</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

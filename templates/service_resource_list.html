@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>服务粒度资源投入</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <div>
+        <h1>服务粒度资源投入</h1>
+        <p>维护云服务相关的人力投入、HC 和 HCS 数据。</p>
+      </div>
+      <div class="toolbar-actions">
+        {% if saml_enabled and saml_user %}
+          <span class="user-chip">已登录</span>
+          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+        {% endif %}
+        <a class="button secondary" href="/releaseplan/">返回首页</a>
+        <a class="button" href="{{ url_for('admin_service_resource_new') }}">新增记录</a>
+      </div>
+    </header>
+
+    {% if records %}
+      <div class="table-wrap card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>五层部门</th>
+              <th>L4云服务</th>
+              <th>功能和用途简介</th>
+              <th>汇总（自有）</th>
+              <th>汇总（OD）</th>
+              <th>汇总（TM）</th>
+              <th>HC（自有）</th>
+              <th>HC（OD）</th>
+              <th>HC（TM）</th>
+              <th>HCS（自有）</th>
+              <th>HCS（OD）</th>
+              <th>HCS（TM）</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+              <tr>
+                <td>{{ record.id }}</td>
+                <td>{{ record.five_level_department or '' }}</td>
+                <td>{{ record.l4_cloud_service or '' }}</td>
+                <td>{{ record.function_description or '' }}</td>
+                <td>{{ record.summary_self_owned or '' }}</td>
+                <td>{{ record.summary_od or '' }}</td>
+                <td>{{ record.summary_tm or '' }}</td>
+                <td>{{ record.hc_self_owned or '' }}</td>
+                <td>{{ record.hc_od or '' }}</td>
+                <td>{{ record.hc_tm or '' }}</td>
+                <td>{{ record.hcs_self_owned or '' }}</td>
+                <td>{{ record.hcs_od or '' }}</td>
+                <td>{{ record.hcs_tm or '' }}</td>
+                <td>
+                  <div class="inline-actions">
+                    <a class="button small" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}">编辑</a>
+                    <form method="post" action="{{ url_for('admin_service_resource_delete', record_id=record.id) }}" onsubmit="return confirm('确认删除这条服务资源记录吗？');">
+                      <button class="button danger small" type="submit">删除</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">当前还没有服务粒度资源投入数据，你可以先新增记录。</div>
+    {% endif %}
+  </div>
+</body>
+</html>

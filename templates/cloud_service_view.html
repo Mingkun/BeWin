@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>云服务视图</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <div>
+        <h1>云服务视图</h1>
+        <p>按服务粒度查看资源投入情况。</p>
+      </div>
+      <div class="toolbar-actions">
+        {% if saml_enabled and saml_user %}
+          <span class="user-chip">已登录</span>
+          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+        {% endif %}
+        <a class="button secondary" href="/releaseplan/">返回首页</a>
+        <a class="button" href="{{ url_for('admin_service_resources') }}">维护服务资源数据</a>
+      </div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="card stat-card"><div class="stat-label">记录数</div><div class="stat-value">{{ summary.count }}</div></div>
+      <div class="card stat-card"><div class="stat-label">汇总（自有）</div><div class="stat-value">{{ summary.summary_self_owned }}</div></div>
+      <div class="card stat-card"><div class="stat-label">汇总（OD）</div><div class="stat-value">{{ summary.summary_od }}</div></div>
+      <div class="card stat-card"><div class="stat-label">汇总（TM）</div><div class="stat-value">{{ summary.summary_tm }}</div></div>
+      <div class="card stat-card"><div class="stat-label">HC 总计</div><div class="stat-value">{{ summary.hc_total }}</div></div>
+      <div class="card stat-card"><div class="stat-label">HCS 总计</div><div class="stat-value">{{ summary.hcs_total }}</div></div>
+    </div>
+
+    {% if records %}
+      <div class="table-wrap card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>五层部门</th>
+              <th>L4云服务</th>
+              <th>功能和用途简介</th>
+              <th>汇总（自有）</th>
+              <th>汇总（OD）</th>
+              <th>汇总（TM）</th>
+              <th>HC（自有）</th>
+              <th>HC（OD）</th>
+              <th>HC（TM）</th>
+              <th>HCS（自有）</th>
+              <th>HCS（OD）</th>
+              <th>HCS（TM）</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+              <tr>
+                <td>{{ record.five_level_department or '' }}</td>
+                <td>{{ record.l4_cloud_service or '' }}</td>
+                <td>{{ record.function_description or '' }}</td>
+                <td>{{ record.summary_self_owned or '' }}</td>
+                <td>{{ record.summary_od or '' }}</td>
+                <td>{{ record.summary_tm or '' }}</td>
+                <td>{{ record.hc_self_owned or '' }}</td>
+                <td>{{ record.hc_od or '' }}</td>
+                <td>{{ record.hc_tm or '' }}</td>
+                <td>{{ record.hcs_self_owned or '' }}</td>
+                <td>{{ record.hcs_od or '' }}</td>
+                <td>{{ record.hcs_tm or '' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">当前还没有服务粒度资源投入数据。</div>
+    {% endif %}
+  </div>
+</body>
+</html>
