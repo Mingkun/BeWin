@@ -20,6 +20,8 @@
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         <a class="button" href="{{ url_for('admin_service_resources') }}">维护服务资源数据</a>
+        <a class="button secondary" href="/releaseplan/admin/service-resources/template-csv">下载 CSV 模板</a>
+        <a class="button secondary" href="/releaseplan/admin/service-resources/export-csv">导出当前 CSV</a>
         <form method="post" action="/releaseplan/admin/service-resources/import-csv" enctype="multipart/form-data" class="inline-upload-form">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">从 CSV 导入</button>

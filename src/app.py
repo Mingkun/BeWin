@@ -1,5 +1,6 @@
 from flask import Flask, redirect, render_template, request, session, url_for, Response
 from io import StringIO
+from urllib.parse import quote
 from werkzeug.middleware.proxy_fix import ProxyFix
 import csv
 import json
@@ -434,11 +435,8 @@ def normalize_service_resource_row(row):
     return data
 
 
-def import_service_resource_csv_file(file_storage, replace=True):
+def import_service_resource_rows(rows, replace=True):
     init_db()
-    content = file_storage.read().decode('utf-8-sig')
-    reader = csv.DictReader(StringIO(content))
-    rows = [normalize_service_resource_row(row) for row in reader]
     if not rows:
         return 0
 
@@ -476,6 +474,13 @@ def import_service_resource_csv_file(file_storage, replace=True):
     return len(rows)
 
 
+def import_service_resource_csv_file(file_storage, replace=True):
+    content = file_storage.read().decode('utf-8-sig')
+    reader = csv.DictReader(StringIO(content))
+    rows = [normalize_service_resource_row(row) for row in reader]
+    return import_service_resource_rows(rows, replace=replace)
+
+
 def seed_service_resources_if_empty():
     init_db()
     with get_conn() as conn:
@@ -497,35 +502,7 @@ def seed_service_resources_if_empty():
         {"五层部门": "云平台部", "L4云服务": "对象存储", "功能和用途简介": "提供对象存储与归档能力", "HC（自有）": "3", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "90", "HCS（OD）": "20", "HCS（TM）": "12"},
         {"五层部门": "基础设施部", "L4云服务": "云网络", "功能和用途简介": "提供 VPC、负载均衡与网络连接能力", "HC（自有）": "5", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "140", "HCS（OD）": "35", "HCS（TM）": "18"},
     ]
-    with get_conn() as conn:
-        conn.executemany(
-            """
-            INSERT INTO service_resource_investment (
-                five_level_department,
-                l4_cloud_service,
-                function_description,
-                summary_self_owned,
-                summary_od,
-                summary_tm,
-                hc_self_owned,
-                hc_od,
-                hc_tm,
-                hcs_self_owned,
-                hcs_od,
-                hcs_tm
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                (
-                    row["five_level_department"], row["l4_cloud_service"], row["function_description"],
-                    row["summary_self_owned"], row["summary_od"], row["summary_tm"],
-                    row["hc_self_owned"], row["hc_od"], row["hc_tm"],
-                    row["hcs_self_owned"], row["hcs_od"], row["hcs_tm"],
-                )
-                for row in [normalize_service_resource_row(row) for row in seed_rows]
-            ],
-        )
-        conn.commit()
+    import_service_resource_rows([normalize_service_resource_row(row) for row in seed_rows], replace=True)
 
 
 @app.route('/saml/login')
@@ -825,6 +802,42 @@ def admin_service_resources_import_csv():
     if file and file.filename:
         import_service_resource_csv_file(file, replace=True)
     return redirect('/releaseplan/views/cloud-service-view')
+
+
+@app.route('/admin/service-resources/template-csv')
+@login_required
+def admin_service_resources_template_csv():
+    content = SERVICE_RESOURCE_CSV_PATH.read_text(encoding='utf-8') if SERVICE_RESOURCE_CSV_PATH.exists() else "五层部门,L4云服务,功能和用途简介,HC（自有）,HC（OD）,HC（TM）,HCS（自有）,HCS（OD）,HCS（TM）\n"
+    response = Response(content, mimetype='text/csv; charset=utf-8')
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('service_resource_investment_template.csv')}"
+    return response
+
+
+@app.route('/admin/service-resources/export-csv')
+@login_required
+def admin_service_resources_export_csv():
+    rows = load_service_resources()
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['五层部门', 'L4云服务', '功能和用途简介', 'HC（自有）', 'HC（OD）', 'HC（TM）', 'HCS（自有）', 'HCS（OD）', 'HCS（TM）', '汇总（自有）', '汇总（OD）', '汇总（TM）'])
+    for row in rows:
+        writer.writerow([
+            row.get('five_level_department', ''),
+            row.get('l4_cloud_service', ''),
+            row.get('function_description', ''),
+            row.get('hc_self_owned', ''),
+            row.get('hc_od', ''),
+            row.get('hc_tm', ''),
+            row.get('hcs_self_owned', ''),
+            row.get('hcs_od', ''),
+            row.get('hcs_tm', ''),
+            row.get('summary_self_owned', ''),
+            row.get('summary_od', ''),
+            row.get('summary_tm', ''),
+        ])
+    response = Response(output.getvalue(), mimetype='text/csv; charset=utf-8')
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('service_resource_investment_export.csv')}"
+    return response
 
 
 @app.route('/releaseplan/views/cloud-service-view/<int:record_id>/edit', methods=['POST'])
