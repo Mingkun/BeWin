@@ -391,6 +391,20 @@ def build_service_resource_summary(rows):
     }
 
 
+def filter_service_resources(rows, department_keyword='', service_keyword=''):
+    department_keyword = (department_keyword or '').strip().lower()
+    service_keyword = (service_keyword or '').strip().lower()
+
+    def matched(row):
+        department_value = (row.get('five_level_department') or '').lower()
+        service_value = (row.get('l4_cloud_service') or '').lower()
+        department_ok = not department_keyword or department_keyword in department_value
+        service_ok = not service_keyword or service_keyword in service_value
+        return department_ok and service_ok
+
+    return [row for row in rows if matched(row)]
+
+
 def seed_service_resources_if_empty():
     init_db()
     with get_conn() as conn:
@@ -504,12 +518,19 @@ def roadmap():
 def view_placeholder(view_key):
     if view_key == 'cloud-service-view':
         seed_service_resources_if_empty()
+        department_keyword = (request.args.get('department') or '').strip()
+        service_keyword = (request.args.get('service') or '').strip()
         rows = load_service_resources()
-        summary = build_service_resource_summary(rows)
+        filtered_rows = filter_service_resources(rows, department_keyword=department_keyword, service_keyword=service_keyword)
+        summary = build_service_resource_summary(filtered_rows)
         return render_template(
             'cloud_service_view.html',
-            records=rows,
+            records=filtered_rows,
             summary=summary,
+            filters={
+                'department': department_keyword,
+                'service': service_keyword,
+            },
             saml_enabled=saml_enabled(),
             saml_user=session.get('saml_user'),
         )

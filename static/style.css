@@ -538,6 +538,18 @@ header p {
   }
 }
 
+.filter-form {
+  margin-bottom: 20px;
+}
+
+.filter-actions {
+  justify-content: flex-end;
+}
+
+.filter-actions .toolbar-actions {
+  margin-top: auto;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
