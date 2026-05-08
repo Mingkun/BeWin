@@ -11,7 +11,7 @@
     <header class="toolbar">
       <div>
         <h1>云服务视图</h1>
-        <p>按服务粒度查看资源投入情况，除汇总列外支持直接编辑。</p>
+        <p>按服务粒度查看资源投入情况，点击单条记录的编辑按钮后再进入编辑。</p>
       </div>
       <div class="toolbar-actions">
         {% if saml_enabled and saml_user %}
@@ -34,7 +34,7 @@
 
     {% if records %}
       <div class="table-wrap card">
-        <table class="data-table cloud-edit-table">
+        <table class="data-table">
           <thead>
             <tr>
               <th>五层部门</th>
@@ -54,23 +54,23 @@
           </thead>
           <tbody>
             {% for record in records %}
-              <form method="post" action="/releaseplan/views/cloud-service-view/{{ record.id }}/edit">
-                <tr>
-                  <td><textarea name="five_level_department" rows="2">{{ record.five_level_department or '' }}</textarea></td>
-                  <td><textarea name="l4_cloud_service" rows="2">{{ record.l4_cloud_service or '' }}</textarea></td>
-                  <td><textarea name="function_description" rows="3">{{ record.function_description or '' }}</textarea></td>
-                  <td><input name="summary_self_owned" value="{{ record.summary_self_owned or '' }}" readonly></td>
-                  <td><input name="summary_od" value="{{ record.summary_od or '' }}" readonly></td>
-                  <td><input name="summary_tm" value="{{ record.summary_tm or '' }}" readonly></td>
-                  <td><input name="hc_self_owned" value="{{ record.hc_self_owned or '' }}"></td>
-                  <td><input name="hc_od" value="{{ record.hc_od or '' }}"></td>
-                  <td><input name="hc_tm" value="{{ record.hc_tm or '' }}"></td>
-                  <td><input name="hcs_self_owned" value="{{ record.hcs_self_owned or '' }}"></td>
-                  <td><input name="hcs_od" value="{{ record.hcs_od or '' }}"></td>
-                  <td><input name="hcs_tm" value="{{ record.hcs_tm or '' }}"></td>
-                  <td><button class="button small" type="submit">保存</button></td>
-                </tr>
-              </form>
+              <tr>
+                <td>{{ record.five_level_department or '' }}</td>
+                <td>{{ record.l4_cloud_service or '' }}</td>
+                <td>{{ record.function_description or '' }}</td>
+                <td>{{ record.summary_self_owned or '' }}</td>
+                <td>{{ record.summary_od or '' }}</td>
+                <td>{{ record.summary_tm or '' }}</td>
+                <td>{{ record.hc_self_owned or '' }}</td>
+                <td>{{ record.hc_od or '' }}</td>
+                <td>{{ record.hc_tm or '' }}</td>
+                <td>{{ record.hcs_self_owned or '' }}</td>
+                <td>{{ record.hcs_od or '' }}</td>
+                <td>{{ record.hcs_tm or '' }}</td>
+                <td>
+                  <a class="button small" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}">编辑</a>
+                </td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>

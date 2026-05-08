@@ -454,20 +454,6 @@ header p {
   font-size: 14px;
 }
 
-.cloud-edit-table textarea,
-.cloud-edit-table input {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 14px;
-  font-family: inherit;
-}
-
-.cloud-edit-table textarea {
-  resize: vertical;
-}
 
 .data-table th {
   background: #f8fafc;
