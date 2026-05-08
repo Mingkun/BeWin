@@ -1,4 +1,5 @@
 from flask import Flask, redirect, render_template, request, session, url_for, Response
+from io import StringIO
 from werkzeug.middleware.proxy_fix import ProxyFix
 import csv
 import json
@@ -18,6 +19,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 CSV_PATH = BASE_DIR / "docs" / "project_table.csv"
 DB_PATH = BASE_DIR / "data" / "releaseplan.db"
 SAML_SETTINGS_PATH = Path(os.getenv("RELEASEPLAN_SAML_SETTINGS", BASE_DIR / "saml_settings.json"))
+SERVICE_RESOURCE_CSV_PATH = BASE_DIR / "docs" / "service_resource_investment.csv"
 MILESTONE_COLUMNS = [
     "1/31", "2/28", "3/31", "4/30", "5/31", "6/30",
     "7/31", "8/31", "9/30", "10/31", "11/30", "12/31"
@@ -414,17 +416,35 @@ def get_service_resource_filter_options(rows):
     }
 
 
-def seed_service_resources_if_empty():
+def normalize_service_resource_row(row):
+    data = {
+        "five_level_department": (row.get("五层部门") or row.get("five_level_department") or "").strip(),
+        "l4_cloud_service": (row.get("L4云服务") or row.get("l4_cloud_service") or "").strip(),
+        "function_description": (row.get("功能和用途简介") or row.get("function_description") or "").strip(),
+        "hc_self_owned": (row.get("HC（自有）") or row.get("hc_self_owned") or "").strip(),
+        "hc_od": (row.get("HC（OD）") or row.get("hc_od") or "").strip(),
+        "hc_tm": (row.get("HC（TM）") or row.get("hc_tm") or "").strip(),
+        "hcs_self_owned": (row.get("HCS（自有）") or row.get("hcs_self_owned") or "").strip(),
+        "hcs_od": (row.get("HCS（OD）") or row.get("hcs_od") or "").strip(),
+        "hcs_tm": (row.get("HCS（TM）") or row.get("hcs_tm") or "").strip(),
+    }
+    data["summary_self_owned"] = format_number(to_number(data["hc_self_owned"]) + to_number(data["hcs_self_owned"]))
+    data["summary_od"] = format_number(to_number(data["hc_od"]) + to_number(data["hcs_od"]))
+    data["summary_tm"] = format_number(to_number(data["hc_tm"]) + to_number(data["hcs_tm"]))
+    return data
+
+
+def import_service_resource_csv_file(file_storage, replace=True):
     init_db()
+    content = file_storage.read().decode('utf-8-sig')
+    reader = csv.DictReader(StringIO(content))
+    rows = [normalize_service_resource_row(row) for row in reader]
+    if not rows:
+        return 0
+
     with get_conn() as conn:
-        count = conn.execute("SELECT COUNT(*) FROM service_resource_investment").fetchone()[0]
-        if count > 0:
-            return
-        seed_rows = [
-            ("云平台部", "容器云", "提供容器编排与运行环境", "6", "2", "1", "4", "1", "1", "120", "30", "15"),
-            ("云平台部", "对象存储", "提供对象存储与归档能力", "5", "1", "1", "3", "1", "1", "90", "20", "12"),
-            ("基础设施部", "云网络", "提供 VPC、负载均衡与网络连接能力", "7", "2", "1", "5", "1", "1", "140", "35", "18"),
-        ]
+        if replace:
+            conn.execute("DELETE FROM service_resource_investment")
         conn.executemany(
             """
             INSERT INTO service_resource_investment (
@@ -442,7 +462,68 @@ def seed_service_resources_if_empty():
                 hcs_tm
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            seed_rows,
+            [
+                (
+                    row["five_level_department"], row["l4_cloud_service"], row["function_description"],
+                    row["summary_self_owned"], row["summary_od"], row["summary_tm"],
+                    row["hc_self_owned"], row["hc_od"], row["hc_tm"],
+                    row["hcs_self_owned"], row["hcs_od"], row["hcs_tm"],
+                )
+                for row in rows
+            ],
+        )
+        conn.commit()
+    return len(rows)
+
+
+def seed_service_resources_if_empty():
+    init_db()
+    with get_conn() as conn:
+        count = conn.execute("SELECT COUNT(*) FROM service_resource_investment").fetchone()[0]
+        if count > 0:
+            return
+
+    if SERVICE_RESOURCE_CSV_PATH.exists():
+        with SERVICE_RESOURCE_CSV_PATH.open('rb') as f:
+            class LocalFile:
+                def read(self_inner):
+                    return f.read()
+            imported = import_service_resource_csv_file(LocalFile(), replace=True)
+            if imported > 0:
+                return
+
+    seed_rows = [
+        {"五层部门": "云平台部", "L4云服务": "容器云", "功能和用途简介": "提供容器编排与运行环境", "HC（自有）": "4", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "120", "HCS（OD）": "30", "HCS（TM）": "15"},
+        {"五层部门": "云平台部", "L4云服务": "对象存储", "功能和用途简介": "提供对象存储与归档能力", "HC（自有）": "3", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "90", "HCS（OD）": "20", "HCS（TM）": "12"},
+        {"五层部门": "基础设施部", "L4云服务": "云网络", "功能和用途简介": "提供 VPC、负载均衡与网络连接能力", "HC（自有）": "5", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "140", "HCS（OD）": "35", "HCS（TM）": "18"},
+    ]
+    with get_conn() as conn:
+        conn.executemany(
+            """
+            INSERT INTO service_resource_investment (
+                five_level_department,
+                l4_cloud_service,
+                function_description,
+                summary_self_owned,
+                summary_od,
+                summary_tm,
+                hc_self_owned,
+                hc_od,
+                hc_tm,
+                hcs_self_owned,
+                hcs_od,
+                hcs_tm
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    row["five_level_department"], row["l4_cloud_service"], row["function_description"],
+                    row["summary_self_owned"], row["summary_od"], row["summary_tm"],
+                    row["hc_self_owned"], row["hc_od"], row["hc_tm"],
+                    row["hcs_self_owned"], row["hcs_od"], row["hcs_tm"],
+                )
+                for row in [normalize_service_resource_row(row) for row in seed_rows]
+            ],
         )
         conn.commit()
 
@@ -735,6 +816,15 @@ def admin_service_resource_delete(record_id):
         conn.execute("DELETE FROM service_resource_investment WHERE id = ?", (record_id,))
         conn.commit()
     return redirect(url_for('admin_service_resources'))
+
+
+@app.route('/admin/service-resources/import-csv', methods=['POST'])
+@login_required
+def admin_service_resources_import_csv():
+    file = request.files.get('csv_file')
+    if file and file.filename:
+        import_service_resource_csv_file(file, replace=True)
+    return redirect('/releaseplan/views/cloud-service-view')
 
 
 @app.route('/releaseplan/views/cloud-service-view/<int:record_id>/edit', methods=['POST'])

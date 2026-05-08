@@ -465,6 +465,17 @@ header p {
   flex-wrap: wrap;
 }
 
+.inline-upload-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inline-upload-form input[type="file"] {
+  max-width: 220px;
+}
+
 .form-page {
   max-width: 1100px;
 }
