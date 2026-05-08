@@ -701,5 +701,39 @@ def admin_service_resource_delete(record_id):
     return redirect(url_for('admin_service_resources'))
 
 
+@app.route('/views/cloud-service-view/<int:record_id>/edit', methods=['POST'])
+@login_required
+def cloud_service_view_edit(record_id):
+    data = form_to_service_resource_data(request.form)
+    with get_conn() as conn:
+        conn.execute(
+            """
+            UPDATE service_resource_investment
+            SET five_level_department = ?,
+                l4_cloud_service = ?,
+                function_description = ?,
+                summary_self_owned = ?,
+                summary_od = ?,
+                summary_tm = ?,
+                hc_self_owned = ?,
+                hc_od = ?,
+                hc_tm = ?,
+                hcs_self_owned = ?,
+                hcs_od = ?,
+                hcs_tm = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (
+                data['five_level_department'], data['l4_cloud_service'], data['function_description'],
+                data['summary_self_owned'], data['summary_od'], data['summary_tm'],
+                data['hc_self_owned'], data['hc_od'], data['hc_tm'],
+                data['hcs_self_owned'], data['hcs_od'], data['hcs_tm'], record_id,
+            ),
+        )
+        conn.commit()
+    return redirect('/releaseplan/views/cloud-service-view')
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5010, debug=False)
