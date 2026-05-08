@@ -808,7 +808,7 @@ def admin_service_resources_import_csv():
 @login_required
 def admin_service_resources_template_csv():
     content = SERVICE_RESOURCE_CSV_PATH.read_text(encoding='utf-8') if SERVICE_RESOURCE_CSV_PATH.exists() else "五层部门,L4云服务,功能和用途简介,HC（自有）,HC（OD）,HC（TM）,HCS（自有）,HCS（OD）,HCS（TM）\n"
-    response = Response(content, mimetype='text/csv; charset=utf-8')
+    response = Response('\ufeff' + content, mimetype='text/csv; charset=utf-8')
     response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('service_resource_investment_template.csv')}"
     return response
 
@@ -835,7 +835,7 @@ def admin_service_resources_export_csv():
             row.get('summary_od', ''),
             row.get('summary_tm', ''),
         ])
-    response = Response(output.getvalue(), mimetype='text/csv; charset=utf-8')
+    response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
     response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('service_resource_investment_export.csv')}"
     return response
 
