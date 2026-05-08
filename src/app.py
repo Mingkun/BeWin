@@ -657,7 +657,7 @@ def admin_service_resource_new():
 @login_required
 def admin_service_resource_edit(record_id):
     record = load_service_resource(record_id)
-    return_to = request.args.get('return_to') or '/releaseplan/views/cloud-service-view'
+    return_to = request.args.get('return_to') or url_for('view_placeholder', view_key='cloud-service-view')
     if not record:
         return redirect(return_to)
     if request.method == 'POST':

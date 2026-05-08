@@ -16,9 +16,9 @@
       <div class="toolbar-actions">
         {% if saml_enabled and saml_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+          <a class="button secondary" href="{{ url_for('saml_logout') }}">退出登录</a>
         {% endif %}
-        <a class="button secondary" href="/releaseplan/">返回首页</a>
+        <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         <a class="button" href="{{ url_for('admin_service_resources') }}">维护服务资源数据</a>
       </div>
     </header>
@@ -68,7 +68,7 @@
                 <td>{{ record.hcs_od or '' }}</td>
                 <td>{{ record.hcs_tm or '' }}</td>
                 <td>
-                  <a class="button small" href="{{ url_for('admin_service_resource_edit', record_id=record.id, return_to='/releaseplan/views/cloud-service-view') }}">编辑</a>
+                  <a class="button small" href="{{ url_for('admin_service_resource_edit', record_id=record.id, return_to=url_for('view_placeholder', view_key='cloud-service-view')) }}">编辑</a>
                 </td>
               </tr>
             {% endfor %}
