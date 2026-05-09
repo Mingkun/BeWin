@@ -33,10 +33,26 @@ chmod +x install.sh
 ./install.sh
 ```
 
-Then start:
+This installer will:
+
+- create `.venv`
+- install dependencies
+- generate `start.sh`
+- install and enable `releaseplan.service`
+- start or restart the service automatically
+
+### Service management
 
 ```bash
-./start.sh
+systemctl status releaseplan.service
+systemctl restart releaseplan.service
+journalctl -u releaseplan.service -f
+```
+
+To uninstall the service:
+
+```bash
+./uninstall.sh
 ```
 
 ### Environment variables
