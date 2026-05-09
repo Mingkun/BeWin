@@ -18,7 +18,7 @@ rsync -a \
   --exclude 'dist' \
   "$BASE_DIR/" "$PKG_DIR/"
 
-chmod +x "$PKG_DIR/install.sh" "$PKG_DIR/package_release.sh" "$PKG_DIR/uninstall.sh"
+chmod +x "$PKG_DIR/install.sh" "$PKG_DIR/package_release.sh" "$PKG_DIR/uninstall.sh" "$PKG_DIR/run-docker.sh"
 
 if command -v python3 >/dev/null 2>&1; then
   mkdir -p "$PKG_DIR/vendor"

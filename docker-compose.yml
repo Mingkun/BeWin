@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  releaseplan:
+    build: .
+    container_name: releaseplan
+    ports:
+      - "5010:5010"
+    environment:
+      RELEASEPLAN_SECRET_KEY: change-me-to-a-random-long-string
+      RELEASEPLAN_SAML_ENABLED: "false"
+      RELEASEPLAN_SAML_SETTINGS: /app/saml_settings.json
+    volumes:
+      - ./data:/app/data
+      - ./docs:/app/docs
+    restart: unless-stopped

@@ -24,13 +24,62 @@ Output:
 
 - `dist/releaseplan-portable.tar.gz`
 
-### Install on target server
+## Docker deployment (recommended for old systems)
+
+If the target server has an old Python version, use Docker.
+
+### Prerequisites
+
+- Docker installed
+- Optional: Docker Compose installed
+
+### Option A: single-command Docker run
 
 ```bash
-tar -xzf releaseplan-portable.tar.gz
+tar -xf releaseplan-portable.tar.gz
+cd releaseplan-portable
+chmod +x run-docker.sh
+./run-docker.sh
+```
+
+Then visit:
+
+- `http://<server-ip>:5010/`
+
+### Option B: docker compose
+
+```bash
+tar -xf releaseplan-portable.tar.gz
+cd releaseplan-portable
+docker compose up -d --build
+```
+
+### Docker notes
+
+- Container uses Python 3.11 internally
+- Host `./data` is mounted to `/app/data`
+- Host `./docs` is mounted to `/app/docs`
+- Default published port: `5010`
+
+### Common Docker commands
+
+```bash
+docker ps
+docker logs -f releaseplan
+docker restart releaseplan
+docker stop releaseplan
+docker rm -f releaseplan
+```
+
+## Native systemd deployment
+
+If the target server Python version is new enough, you can still use the native installer.
+
+```bash
+tar -xf releaseplan-portable.tar.gz
 cd releaseplan-portable
 chmod +x install.sh
-./install.sh
+sudo ./install.sh
 ```
 
 This installer will:
