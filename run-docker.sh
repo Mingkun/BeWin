@@ -6,16 +6,29 @@ cd "$BASE_DIR"
 
 IMAGE_NAME="releaseplan:latest"
 CONTAINER_NAME="releaseplan"
+PROXY_URL="${PROXY_URL:-}"
 
 mkdir -p data
 
-docker build -t "$IMAGE_NAME" .
+BUILD_ARGS=()
+RUN_PROXY_ARGS=()
+
+if [ -n "$PROXY_URL" ]; then
+  BUILD_ARGS+=(--build-arg "http_proxy=$PROXY_URL")
+  BUILD_ARGS+=(--build-arg "https_proxy=$PROXY_URL")
+  RUN_PROXY_ARGS+=(-e "http_proxy=$PROXY_URL")
+  RUN_PROXY_ARGS+=(-e "https_proxy=$PROXY_URL")
+  echo "[INFO] 已启用代理 PROXY_URL"
+fi
+
+docker build "${BUILD_ARGS[@]}" -t "$IMAGE_NAME" .
 
 docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 
 docker run -d \
   --name "$CONTAINER_NAME" \
   -p 5010:5010 \
+  "${RUN_PROXY_ARGS[@]}" \
   -e RELEASEPLAN_SECRET_KEY="${RELEASEPLAN_SECRET_KEY:-change-me-to-a-random-long-string}" \
   -e RELEASEPLAN_SAML_ENABLED="${RELEASEPLAN_SAML_ENABLED:-false}" \
   -e RELEASEPLAN_SAML_SETTINGS="/app/saml_settings.json" \

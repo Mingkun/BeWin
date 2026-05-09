@@ -35,10 +35,22 @@ If the target server has an old Python version, use Docker.
 
 ### Option A: single-command Docker run
 
+Without proxy:
+
 ```bash
 tar -xf releaseplan-portable.tar.gz
 cd releaseplan-portable
 chmod +x run-docker.sh
+./run-docker.sh
+```
+
+With proxy:
+
+```bash
+tar -xf releaseplan-portable.tar.gz
+cd releaseplan-portable
+chmod +x run-docker.sh
+export PROXY_URL='http://username:password@proxy-host:proxy-port'
 ./run-docker.sh
 ```
 
@@ -60,6 +72,7 @@ docker compose up -d --build
 - Host `./data` is mounted to `/app/data`
 - Host `./docs` is mounted to `/app/docs`
 - Default published port: `5010`
+- If `PROXY_URL` is set, it is passed to both `docker build` and `docker run`
 
 ### Common Docker commands
 
