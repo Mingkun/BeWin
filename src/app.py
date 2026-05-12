@@ -53,6 +53,12 @@ app.secret_key = os.getenv("RELEASEPLAN_SECRET_KEY", "releaseplan-dev-secret-cha
 def get_home_cards():
     default_cards = [
         {
+            "key": "department-pipeline-load",
+            "title": os.getenv("RELEASEPLAN_CARD_4_TITLE", "项目视图"),
+            "desc": "查看部门管道容量、排期与负载情况。",
+            "href": url_for('view_placeholder', view_key='department-pipeline-load'),
+        },
+        {
             "key": "roadmap",
             "title": os.getenv("RELEASEPLAN_CARD_1_TITLE", "关键特性视图"),
             "desc": "查看按项目切换的关键特性 roadmap 视图。",
@@ -71,12 +77,6 @@ def get_home_cards():
             "href": url_for('view_placeholder', view_key='project-budget-resource'),
         },
         {
-            "key": "department-pipeline-load",
-            "title": os.getenv("RELEASEPLAN_CARD_4_TITLE", "项目视图"),
-            "desc": "查看部门管道容量、排期与负载情况。",
-            "href": url_for('view_placeholder', view_key='department-pipeline-load'),
-        },
-        {
             "key": "cloud-service-view",
             "title": os.getenv("RELEASEPLAN_CARD_5_TITLE", "云服务视图"),
             "desc": "查看云服务相关项目与规划信息。",
@@ -84,10 +84,10 @@ def get_home_cards():
         },
     ]
     preferred_order = [
-        os.getenv("RELEASEPLAN_CARD_1_KEY", "roadmap"),
-        os.getenv("RELEASEPLAN_CARD_2_KEY", "department-budget-resource"),
-        os.getenv("RELEASEPLAN_CARD_3_KEY", "project-budget-resource"),
-        os.getenv("RELEASEPLAN_CARD_4_KEY", "department-pipeline-load"),
+        os.getenv("RELEASEPLAN_CARD_1_KEY", "department-pipeline-load"),
+        os.getenv("RELEASEPLAN_CARD_2_KEY", "roadmap"),
+        os.getenv("RELEASEPLAN_CARD_3_KEY", "department-budget-resource"),
+        os.getenv("RELEASEPLAN_CARD_4_KEY", "project-budget-resource"),
         os.getenv("RELEASEPLAN_CARD_5_KEY", "cloud-service-view"),
     ]
     card_map = {card["key"]: card for card in default_cards}
