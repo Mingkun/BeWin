@@ -21,20 +21,21 @@
         <a class="button secondary" href="{{ url_for('admin_feature_new') }}">新增关键特性</a>
         <a class="button secondary" href="{{ url_for('admin_projects_template_csv') }}">导出模板</a>
         <a class="button secondary" href="{{ url_for('admin_projects_export_csv') }}">导出数据</a>
+        <button class="button warning" type="button" id="show-project-import" onclick="document.getElementById('project-import-panel').hidden = false;">导入数据</button>
       </div>
     </header>
 
-    <details class="card import-panel" id="project-import-panel">
-      <summary class="button warning">导入数据</summary>
+    <div class="card import-panel" id="project-import-panel" hidden>
       <form method="post" action="{{ url_for('admin_projects_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form">
         <div class="import-panel-title">导入关键特性路标图数据</div>
         <div class="import-panel-desc">请选择关键特性 CSV 文件，导入后会覆盖当前关键特性数据。</div>
         <div class="import-panel-actions">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">确认导入</button>
+          <button class="button secondary" type="button" id="cancel-project-import" onclick="document.getElementById('project-import-panel').hidden = true;">取消</button>
         </div>
       </form>
-    </details>
+    </div>
 
     {% if project_groups %}
       <div class="project-tab-bar">
