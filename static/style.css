@@ -5,6 +5,28 @@ body {
   color: #1f2937;
 }
 
+body.theme-ios-dark {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+body.theme-ios-dark .card,
+body.theme-ios-dark .entry-card,
+body.theme-ios-dark .project-lane-card,
+body.theme-ios-dark .table-wrap,
+body.theme-ios-dark .roadmap-header-grid {
+  background: #1f2937;
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.theme-ios-dark .entry-card-title,
+body.theme-ios-dark header p,
+body.theme-ios-dark .entry-card-desc,
+body.theme-ios-dark .meta {
+  color: #cbd5e1;
+}
+
 .page {
   max-width: 1500px;
   margin: 0 auto;
@@ -143,6 +165,168 @@ header p {
 .button.small {
   padding: 6px 10px;
   font-size: 13px;
+}
+
+.settings-button {
+  gap: 8px;
+}
+
+.settings-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.settings-page {
+  max-width: 920px;
+}
+
+.flash-card {
+  padding: 16px 20px;
+  margin-bottom: 18px;
+}
+
+.flash-success {
+  color: #166534;
+  font-weight: 700;
+}
+
+.settings-card {
+  padding: 20px;
+}
+
+.settings-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #334155;
+  margin: 0 0 8px;
+}
+
+.settings-section-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 14px;
+  line-height: 1.7;
+}
+
+.ios-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-radius: 24px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(18px);
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ios-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.ios-field-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.ios-field input,
+.ios-field select {
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.ios-select-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ios-select-wrap select {
+  flex: 1;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.ios-chevron {
+  font-size: 22px;
+  color: #94a3b8;
+  line-height: 1;
+}
+
+.ios-order-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ios-preview-card {
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+}
+
+.ios-preview-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1d4ed8;
+  margin-bottom: 8px;
+}
+
+.ios-preview-subtitle {
+  font-size: 14px;
+  color: #475569;
+}
+
+.settings-actions {
+  margin-top: 6px;
+}
+
+body.theme-ios-dark .ios-settings-form {
+  background: rgba(17, 24, 39, 0.78);
+}
+
+body.theme-ios-dark .ios-field {
+  background: rgba(31, 41, 55, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+body.theme-ios-dark .ios-field-label,
+body.theme-ios-dark .flash-success,
+body.theme-ios-dark .settings-section-desc,
+body.theme-ios-dark .ios-preview-subtitle {
+  color: #cbd5e1;
+}
+
+body.theme-ios-dark .ios-field input,
+body.theme-ios-dark .ios-field select,
+body.theme-ios-dark .settings-section-title {
+  color: #f8fafc;
+}
+
+body.theme-ios-dark .ios-preview-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(37, 99, 235, 0.25) 100%);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+body.theme-ios-dark .ios-preview-title {
+  color: #bfdbfe;
 }
 
 .user-chip {
@@ -476,6 +660,40 @@ header p {
   max-width: 220px;
 }
 
+.import-panel {
+  margin-bottom: 20px;
+  padding: 18px 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.import-panel-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  text-align: right;
+}
+
+.import-panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.import-panel-desc {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.import-panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .form-page {
   max-width: 1100px;
 }
@@ -508,6 +726,10 @@ header p {
   gap: 8px;
   font-size: 14px;
   color: #374151;
+}
+
+.form-grid > .block-field {
+  grid-column: 1 / -1;
 }
 
 .form-grid input,
