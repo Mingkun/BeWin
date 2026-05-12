@@ -862,6 +862,13 @@ body.theme-ios-dark .ios-preview-title {
   min-width: 260px;
 }
 
+.project-desc-cell {
+  max-width: 12ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .inline-actions {
   display: flex;
   gap: 8px;

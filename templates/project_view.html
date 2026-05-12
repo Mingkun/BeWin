@@ -116,7 +116,7 @@
                 <td>{{ project.project_status or '未填写' }}</td>
                 <td>{{ project.control_gate or '未填写' }}</td>
                 <td>{{ project.investment_subject or '未填写' }}</td>
-                <td>{{ project.project_description or '未填写' }}</td>
+                <td class="project-desc-cell" title="{{ project.project_description or '未填写' }}">{{ project.project_description or '未填写' }}</td>
                 <td>{{ project.planned_start_date or '未填写' }}</td>
                 <td>{{ project.planned_end_date or '未填写' }}</td>
                 <td>{{ project.workload_person_month or '未填写' }}</td>
