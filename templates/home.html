@@ -22,17 +22,54 @@
       </div>
     </header>
 
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <div class="entry-card-grid">
       {% for card in home_cards %}
-      <a class="entry-card {% if card.key in ['department-budget-resource', 'project-budget-resource', 'cloud-service-view'] %}entry-card-pending{% endif %}" href="{{ card.href }}">
+      <div class="entry-card {% if card.key in ['department-budget-resource', 'project-budget-resource', 'cloud-service-view'] %}entry-card-pending{% endif %}">
         {% if card.key in ['department-budget-resource', 'project-budget-resource', 'cloud-service-view'] %}
         <div class="entry-card-badge">待建设</div>
         {% endif %}
+        <div class="entry-card-top-actions">
+          <a class="button secondary small" href="{{ card.href }}">进入</a>
+          <button class="button secondary small" type="button" onclick="toggleCardEditor('{{ loop.index0 }}')">设置</button>
+        </div>
         <div class="entry-card-title">{{ card.title }}</div>
         <div class="entry-card-desc">{{ card.desc }}</div>
-      </a>
+
+        <form method="post" action="{{ url_for('home_card_settings', card_key=card.key) }}" class="card-inline-editor" id="card-editor-{{ loop.index0 }}" hidden>
+          <label class="ios-field">
+            <span class="ios-field-label">标题</span>
+            <input type="text" name="title" value="{{ card.title }}">
+          </label>
+          <label class="ios-field">
+            <span class="ios-field-label">描述</span>
+            <textarea name="desc" rows="4">{{ card.desc }}</textarea>
+          </label>
+          <div class="toolbar-actions">
+            <button class="button small" type="submit">保存</button>
+            <button class="button secondary small" type="button" onclick="toggleCardEditor('{{ loop.index0 }}')">取消</button>
+          </div>
+        </form>
+      </div>
       {% endfor %}
     </div>
   </div>
+
+  <script>
+    function toggleCardEditor(index) {
+      const panel = document.getElementById('card-editor-' + index);
+      if (!panel) return;
+      panel.hidden = !panel.hidden;
+    }
+  </script>
 </body>
 </html>
