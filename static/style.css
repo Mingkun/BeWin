@@ -663,8 +663,19 @@ body.theme-ios-dark .ios-preview-title {
 .import-panel {
   margin-bottom: 20px;
   padding: 18px 20px;
-  display: flex;
-  justify-content: flex-end;
+}
+
+.import-panel summary {
+  list-style: none;
+  display: inline-flex;
+}
+
+.import-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.import-panel[open] summary {
+  margin-bottom: 12px;
 }
 
 .import-panel-form {
