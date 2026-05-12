@@ -62,7 +62,7 @@ def get_home_cards():
         {
             "key": "roadmap",
             "title": os.getenv("RELEASEPLAN_CARD_2_TITLE", "关键特性视图"),
-            "desc": "云服务列表及每个云服务的实际投入。",
+            "desc": "查看所规划关键特性的路标信息。",
             "href": url_for('roadmap'),
         },
         {
@@ -80,7 +80,7 @@ def get_home_cards():
         {
             "key": "cloud-service-view",
             "title": os.getenv("RELEASEPLAN_CARD_5_TITLE", "云服务视图"),
-            "desc": "查看云服务相关项目与规划信息。",
+            "desc": "按云服务粒度查看资源投入情况。",
             "href": url_for('view_placeholder', view_key='cloud-service-view'),
         },
     ]
