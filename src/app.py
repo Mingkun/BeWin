@@ -1149,7 +1149,7 @@ def admin_projects_import_csv():
     file = request.files.get('csv_file')
     if file and file.filename:
         import_project_csv_file(file, replace=True)
-    return redirect(url_for('admin_projects'))
+    return redirect(url_for('roadmap'))
 
 
 @app.route('/admin/projects/template-csv')
