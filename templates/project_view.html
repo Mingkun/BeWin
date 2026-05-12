@@ -24,6 +24,61 @@
     </header>
 
     {% if projects %}
+      <div class="project-lane-card" style="margin-bottom: 20px;">
+        <div class="project-lane-title">
+          <h2>项目甘特图</h2>
+          <div class="meta">按项目展示计划起止时间</div>
+        </div>
+
+        <div class="roadmap-header-grid">
+          <div class="roadmap-left-header">项目</div>
+          <div class="roadmap-time-header">
+            <div class="quarter-row">
+              {% for quarter in quarters %}
+                <div class="quarter-cell" style="width: {{ quarter.span / 12 * 100 }}%;">{{ quarter.name }}</div>
+              {% endfor %}
+            </div>
+            <div class="month-row">
+              {% for month in month_labels %}
+                <div class="month-cell-head">{{ month }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-lane-list">
+          {% for project in gantt_projects %}
+            <div class="feature-lane-row">
+              <div class="feature-info-panel">
+                <div class="feature-info-head">
+                  <div class="feature-name">{{ project.project_name }}</div>
+                </div>
+                <div class="feature-tags">
+                  <span>项目经理：{{ project.project_manager or '未填写' }}</span>
+                  <span>周期：{{ project.start_label }} ~ {{ project.end_label }}</span>
+                </div>
+              </div>
+
+              <div class="timeline-panel">
+                <div class="timeline-grid-lines">
+                  {% for month in month_labels %}
+                    <div class="timeline-grid-col"></div>
+                  {% endfor %}
+                </div>
+
+                {% if project.has_schedule %}
+                  <div class="timeline-bar" style="left: {{ project.start_percent }}%; width: {{ project.width_percent }}%;">
+                    <div class="timeline-bar-label">{{ project.project_name }}</div>
+                  </div>
+                {% else %}
+                  <div class="timeline-empty">未排期</div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
       <div class="entry-card-grid">
         {% for project in projects %}
           <div class="card entry-card">

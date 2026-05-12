@@ -513,6 +513,41 @@ def load_project(project_id):
         return dict(row) if row else None
 
 
+def build_project_gantt(project_rows):
+    gantt_projects = []
+    for row in project_rows:
+        start_value = (row.get("planned_start_date") or "").strip()
+        end_value = (row.get("planned_end_date") or "").strip()
+
+        start_index = None
+        end_index = None
+        for index in range(12):
+            month_no = index + 1
+            if start_index is None and f"-{month_no:02d}-" in start_value:
+                start_index = index
+            if end_index is None and f"-{month_no:02d}-" in end_value:
+                end_index = index
+
+        if start_index is not None and end_index is None:
+            end_index = start_index
+        if end_index is not None and start_index is None:
+            start_index = end_index
+        if start_index is not None and end_index is not None and end_index < start_index:
+            start_index, end_index = end_index, start_index
+
+        gantt_projects.append({
+            "id": row.get("id"),
+            "project_name": (row.get("project_name") or "").strip() or "未命名项目",
+            "project_manager": (row.get("project_manager") or "").strip(),
+            "start_label": MONTH_LABELS[start_index] if start_index is not None else "-",
+            "end_label": MONTH_LABELS[end_index] if end_index is not None else "-",
+            "start_percent": (start_index / 12 * 100) if start_index is not None else 0,
+            "width_percent": ((end_index - start_index + 1) / 12 * 100) if start_index is not None and end_index is not None else 0,
+            "has_schedule": start_index is not None and end_index is not None,
+        })
+    return gantt_projects
+
+
 def build_project_roadmap(project_rows, feature_rows):
     grouped = {}
     project_id_map = {}
@@ -986,9 +1021,13 @@ def view_placeholder(view_key):
         )
 
     if view_key == 'department-pipeline-load':
+        project_rows = load_projects()
         return render_template(
             'project_view.html',
-            projects=load_projects(),
+            projects=project_rows,
+            gantt_projects=build_project_gantt(project_rows),
+            month_labels=MONTH_LABELS,
+            quarters=QUARTERS,
             saml_enabled=saml_enabled(),
             saml_user=session.get('saml_user'),
         )
