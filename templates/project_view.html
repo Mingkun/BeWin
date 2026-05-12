@@ -86,7 +86,7 @@
       <div class="table-wrap card">
         <table class="data-table resizable-table" id="project-data-table">
           <colgroup>
-            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
+            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
           </colgroup>
           <thead>
             <tr>
@@ -96,9 +96,6 @@
               <th data-sort="text">立项状态<div class="col-resizer"></div></th>
               <th data-sort="text">管控灶<div class="col-resizer"></div></th>
               <th data-sort="text">投资主体<div class="col-resizer"></div></th>
-              <th data-sort="text">项目大类<div class="col-resizer"></div></th>
-              <th data-sort="text">项目子类<div class="col-resizer"></div></th>
-              <th data-sort="text">项目复杂度<div class="col-resizer"></div></th>
               <th data-sort="text">项目描述<div class="col-resizer"></div></th>
               <th data-sort="date">计划启动日期<div class="col-resizer"></div></th>
               <th data-sort="date">计划结束日期<div class="col-resizer"></div></th>
@@ -119,9 +116,6 @@
                 <td>{{ project.project_status or '未填写' }}</td>
                 <td>{{ project.control_gate or '未填写' }}</td>
                 <td>{{ project.investment_subject or '未填写' }}</td>
-                <td>{{ project.project_category or '未填写' }}</td>
-                <td>{{ project.project_subcategory or '未填写' }}</td>
-                <td>{{ project.project_complexity or '未填写' }}</td>
                 <td>{{ project.project_description or '未填写' }}</td>
                 <td>{{ project.planned_start_date or '未填写' }}</td>
                 <td>{{ project.planned_end_date or '未填写' }}</td>

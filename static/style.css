@@ -452,20 +452,20 @@ body.theme-ios-dark .ios-preview-title {
 .feature-lane-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 
 .feature-lane-row {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 320px 1fr;
   gap: 0;
   border: 1px solid #e5e7eb;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
 .feature-info-panel {
-  padding: 16px;
+  padding: 8px 12px;
   background: #f8fafc;
   border-right: 1px solid #e5e7eb;
 }
@@ -474,14 +474,15 @@ body.theme-ios-dark .ios-preview-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .feature-name {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   margin-bottom: 0;
+  line-height: 1.2;
 }
 
 .feature-edit-link {
@@ -508,22 +509,23 @@ body.theme-ios-dark .ios-preview-title {
 .feature-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .feature-tags span {
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-radius: 999px;
   background: #e2e8f0;
   color: #334155;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.2;
 }
 
 .timeline-panel {
   position: relative;
-  min-height: 120px;
+  min-height: 60px;
   background: #fff;
 }
 
@@ -555,12 +557,12 @@ body.theme-ios-dark .ios-preview-title {
 
 .timeline-today-marker {
   position: absolute;
-  top: 10px;
+  top: 5px;
   width: 0;
   height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 10px solid #1e3a8a;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 8px solid #1e3a8a;
   transform: translateX(-50%);
   z-index: 3;
 }
@@ -569,17 +571,17 @@ body.theme-ios-dark .ios-preview-title {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  height: 26px;
+  height: 14px;
   border-radius: 999px;
   background: linear-gradient(90deg, #93c5fd, #2563eb);
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
   display: flex;
   align-items: center;
-  padding: 0 14px;
+  padding: 0 8px;
   color: #fff;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  min-width: 56px;
+  min-width: 40px;
 }
 
 .timeline-bar-label {
