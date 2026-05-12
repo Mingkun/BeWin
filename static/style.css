@@ -877,22 +877,17 @@ body.theme-ios-dark .ios-preview-title {
 
 .actions-col {
   white-space: nowrap;
-  width: 1%;
+  width: 110px;
+  min-width: 110px;
   text-align: right;
   padding-right: 8px;
 }
 
-.data-table td.actions-col {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
 .compact-actions {
+  display: inline-flex;
   justify-content: flex-end;
   gap: 6px;
   flex-wrap: nowrap;
-  width: max-content;
   margin-left: auto;
 }
 
