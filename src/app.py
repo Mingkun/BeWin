@@ -527,6 +527,16 @@ def parse_date_parts(date_text):
     return None, None
 
 
+def parse_workload_value(value):
+    text = (value or '').strip()
+    if not text:
+        return -1
+    try:
+        return float(text)
+    except ValueError:
+        return -1
+
+
 def build_project_gantt(project_rows, display_year):
     gantt_projects = []
     for row in project_rows:
@@ -1035,12 +1045,16 @@ def view_placeholder(view_key):
 
     if view_key == 'department-pipeline-load':
         project_rows = load_projects()
+        sorted_projects = sorted(
+            project_rows,
+            key=lambda row: (-parse_workload_value(row.get('workload_person_month')), (row.get('project_name') or '').strip(), row.get('id') or 0),
+        )
         now = datetime.utcnow()
         display_year = now.year
         today_marker_percent = ((now.month - 1) + 0.5) / 12 * 100 if now.year == display_year else None
         return render_template(
             'project_view.html',
-            projects=project_rows,
+            projects=sorted_projects,
             gantt_projects=build_project_gantt(project_rows, display_year),
             month_labels=MONTH_LABELS,
             quarters=QUARTERS,
