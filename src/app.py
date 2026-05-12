@@ -23,6 +23,7 @@ FEATURE_CSV_PATH = BASE_DIR / "docs" / "feature_table.csv"
 DB_PATH = BASE_DIR / "data" / "releaseplan.db"
 SAML_SETTINGS_PATH = Path(os.getenv("RELEASEPLAN_SAML_SETTINGS", BASE_DIR / "saml_settings.json"))
 SERVICE_RESOURCE_CSV_PATH = BASE_DIR / "docs" / "service_resource_investment.csv"
+REQUIREMENTS_LOG_PATH = BASE_DIR / "data" / "requirements_requests.md"
 MILESTONE_COLUMNS = [
     "1/31", "2/28", "3/31", "4/30", "5/31", "6/30",
     "7/31", "8/31", "9/30", "10/31", "11/30", "12/31"
@@ -1017,6 +1018,30 @@ def settings_page():
         flash('设置已保存并立即生效')
         return redirect(url_for('settings_page'))
     return render_template('settings.html', branding=get_branding(), home_cards=get_home_cards(), saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+
+
+@app.route('/requirements', methods=['GET', 'POST'])
+@login_required
+def requirements_page():
+    example_text = "示例：项目视图增加按项目经理筛选，并支持导出当前筛选结果为 Excel。"
+    if request.method == 'POST':
+        requirement_text = (request.form.get('requirement_text') or '').strip()
+        if not requirement_text:
+            flash('请输入需求内容')
+            return redirect(url_for('requirements_page'))
+        REQUIREMENTS_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        with REQUIREMENTS_LOG_PATH.open('a', encoding='utf-8') as fh:
+            fh.write(f"\n## {created_at}\n\n{requirement_text}\n")
+        flash('需求已提交')
+        return redirect(url_for('requirements_page'))
+    return render_template(
+        'requirements.html',
+        branding=get_branding(),
+        saml_enabled=saml_enabled(),
+        saml_user=session.get('saml_user'),
+        example_text=example_text,
+    )
 
 
 @app.route('/views/<view_key>')

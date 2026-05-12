@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>需求</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-{{ branding.theme }}">
+  <div class="page settings-page">
+    <header class="toolbar">
+      <div>
+        <h1>需求</h1>
+        <p>用文本方式记录你对这个系统的新需求。</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" class="card settings-card ios-settings-form">
+      <section class="settings-group">
+        <div class="settings-section-title">需求内容</div>
+        <div class="settings-section-desc">可以直接输入你想新增、调整、优化的功能需求。</div>
+
+        <label class="ios-field">
+          <span class="ios-field-label">需求样例</span>
+          <div class="requirement-example">{{ example_text }}</div>
+        </label>
+
+        <label class="ios-field">
+          <span class="ios-field-label">请输入需求</span>
+          <textarea name="requirement_text" rows="8" placeholder="例如：项目视图增加按项目经理筛选，并支持导出当前筛选结果为 Excel。"></textarea>
+        </label>
+      </section>
+
+      <div class="toolbar-actions settings-actions">
+        <button type="submit" class="button">提交需求</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

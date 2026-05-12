@@ -258,12 +258,19 @@ header p {
 }
 
 .ios-field input,
-.ios-field select {
+.ios-field select,
+.ios-field textarea {
   border: 0;
   outline: none;
   background: transparent;
   font-size: 16px;
   color: #0f172a;
+  font-family: inherit;
+}
+
+.ios-field textarea {
+  resize: vertical;
+  min-height: 160px;
 }
 
 .ios-select-wrap {
@@ -303,6 +310,12 @@ header p {
   font-weight: 700;
   color: #1d4ed8;
   margin-bottom: 8px;
+}
+
+.requirement-example {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #475569;
 }
 
 .ios-preview-subtitle {
