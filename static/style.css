@@ -879,11 +879,25 @@ body.theme-ios-dark .ios-preview-title {
   white-space: nowrap;
   width: 1%;
   text-align: right;
+  padding-right: 8px;
+}
+
+.data-table td.actions-col {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .compact-actions {
   justify-content: flex-end;
   gap: 6px;
+  flex-wrap: nowrap;
+  width: max-content;
+  margin-left: auto;
+}
+
+.compact-actions form {
+  margin: 0;
 }
 
 .inline-upload-form {
