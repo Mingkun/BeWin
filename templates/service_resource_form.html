@@ -22,6 +22,16 @@
       </div>
     </header>
 
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <form method="post" class="card project-form">
       <div class="form-grid form-grid-3">
         <label>五层部门<textarea name="five_level_department" rows="2">{{ record.five_level_department or '' }}</textarea></label>
@@ -36,6 +46,10 @@
         <label>HCS（自有）<input name="hcs_self_owned" value="{{ record.hcs_self_owned or '' }}" data-summary-target="summary_self_owned"></label>
         <label>HCS（OD）<input name="hcs_od" value="{{ record.hcs_od or '' }}" data-summary-target="summary_od"></label>
         <label>HCS（TM）<input name="hcs_tm" value="{{ record.hcs_tm or '' }}" data-summary-target="summary_tm"></label>
+      </div>
+
+      <div class="card inner-card">
+        <label>二次确认码<input type="text" name="confirmation_code" placeholder="请输入二次确认码" required></label>
       </div>
 
       <div class="toolbar-actions">

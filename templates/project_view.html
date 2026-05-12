@@ -127,6 +127,7 @@
                   <div class="inline-actions compact-actions">
                     <a class="button small" href="{{ url_for('admin_project_edit', project_id=project.id) }}">修改</a>
                     <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" onsubmit="return confirm('确认删除这条项目数据吗？');">
+                      <input type="text" name="confirmation_code" placeholder="确认码" required>
                       <button class="button danger small" type="submit">删除</button>
                     </form>
                   </div>

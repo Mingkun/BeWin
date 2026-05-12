@@ -22,6 +22,16 @@
       </div>
     </header>
 
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <form method="post" class="card project-form">
       <div class="form-grid">
         <label>立项状态<textarea name="project_status" rows="2">{{ project.project_status or '' }}</textarea></label>
@@ -41,6 +51,10 @@
         <label>人力预算（自有）<textarea name="headcount_budget_self_owned" rows="2">{{ project.headcount_budget_self_owned or '' }}</textarea></label>
         <label>人力预算（OD）<textarea name="headcount_budget_od" rows="2">{{ project.headcount_budget_od or '' }}</textarea></label>
         <label>人力预算（TM）<textarea name="headcount_budget_tm" rows="2">{{ project.headcount_budget_tm or '' }}</textarea></label>
+      </div>
+
+      <div class="card inner-card">
+        <label>二次确认码<input type="text" name="confirmation_code" placeholder="请输入二次确认码" required></label>
       </div>
 
       <div class="toolbar-actions">

@@ -111,6 +111,16 @@ def get_branding():
     }
 
 
+def get_confirmation_code():
+    return os.getenv("RELEASEPLAN_CONFIRMATION_CODE", "0808")
+
+
+def require_confirmation_code(form):
+    expected = get_confirmation_code()
+    provided = (form.get('confirmation_code') or '').strip()
+    return provided == expected
+
+
 def save_env_settings(updates):
     env_path = BASE_DIR / ".env"
     lines = []
@@ -1018,6 +1028,7 @@ def settings_page():
             "RELEASEPLAN_HOME_TITLE": (request.form.get('home_title') or '').strip() or 'ReleasePlan',
             "RELEASEPLAN_BROWSER_TITLE": (request.form.get('browser_title') or '').strip() or 'ReleasePlan 入口',
             "RELEASEPLAN_THEME": (request.form.get('theme') or 'ios-light').strip() or 'ios-light',
+            "RELEASEPLAN_CONFIRMATION_CODE": (request.form.get('confirmation_code') or '').strip() or '0808',
             "RELEASEPLAN_CARD_1_TITLE": (request.form.get('card_1_title') or '').strip() or '项目视图',
             "RELEASEPLAN_CARD_2_TITLE": (request.form.get('card_2_title') or '').strip() or '关键特性视图',
             "RELEASEPLAN_CARD_3_TITLE": (request.form.get('card_3_title') or '').strip() or '投资视图',
@@ -1033,7 +1044,7 @@ def settings_page():
         os.environ.update(updates)
         flash('设置已保存并立即生效')
         return redirect(url_for('settings_page'))
-    return render_template('settings.html', branding=get_branding(), home_cards=get_home_cards(), saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    return render_template('settings.html', branding=get_branding(), home_cards=get_home_cards(), confirmation_code=get_confirmation_code(), saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
 
 
 @app.route('/requirements', methods=['GET', 'POST'])
@@ -1159,6 +1170,9 @@ def view_placeholder(view_key):
 @login_required
 def admin_project_new():
     if request.method == 'POST':
+        if not require_confirmation_code(request.form):
+            flash('二次确认码错误')
+            return render_template('project_form.html', project=request.form, mode='new', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
         data = form_to_project_data(request.form)
         sql_columns = [
             "project_status", "control_gate", "investment_subject", "project_code", "project_name", "project_description",
@@ -1184,6 +1198,11 @@ def admin_project_edit(project_id):
     if not project:
         return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
     if request.method == 'POST':
+        if not require_confirmation_code(request.form):
+            flash('二次确认码错误')
+            form_project = dict(request.form)
+            form_project['id'] = project_id
+            return render_template('project_form.html', project=form_project, mode='edit', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
         data = form_to_project_data(request.form)
         set_clause = [
             "project_status = ?",
@@ -1223,6 +1242,9 @@ def admin_project_edit(project_id):
 @app.route('/admin/projects/<int:project_id>/delete', methods=['POST'])
 @login_required
 def admin_project_delete(project_id):
+    if not require_confirmation_code(request.form):
+        flash('二次确认码错误')
+        return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
     with get_conn() as conn:
         conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
         conn.commit()
@@ -1234,6 +1256,9 @@ def admin_project_delete(project_id):
 def admin_feature_new():
     project_options = get_project_options()
     if request.method == 'POST':
+        if not require_confirmation_code(request.form):
+            flash('二次确认码错误')
+            return render_template('feature_form.html', feature=request.form, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
         data = form_to_feature_data(request.form)
         with get_conn() as conn:
             project_row = conn.execute("SELECT id, project_name, project_code FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (data['project_name'],)).fetchone()
@@ -1260,6 +1285,9 @@ def admin_feature_edit(feature_id):
         return redirect(url_for('roadmap'))
     project_options = get_project_options()
     if request.method == 'POST':
+        if not require_confirmation_code(request.form):
+            flash('二次确认码错误')
+            return render_template('feature_form.html', feature=request.form, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
         data = form_to_feature_data(request.form)
         with get_conn() as conn:
             project_row = conn.execute("SELECT id, project_name, project_code FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (data['project_name'],)).fetchone()
@@ -1354,6 +1382,9 @@ def admin_service_resources():
 @login_required
 def admin_service_resource_new():
     if request.method == 'POST':
+        if not require_confirmation_code(request.form):
+            flash('二次确认码错误')
+            return render_template('service_resource_form.html', record=request.form, mode='new', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
         data = form_to_service_resource_data(request.form)
         with get_conn() as conn:
             conn.execute(
@@ -1393,6 +1424,11 @@ def admin_service_resource_edit(record_id):
     if not record:
         return redirect(return_to)
     if request.method == 'POST':
+        if not require_confirmation_code(request.form):
+            flash('二次确认码错误')
+            form_record = dict(request.form)
+            form_record['id'] = record_id
+            return render_template('service_resource_form.html', record=form_record, mode='edit', return_to=return_to, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
         data = form_to_service_resource_data(request.form)
         with get_conn() as conn:
             conn.execute(
@@ -1428,6 +1464,9 @@ def admin_service_resource_edit(record_id):
 @app.route('/admin/service-resources/<int:record_id>/delete', methods=['POST'])
 @login_required
 def admin_service_resource_delete(record_id):
+    if not require_confirmation_code(request.form):
+        flash('二次确认码错误')
+        return redirect(url_for('admin_service_resources'))
     with get_conn() as conn:
         conn.execute("DELETE FROM service_resource_investment WHERE id = ?", (record_id,))
         conn.commit()
