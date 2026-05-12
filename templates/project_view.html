@@ -90,31 +90,31 @@
           </colgroup>
           <thead>
             <tr>
-              <th>项目名称<div class="col-resizer"></div></th>
-              <th>项目编码<div class="col-resizer"></div></th>
-              <th>项目经理<div class="col-resizer"></div></th>
-              <th>立项状态<div class="col-resizer"></div></th>
-              <th>管控灶<div class="col-resizer"></div></th>
-              <th>投资主体<div class="col-resizer"></div></th>
-              <th>项目大类<div class="col-resizer"></div></th>
-              <th>项目子类<div class="col-resizer"></div></th>
-              <th>项目复杂度<div class="col-resizer"></div></th>
-              <th>项目描述<div class="col-resizer"></div></th>
-              <th>计划启动日期<div class="col-resizer"></div></th>
-              <th>计划结束日期<div class="col-resizer"></div></th>
-              <th>工作量（人月）<div class="col-resizer"></div></th>
-              <th>研发费用预算（w）<div class="col-resizer"></div></th>
-              <th>人力预算（自有）<div class="col-resizer"></div></th>
-              <th>人力预算（OD）<div class="col-resizer"></div></th>
-              <th>人力预算（TM）<div class="col-resizer"></div></th>
-              <th class="actions-col">操作<div class="col-resizer"></div></th>
+              <th class="sticky-col sticky-col-1" data-sort="text">项目名称<div class="col-resizer"></div></th>
+              <th class="sticky-col sticky-col-2" data-sort="text">项目编码<div class="col-resizer"></div></th>
+              <th data-sort="text">项目经理<div class="col-resizer"></div></th>
+              <th data-sort="text">立项状态<div class="col-resizer"></div></th>
+              <th data-sort="text">管控灶<div class="col-resizer"></div></th>
+              <th data-sort="text">投资主体<div class="col-resizer"></div></th>
+              <th data-sort="text">项目大类<div class="col-resizer"></div></th>
+              <th data-sort="text">项目子类<div class="col-resizer"></div></th>
+              <th data-sort="text">项目复杂度<div class="col-resizer"></div></th>
+              <th data-sort="text">项目描述<div class="col-resizer"></div></th>
+              <th data-sort="date">计划启动日期<div class="col-resizer"></div></th>
+              <th data-sort="date">计划结束日期<div class="col-resizer"></div></th>
+              <th data-sort="number">工作量（人月）<div class="col-resizer"></div></th>
+              <th data-sort="number">研发费用预算（w）<div class="col-resizer"></div></th>
+              <th data-sort="number">人力预算（自有）<div class="col-resizer"></div></th>
+              <th data-sort="number">人力预算（OD）<div class="col-resizer"></div></th>
+              <th data-sort="number">人力预算（TM）<div class="col-resizer"></div></th>
+              <th class="actions-col" data-sort="none">操作<div class="col-resizer"></div></th>
             </tr>
           </thead>
           <tbody>
             {% for project in projects %}
               <tr>
-                <td>{{ project.project_name or '未命名项目' }}</td>
-                <td>{{ project.project_code or '未填写' }}</td>
+                <td class="sticky-col sticky-col-1">{{ project.project_name or '未命名项目' }}</td>
+                <td class="sticky-col sticky-col-2">{{ project.project_code or '未填写' }}</td>
                 <td>{{ project.project_manager or '未填写' }}</td>
                 <td>{{ project.project_status or '未填写' }}</td>
                 <td>{{ project.control_gate or '未填写' }}</td>
@@ -155,6 +155,7 @@
       const storageKey = 'releaseplan.projectTable.columnWidths';
       const cols = Array.from(table.querySelectorAll('colgroup col'));
       const headers = Array.from(table.querySelectorAll('thead th'));
+      const tbody = table.querySelector('tbody');
 
       function applySavedWidths() {
         try {
@@ -173,6 +174,52 @@
       }
 
       applySavedWidths();
+
+      function parseSortableValue(text, type) {
+        const value = (text || '').trim();
+        if (!value || value === '未填写' || type === 'none') return null;
+        if (type === 'number') {
+          const numeric = Number(value);
+          return Number.isNaN(numeric) ? null : numeric;
+        }
+        if (type === 'date') {
+          const normalized = value.replace(/年|月/g, '-').replace(/日/g, '').replace(/\//g, '-').replace(/\./g, '-');
+          const time = Date.parse(normalized);
+          return Number.isNaN(time) ? null : time;
+        }
+        return value.localeCompare ? value : String(value);
+      }
+
+      headers.forEach((header, headerIndex) => {
+        const sortType = header.dataset.sort;
+        if (sortType && sortType !== 'none') {
+          header.style.cursor = 'pointer';
+          header.addEventListener('click', (event) => {
+            if (event.target.classList.contains('col-resizer')) return;
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const currentOrder = header.dataset.order === 'asc' ? 'asc' : 'desc';
+            const nextOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+            headers.forEach((item) => delete item.dataset.order);
+            header.dataset.order = nextOrder;
+
+            rows.sort((rowA, rowB) => {
+              const valueA = parseSortableValue(rowA.children[headerIndex]?.innerText, sortType);
+              const valueB = parseSortableValue(rowB.children[headerIndex]?.innerText, sortType);
+              if (valueA === null && valueB === null) return 0;
+              if (valueA === null) return 1;
+              if (valueB === null) return -1;
+              if (sortType === 'text') {
+                return nextOrder === 'asc'
+                  ? String(rowA.children[headerIndex]?.innerText || '').localeCompare(String(rowB.children[headerIndex]?.innerText || ''))
+                  : String(rowB.children[headerIndex]?.innerText || '').localeCompare(String(rowA.children[headerIndex]?.innerText || ''));
+              }
+              return nextOrder === 'asc' ? valueA - valueB : valueB - valueA;
+            });
+
+            rows.forEach((row) => tbody.appendChild(row));
+          });
+        }
+      });
 
       headers.forEach((header, index) => {
         const resizer = header.querySelector('.col-resizer');

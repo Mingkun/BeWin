@@ -658,6 +658,25 @@ body.theme-ios-dark .ios-preview-title {
   position: relative;
 }
 
+.sticky-col {
+  position: sticky;
+  background: #fff;
+  z-index: 2;
+}
+
+.data-table th.sticky-col {
+  z-index: 4;
+  background: #f8fafc;
+}
+
+.sticky-col-1 {
+  left: 0;
+}
+
+.sticky-col-2 {
+  left: 160px;
+}
+
 .col-resizer {
   position: absolute;
   top: 0;
