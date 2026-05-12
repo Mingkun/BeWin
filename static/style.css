@@ -661,6 +661,17 @@ body.theme-ios-dark .ios-preview-title {
   flex-wrap: wrap;
 }
 
+.actions-col {
+  white-space: nowrap;
+  width: 1%;
+  text-align: right;
+}
+
+.compact-actions {
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .inline-upload-form {
   display: inline-flex;
   align-items: center;

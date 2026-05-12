@@ -94,7 +94,7 @@
               <th>计划启动日期</th>
               <th>计划结束日期</th>
               <th>工作量（人月）</th>
-              <th>操作</th>
+              <th class="actions-col">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -107,11 +107,11 @@
                 <td>{{ project.planned_start_date or '未填写' }}</td>
                 <td>{{ project.planned_end_date or '未填写' }}</td>
                 <td>{{ project.workload_person_month or '未填写' }}</td>
-                <td>
-                  <div class="inline-actions">
-                    <a class="button small" href="{{ url_for('admin_project_edit', project_id=project.id) }}">修改项目信息</a>
+                <td class="actions-col">
+                  <div class="inline-actions compact-actions">
+                    <a class="button small" href="{{ url_for('admin_project_edit', project_id=project.id) }}">修改</a>
                     <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" onsubmit="return confirm('确认删除这条项目数据吗？');">
-                      <button class="button danger small" type="submit">删除项目</button>
+                      <button class="button danger small" type="submit">删除</button>
                     </form>
                   </div>
                 </td>
