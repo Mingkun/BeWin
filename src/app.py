@@ -1100,7 +1100,7 @@ def view_placeholder(view_key):
         },
         'project-budget-resource': {
             'title': '资源视图',
-            'description': '查看资源维度的整体情况、投入分布与统计信息。',
+            'description': '查看项目维度的预算与资源分布信息。',
         },
     }
     view_config = view_map.get(view_key)
