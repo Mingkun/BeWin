@@ -62,19 +62,19 @@ def get_home_cards():
         {
             "key": "roadmap",
             "title": os.getenv("RELEASEPLAN_CARD_2_TITLE", "关键特性视图"),
-            "desc": "查看按项目切换的关键特性 roadmap 视图。",
+            "desc": "规划关键特性的路标信息。",
             "href": url_for('roadmap'),
         },
         {
             "key": "department-budget-resource",
             "title": os.getenv("RELEASEPLAN_CARD_3_TITLE", "投资视图"),
-            "desc": "查看部门视角的预算与资源统计信息。",
+            "desc": "从投资维度看管道。",
             "href": url_for('view_placeholder', view_key='department-budget-resource'),
         },
         {
             "key": "project-budget-resource",
             "title": os.getenv("RELEASEPLAN_CARD_4_TITLE", "资源视图"),
-            "desc": "查看项目维度的预算与资源分布信息。",
+            "desc": "了解部门人力资源情况。",
             "href": url_for('view_placeholder', view_key='project-budget-resource'),
         },
         {
