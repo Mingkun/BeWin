@@ -62,7 +62,7 @@ def get_home_cards():
         {
             "key": "roadmap",
             "title": os.getenv("RELEASEPLAN_CARD_2_TITLE", "关键特性视图"),
-            "desc": "规划关键特性的路标信息。",
+            "desc": "云服务列表及每个云服务的实际投入。",
             "href": url_for('roadmap'),
         },
         {
