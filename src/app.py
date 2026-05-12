@@ -1235,7 +1235,7 @@ def admin_projects_template_csv():
         writer.writerow(PROJECT_ALL_COLUMNS)
         content = output.getvalue()
     response = Response('\ufeff' + content, mimetype='text/csv; charset=utf-8')
-    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('project_table_template.csv')}"
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('关键特性描述_导出模板.csv')}"
     return response
 
 
@@ -1267,7 +1267,7 @@ def admin_projects_export_csv():
             row.get('headcount_budget_tm', ''),
         ])
     response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
-    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('project_table_export.csv')}"
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('关键特性描述_导出数据.csv')}"
     return response
 
 
