@@ -1013,13 +1013,6 @@ def view_placeholder(view_key):
     return render_template('view_placeholder.html', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'), **view_config)
 
 
-@app.route('/admin/projects')
-@login_required
-def admin_projects():
-    rows = load_projects()
-    return render_template('admin_projects.html', projects=rows, months=MILESTONE_COLUMNS, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
-
-
 @app.route('/admin/projects/new', methods=['GET', 'POST'])
 @login_required
 def admin_project_new():
@@ -1038,7 +1031,7 @@ def admin_project_new():
                 values,
             )
             conn.commit()
-        return redirect(url_for('admin_projects'))
+        return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
     return render_template('project_form.html', project={}, mode='new', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
 
 
@@ -1047,7 +1040,7 @@ def admin_project_new():
 def admin_project_edit(project_id):
     project = load_project(project_id)
     if not project:
-        return redirect(url_for('admin_projects'))
+        return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
     if request.method == 'POST':
         data = form_to_project_data(request.form)
         set_clause = [
@@ -1081,7 +1074,7 @@ def admin_project_edit(project_id):
                 values,
             )
             conn.commit()
-        return redirect(url_for('admin_projects'))
+        return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
     return render_template('project_form.html', project=project, mode='edit', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
 
 
@@ -1091,7 +1084,7 @@ def admin_project_delete(project_id):
     with get_conn() as conn:
         conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
         conn.commit()
-    return redirect(url_for('admin_projects'))
+    return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
 
 
 @app.route('/admin/features/new', methods=['GET', 'POST'])

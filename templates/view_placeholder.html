@@ -16,7 +16,7 @@
       <div class="toolbar-actions">
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         {% if title == '项目视图' %}
-          <a class="button secondary" href="{{ url_for('admin_projects') }}">维护项目数据</a>
+          <a class="button secondary" href="{{ url_for('view_placeholder', view_key='department-pipeline-load') }}">进入项目视图</a>
         {% elif title == '关键特性路标图' %}
           <a class="button secondary" href="{{ url_for('roadmap') }}">进入关键特性路标图</a>
         {% endif %}
