@@ -76,6 +76,7 @@ header p {
 
 .entry-card {
   display: block;
+  position: relative;
   background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
   border: 1px solid #dbeafe;
   border-radius: 18px;
@@ -102,6 +103,21 @@ header p {
   font-size: 14px;
   line-height: 1.7;
   color: #475569;
+}
+
+.entry-card-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .placeholder-card {
