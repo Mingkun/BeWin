@@ -985,6 +985,14 @@ def view_placeholder(view_key):
             saml_user=session.get('saml_user'),
         )
 
+    if view_key == 'department-pipeline-load':
+        return render_template(
+            'project_view.html',
+            projects=load_projects(),
+            saml_enabled=saml_enabled(),
+            saml_user=session.get('saml_user'),
+        )
+
     view_map = {
         'department-budget-resource': {
             'title': '投资视图',

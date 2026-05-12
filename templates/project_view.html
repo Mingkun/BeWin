@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目视图</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <div>
+        <h1>项目视图</h1>
+        <p>按项目卡片查看基础信息，并支持新增、编辑、删除项目。</p>
+      </div>
+      <div class="toolbar-actions">
+        {% if saml_enabled and saml_user %}
+          <span class="user-chip">已登录</span>
+          <a class="button secondary" href="{{ url_for('saml_logout') }}">退出登录</a>
+        {% endif %}
+        <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
+        <a class="button" href="{{ url_for('admin_project_new') }}">新增项目</a>
+      </div>
+    </header>
+
+    {% if projects %}
+      <div class="entry-card-grid">
+        {% for project in projects %}
+          <div class="card entry-card">
+            <div class="entry-card-title">{{ project.project_name or '未命名项目' }}</div>
+            <div class="entry-card-desc">{{ project.project_description or '暂无项目描述' }}</div>
+            <div class="feature-tags" style="margin: 12px 0 0;">
+              <span>项目编码：{{ project.project_code or '未填写' }}</span>
+              <span>立项状态：{{ project.project_status or '未填写' }}</span>
+              <span>项目经理：{{ project.project_manager or '未填写' }}</span>
+              <span>投资主体：{{ project.investment_subject or '未填写' }}</span>
+              <span>管控灶：{{ project.control_gate or '未填写' }}</span>
+              <span>项目大类：{{ project.project_category or '未填写' }}</span>
+              <span>项目子类：{{ project.project_subcategory or '未填写' }}</span>
+              <span>项目复杂度：{{ project.project_complexity or '未填写' }}</span>
+              <span>计划启动日期：{{ project.planned_start_date or '未填写' }}</span>
+              <span>计划结束日期：{{ project.planned_end_date or '未填写' }}</span>
+              <span>工作量（人月）：{{ project.workload_person_month or '未填写' }}</span>
+              <span>研发费用预算（w）：{{ project.rd_budget_w or '未填写' }}</span>
+              <span>人力预算（自有）：{{ project.headcount_budget_self_owned or '未填写' }}</span>
+              <span>人力预算（OD）：{{ project.headcount_budget_od or '未填写' }}</span>
+              <span>人力预算（TM）：{{ project.headcount_budget_tm or '未填写' }}</span>
+            </div>
+            <div class="inline-actions" style="margin-top: 16px;">
+              <a class="button small" href="{{ url_for('admin_project_edit', project_id=project.id) }}">修改项目信息</a>
+              <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" onsubmit="return confirm('确认删除这条项目数据吗？');">
+                <button class="button danger small" type="submit">删除项目</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">当前还没有项目数据。你可以先新增项目。</div>
+    {% endif %}
+  </div>
+</body>
+</html>
