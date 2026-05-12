@@ -147,23 +147,44 @@
       if (!table) return;
 
       const storageKey = 'releaseplan.projectTable.columnWidths';
+      const storageMetaKey = 'releaseplan.projectTable.columnMeta';
       const cols = Array.from(table.querySelectorAll('colgroup col'));
       const headers = Array.from(table.querySelectorAll('thead th'));
       const tbody = table.querySelector('tbody');
+      const headerSignature = headers.map((header) => header.childNodes[0]?.textContent?.trim() || '').join('|');
+
+      function clearSavedWidths() {
+        localStorage.removeItem(storageKey);
+        localStorage.setItem(storageMetaKey, headerSignature);
+      }
 
       function applySavedWidths() {
         try {
+          const savedMeta = localStorage.getItem(storageMetaKey);
+          if (savedMeta && savedMeta !== headerSignature) {
+            clearSavedWidths();
+            return;
+          }
+          if (!savedMeta) {
+            localStorage.setItem(storageMetaKey, headerSignature);
+          }
           const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+          if (saved.length > cols.length) {
+            clearSavedWidths();
+            return;
+          }
           saved.forEach((width, index) => {
             if (cols[index] && width) cols[index].style.width = width;
           });
         } catch (error) {
           console.warn('load column widths failed', error);
+          clearSavedWidths();
         }
       }
 
       function saveWidths() {
         const widths = cols.map((col) => col.style.width || '');
+        localStorage.setItem(storageMetaKey, headerSignature);
         localStorage.setItem(storageKey, JSON.stringify(widths));
       }
 
