@@ -56,7 +56,7 @@ def get_home_cards():
         {
             "key": "department-pipeline-load",
             "title": os.getenv("RELEASEPLAN_CARD_1_TITLE", "项目视图"),
-            "desc": "查看部门管道容量、排期与负载情况。",
+            "desc": "查看项目视图页面的内容，项目甘特图、项目主要信息。",
             "href": url_for('view_placeholder', view_key='department-pipeline-load'),
         },
         {
