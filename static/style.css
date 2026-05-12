@@ -863,7 +863,7 @@ body.theme-ios-dark .ios-preview-title {
 }
 
 .project-desc-cell {
-  max-width: 12ch;
+  max-width: 12em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
