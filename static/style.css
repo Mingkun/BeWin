@@ -120,21 +120,6 @@ header p {
   font-weight: 700;
 }
 
-.entry-card-top-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding-right: 52px;
-}
-
-.card-inline-editor {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .placeholder-card {
   padding: 32px;
 }

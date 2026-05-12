@@ -56,31 +56,31 @@ def get_home_cards():
         {
             "key": "department-pipeline-load",
             "title": os.getenv("RELEASEPLAN_CARD_4_TITLE", "项目视图"),
-            "desc": os.getenv("RELEASEPLAN_CARD_4_DESC", "查看部门管道容量、排期与负载情况。"),
+            "desc": "查看部门管道容量、排期与负载情况。",
             "href": url_for('view_placeholder', view_key='department-pipeline-load'),
         },
         {
             "key": "roadmap",
             "title": os.getenv("RELEASEPLAN_CARD_1_TITLE", "关键特性视图"),
-            "desc": os.getenv("RELEASEPLAN_CARD_1_DESC", "查看按项目切换的关键特性 roadmap 视图。"),
+            "desc": "查看按项目切换的关键特性 roadmap 视图。",
             "href": url_for('roadmap'),
         },
         {
             "key": "department-budget-resource",
             "title": os.getenv("RELEASEPLAN_CARD_2_TITLE", "投资视图"),
-            "desc": os.getenv("RELEASEPLAN_CARD_2_DESC", "查看部门视角的预算与资源统计信息。"),
+            "desc": "查看部门视角的预算与资源统计信息。",
             "href": url_for('view_placeholder', view_key='department-budget-resource'),
         },
         {
             "key": "project-budget-resource",
             "title": os.getenv("RELEASEPLAN_CARD_3_TITLE", "资源视图"),
-            "desc": os.getenv("RELEASEPLAN_CARD_3_DESC", "查看项目维度的预算与资源分布信息。"),
+            "desc": "查看项目维度的预算与资源分布信息。",
             "href": url_for('view_placeholder', view_key='project-budget-resource'),
         },
         {
             "key": "cloud-service-view",
             "title": os.getenv("RELEASEPLAN_CARD_5_TITLE", "云服务视图"),
-            "desc": os.getenv("RELEASEPLAN_CARD_5_DESC", "查看云服务相关项目与规划信息。"),
+            "desc": "查看云服务相关项目与规划信息。",
             "href": url_for('view_placeholder', view_key='cloud-service-view'),
         },
     ]
@@ -1018,30 +1018,6 @@ def settings_page():
         flash('设置已保存并立即生效')
         return redirect(url_for('settings_page'))
     return render_template('settings.html', branding=get_branding(), home_cards=get_home_cards(), saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
-
-
-@app.route('/home-card-settings/<card_key>', methods=['POST'])
-@login_required
-def home_card_settings(card_key):
-    card_env_map = {
-        'roadmap': ('RELEASEPLAN_CARD_1_TITLE', 'RELEASEPLAN_CARD_1_DESC', '关键特性视图', '查看按项目切换的关键特性 roadmap 视图。'),
-        'department-budget-resource': ('RELEASEPLAN_CARD_2_TITLE', 'RELEASEPLAN_CARD_2_DESC', '投资视图', '查看部门视角的预算与资源统计信息。'),
-        'project-budget-resource': ('RELEASEPLAN_CARD_3_TITLE', 'RELEASEPLAN_CARD_3_DESC', '资源视图', '查看项目维度的预算与资源分布信息。'),
-        'department-pipeline-load': ('RELEASEPLAN_CARD_4_TITLE', 'RELEASEPLAN_CARD_4_DESC', '项目视图', '查看部门管道容量、排期与负载情况。'),
-        'cloud-service-view': ('RELEASEPLAN_CARD_5_TITLE', 'RELEASEPLAN_CARD_5_DESC', '云服务视图', '查看云服务相关项目与规划信息。'),
-    }
-    config = card_env_map.get(card_key)
-    if not config:
-        return redirect(url_for('index'))
-    title_key, desc_key, default_title, default_desc = config
-    updates = {
-        title_key: (request.form.get('title') or '').strip() or default_title,
-        desc_key: (request.form.get('desc') or '').strip() or default_desc,
-    }
-    save_env_settings(updates)
-    os.environ.update(updates)
-    flash('卡片设置已保存')
-    return redirect(url_for('index'))
 
 
 @app.route('/requirements', methods=['GET', 'POST'])
