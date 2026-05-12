@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if mode == 'edit' %}编辑关键特性{% else %}新增关键特性{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page form-page">
+    <header class="toolbar">
+      <div>
+        <h1>{% if mode == 'edit' %}编辑关键特性{% else %}新增关键特性{% endif %}</h1>
+        <p>维护关键特性、五层部门及月度排期。</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('roadmap') }}">返回路标图</a>
+      </div>
+    </header>
+
+    <form method="post" class="card project-form">
+      <div class="form-grid">
+        <label>项目名称<textarea name="project_name" rows="2">{{ feature.project_name or '' }}</textarea></label>
+        <label>五层部门<textarea name="five_level_department" rows="2">{{ feature.five_level_department or '' }}</textarea></label>
+        <label>服务交付PM<textarea name="delivery_pm" rows="2">{{ feature.delivery_pm or '' }}</textarea></label>
+        <label>关键特性<textarea name="feature_name" rows="3">{{ feature.feature_name or '' }}</textarea></label>
+        <label>L4服务或服务组<textarea name="service_group" rows="3">{{ feature.service_group or '' }}</textarea></label>
+      </div>
+
+      <label class="block-field">重点工作
+        <textarea name="focus_work" rows="5">{{ feature.focus_work or '' }}</textarea>
+      </label>
+
+      <div class="card inner-card">
+        <h3>月度排期</h3>
+        <div class="month-grid-form">
+          {% for month in months %}
+            <label>{{ month }}<textarea name="{{ month }}" rows="3">{{ feature[month] if feature and month in feature else '' }}</textarea></label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('roadmap') }}">取消</a>
+        <button class="button" type="submit">保存</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

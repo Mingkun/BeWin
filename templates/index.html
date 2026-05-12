@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReleasePlan 月度进展路标图</title>
+  <title>{{ branding.roadmap_browser_title }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="theme-{{ branding.theme }}">
   <div class="page page-roadmap">
     <header class="toolbar">
       <div>
@@ -15,12 +15,27 @@
       <div class="toolbar-actions">
         {% if saml_enabled and saml_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+          <a class="button secondary" href="{{ url_for('saml_logout') }}">退出登录</a>
         {% endif %}
-        <a class="button secondary" href="/releaseplan/">返回首页</a>
-        <a class="button secondary" href="/releaseplan/admin/projects">维护项目数据</a>
+        <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
+        <a class="button secondary" href="{{ url_for('admin_feature_new') }}">新增关键特性</a>
+        <a class="button secondary" href="{{ url_for('admin_projects_template_csv') }}">导出模板</a>
+        <a class="button secondary" href="{{ url_for('admin_projects_export_csv') }}">导出数据</a>
+        <button class="button warning" type="button" id="show-project-import" onclick="document.getElementById('project-import-panel').hidden = false;">导入数据</button>
       </div>
     </header>
+
+    <div class="card import-panel" id="project-import-panel" hidden>
+      <form method="post" action="{{ url_for('admin_projects_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form">
+        <div class="import-panel-title">导入关键特性路标图数据</div>
+        <div class="import-panel-desc">请选择关键特性 CSV 文件，导入后会覆盖当前关键特性数据。</div>
+        <div class="import-panel-actions">
+          <input type="file" name="csv_file" accept=".csv" required>
+          <button class="button warning" type="submit">确认导入</button>
+          <button class="button secondary" type="button" id="cancel-project-import" onclick="document.getElementById('project-import-panel').hidden = true;">取消</button>
+        </div>
+      </form>
+    </div>
 
     {% if project_groups %}
       <div class="project-tab-bar">
@@ -62,11 +77,11 @@
                     <div class="feature-info-panel">
                       <div class="feature-info-head">
                         <div class="feature-name">{{ feature.feature_name }}</div>
-                        <a class="feature-edit-link" href="/releaseplan/admin/projects/{{ feature.id }}/edit">编辑</a>
+                        <a class="feature-edit-link" href="{{ url_for('admin_feature_edit', feature_id=feature.id) }}">编辑</a>
                       </div>
                       <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
                       <div class="feature-tags">
-                        <span>工作量：{{ feature.workload_person_month or '未填写' }}</span>
+                        <span>五层部门：{{ feature.five_level_department or '未填写' }}</span>
                         <span>L4：{{ feature.service_group or '未填写' }}</span>
                         <span>交付PM：{{ feature.delivery_pm or '未填写' }}</span>
                         <span>周期：{{ feature.start_label }} ~ {{ feature.end_label }}</span>
@@ -118,6 +133,7 @@
         if (panel) panel.classList.add('active');
       });
     });
+
   </script>
 </body>
 </html>

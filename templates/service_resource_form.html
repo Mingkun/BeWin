@@ -16,7 +16,7 @@
       <div class="toolbar-actions">
         {% if saml_enabled and saml_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+          <a class="button secondary" href="{{ url_for('saml_logout') }}">退出登录</a>
         {% endif %}
         <a class="button secondary" href="{{ return_to or url_for('admin_service_resources') }}">返回列表</a>
       </div>

@@ -11,42 +11,40 @@
     <header class="toolbar">
       <div>
         <h1>{% if mode == 'edit' %}编辑项目{% else %}新增项目{% endif %}</h1>
-        <p>维护项目基础信息和每个月排期内容。</p>
+        <p>维护项目基础信息，不再在这里维护关键特性排期。</p>
       </div>
       <div class="toolbar-actions">
         {% if saml_enabled and saml_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+          <a class="button secondary" href="{{ url_for('saml_logout') }}">退出登录</a>
         {% endif %}
-        <a class="button secondary" href="/releaseplan/roadmap">返回路标图</a>
+        <a class="button secondary" href="{{ url_for('admin_projects') }}">返回项目数据维护</a>
       </div>
     </header>
 
     <form method="post" class="card project-form">
       <div class="form-grid">
+        <label>立项状态<textarea name="project_status" rows="2">{{ project.project_status or '' }}</textarea></label>
+        <label>管控灶<textarea name="control_gate" rows="2">{{ project.control_gate or '' }}</textarea></label>
+        <label>投资主体<textarea name="investment_subject" rows="2">{{ project.investment_subject or '' }}</textarea></label>
+        <label>项目编码<textarea name="project_code" rows="2">{{ project.project_code or '' }}</textarea></label>
         <label>项目名称<textarea name="project_name" rows="2">{{ project.project_name or '' }}</textarea></label>
+        <label>项目描述<textarea name="project_description" rows="3">{{ project.project_description or '' }}</textarea></label>
+        <label>项目大类<textarea name="project_category" rows="2">{{ project.project_category or '' }}</textarea></label>
+        <label>项目子类<textarea name="project_subcategory" rows="2">{{ project.project_subcategory or '' }}</textarea></label>
+        <label>项目复杂度<textarea name="project_complexity" rows="2">{{ project.project_complexity or '' }}</textarea></label>
         <label>项目经理<textarea name="project_manager" rows="2">{{ project.project_manager or '' }}</textarea></label>
+        <label>计划启动日期<textarea name="planned_start_date" rows="2">{{ project.planned_start_date or '' }}</textarea></label>
+        <label>计划结束日期<textarea name="planned_end_date" rows="2">{{ project.planned_end_date or '' }}</textarea></label>
         <label>工作量（人月）<textarea name="workload_person_month" rows="2">{{ project.workload_person_month or '' }}</textarea></label>
-        <label>服务交付PM<textarea name="delivery_pm" rows="2">{{ project.delivery_pm or '' }}</textarea></label>
-        <label>关键特性<textarea name="feature_name" rows="3">{{ project.feature_name or '' }}</textarea></label>
-        <label>L4服务或服务组<textarea name="service_group" rows="3">{{ project.service_group or '' }}</textarea></label>
-      </div>
-
-      <label class="block-field">重点工作
-        <textarea name="focus_work" rows="5">{{ project.focus_work or '' }}</textarea>
-      </label>
-
-      <div class="card inner-card">
-        <h3>月度排期</h3>
-        <div class="month-grid-form">
-          {% for month in months %}
-            <label>{{ month }}<textarea name="{{ month }}" rows="3">{{ project[month] if project and month in project else '' }}</textarea></label>
-          {% endfor %}
-        </div>
+        <label>研发费用预算（w）<textarea name="rd_budget_w" rows="2">{{ project.rd_budget_w or '' }}</textarea></label>
+        <label>人力预算（自有）<textarea name="headcount_budget_self_owned" rows="2">{{ project.headcount_budget_self_owned or '' }}</textarea></label>
+        <label>人力预算（OD）<textarea name="headcount_budget_od" rows="2">{{ project.headcount_budget_od or '' }}</textarea></label>
+        <label>人力预算（TM）<textarea name="headcount_budget_tm" rows="2">{{ project.headcount_budget_tm or '' }}</textarea></label>
       </div>
 
       <div class="toolbar-actions">
-        <a class="button secondary" href="/releaseplan/roadmap">取消</a>
+        <a class="button secondary" href="{{ url_for('admin_projects') }}">取消</a>
         <button class="button" type="submit">保存</button>
       </div>
     </form>

@@ -16,14 +16,14 @@
       <div class="toolbar-actions">
         {% if saml_enabled and saml_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+          <a class="button secondary" href="{{ url_for('saml_logout') }}">退出登录</a>
         {% endif %}
-        <a class="button secondary" href="/releaseplan/">返回首页</a>
-        <a class="button secondary" href="/releaseplan/views/cloud-service-view">返回云服务视图</a>
+        <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
+        <a class="button secondary" href="{{ url_for('view_placeholder', view_key='cloud-service-view') }}">返回云服务视图</a>
         <a class="button" href="{{ url_for('admin_service_resource_new') }}">新增记录</a>
-        <a class="button secondary" href="/releaseplan/admin/service-resources/template-csv">下载 CSV 模板</a>
-        <a class="button secondary" href="/releaseplan/admin/service-resources/export-csv">导出当前 CSV</a>
-        <form method="post" action="/releaseplan/admin/service-resources/import-csv" enctype="multipart/form-data" class="inline-upload-form">
+        <a class="button secondary" href="{{ url_for('admin_service_resources_template_csv') }}">下载 CSV 模板</a>
+        <a class="button secondary" href="{{ url_for('admin_service_resources_export_csv') }}">导出当前 CSV</a>
+        <form method="post" action="{{ url_for('admin_service_resources_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">从 CSV 导入</button>
         </form>

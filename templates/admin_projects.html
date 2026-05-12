@@ -11,17 +11,21 @@
     <header class="toolbar">
       <div>
         <h1>项目数据维护</h1>
-        <p>在这里维护数据库中的项目数据，也可以用 CSV 覆盖导入。</p>
+        <p>在这里维护数据库中的项目基础信息，也可以用项目 CSV 覆盖导入。</p>
       </div>
       <div class="toolbar-actions">
         {% if saml_enabled and saml_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="/releaseplan/saml/logout">退出登录</a>
+          <a class="button secondary" href="{{ url_for('saml_logout') }}">退出登录</a>
         {% endif %}
-        <a class="button secondary" href="/releaseplan/">返回首页</a>
+        <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
+        <a class="button secondary" href="{{ url_for('roadmap') }}">返回路标图</a>
         <a class="button" href="{{ url_for('admin_project_new') }}">新增项目</a>
-        <form method="post" action="{{ url_for('admin_projects_import_csv') }}" onsubmit="return confirm('确认用 docs/project_table.csv 覆盖导入数据库吗？');">
-          <button class="button warning" type="submit">用 CSV 覆盖导入</button>
+        <a class="button secondary" href="{{ url_for('admin_projects_template_csv') }}">下载项目 CSV 模板</a>
+        <a class="button secondary" href="{{ url_for('admin_projects_export_csv') }}">导出项目 CSV</a>
+        <form method="post" action="{{ url_for('admin_projects_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form" onsubmit="return confirm('确认用上传的项目 CSV 覆盖导入数据库吗？');">
+          <input type="file" name="csv_file" accept=".csv" required>
+          <button class="button warning" type="submit">导入项目 CSV</button>
         </form>
       </div>
     </header>
@@ -32,16 +36,23 @@
           <thead>
             <tr>
               <th>ID</th>
+              <th>立项状态</th>
+              <th>管控灶</th>
+              <th>投资主体</th>
+              <th>项目编码</th>
               <th>项目名称</th>
+              <th>项目描述</th>
+              <th>项目大类</th>
+              <th>项目子类</th>
+              <th>项目复杂度</th>
               <th>项目经理</th>
+              <th>计划启动日期</th>
+              <th>计划结束日期</th>
               <th>工作量（人月）</th>
-              <th>关键特性</th>
-              <th>重点工作</th>
-              <th>L4服务/服务组</th>
-              <th>交付PM</th>
-              {% for month in months %}
-                <th>{{ month }}</th>
-              {% endfor %}
+              <th>研发费用预算（w）</th>
+              <th>人力预算（自有）</th>
+              <th>人力预算（OD）</th>
+              <th>人力预算（TM）</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -49,16 +60,23 @@
             {% for project in projects %}
               <tr>
                 <td>{{ project.id }}</td>
+                <td>{{ project.project_status or '' }}</td>
+                <td>{{ project.control_gate or '' }}</td>
+                <td>{{ project.investment_subject or '' }}</td>
+                <td>{{ project.project_code or '' }}</td>
                 <td>{{ project.project_name or '' }}</td>
+                <td>{{ project.project_description or '' }}</td>
+                <td>{{ project.project_category or '' }}</td>
+                <td>{{ project.project_subcategory or '' }}</td>
+                <td>{{ project.project_complexity or '' }}</td>
                 <td>{{ project.project_manager or '' }}</td>
+                <td>{{ project.planned_start_date or '' }}</td>
+                <td>{{ project.planned_end_date or '' }}</td>
                 <td>{{ project.workload_person_month or '' }}</td>
-                <td>{{ project.feature_name or '' }}</td>
-                <td>{{ project.focus_work or '' }}</td>
-                <td>{{ project.service_group or '' }}</td>
-                <td>{{ project.delivery_pm or '' }}</td>
-                {% for month in months %}
-                  <td>{{ project[month] or '' }}</td>
-                {% endfor %}
+                <td>{{ project.rd_budget_w or '' }}</td>
+                <td>{{ project.headcount_budget_self_owned or '' }}</td>
+                <td>{{ project.headcount_budget_od or '' }}</td>
+                <td>{{ project.headcount_budget_tm or '' }}</td>
                 <td>
                   <div class="inline-actions">
                     <a class="button small" href="{{ url_for('admin_project_edit', project_id=project.id) }}">编辑</a>

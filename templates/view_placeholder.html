@@ -14,7 +14,12 @@
         <p>{{ description }}</p>
       </div>
       <div class="toolbar-actions">
-        <a class="button secondary" href="/releaseplan/">返回首页</a>
+        <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
+        {% if title == '项目视图' %}
+          <a class="button secondary" href="{{ url_for('admin_projects') }}">维护项目数据</a>
+        {% elif title == '关键特性路标图' %}
+          <a class="button secondary" href="{{ url_for('roadmap') }}">进入关键特性路标图</a>
+        {% endif %}
       </div>
     </header>
 
@@ -22,7 +27,17 @@
       <div class="placeholder-badge">待建设</div>
       <h2>{{ title }}</h2>
       <p>{{ description }}</p>
-      <p>当前已预留入口，后续可以继续补具体统计口径、图表和表格。</p>
+      <p>
+        {% if title == '项目视图' %}
+          当前已预留项目视图入口，后续可以继续补项目概览、排期分析和重点事项展示。
+        {% elif title == '投资视图' %}
+          当前已预留投资视图入口，后续可以继续补投资概览、分布统计和趋势分析。
+        {% elif title == '资源视图' %}
+          当前已预留资源视图入口，后续可以继续补资源分布、投入结构和汇总看板。
+        {% else %}
+          当前已预留入口，后续可以继续补具体统计口径、图表和表格。
+        {% endif %}
+      </p>
     </div>
   </div>
 </body>
