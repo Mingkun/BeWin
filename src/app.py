@@ -549,6 +549,7 @@ def build_project_gantt(project_rows, display_year):
             "id": row.get("id"),
             "project_name": (row.get("project_name") or "").strip() or "未命名项目",
             "project_manager": (row.get("project_manager") or "").strip(),
+            "workload_person_month": (row.get("workload_person_month") or "").strip(),
             "planned_start_date": start_value or '未填写',
             "planned_end_date": end_value or '未填写',
             "start_label": MONTH_LABELS[start_index] if start_index is not None else "-",
@@ -1034,7 +1035,9 @@ def view_placeholder(view_key):
 
     if view_key == 'department-pipeline-load':
         project_rows = load_projects()
-        display_year = datetime.utcnow().year
+        now = datetime.utcnow()
+        display_year = now.year
+        today_marker_percent = ((now.month - 1) + 0.5) / 12 * 100 if now.year == display_year else None
         return render_template(
             'project_view.html',
             projects=project_rows,
@@ -1042,6 +1045,7 @@ def view_placeholder(view_key):
             month_labels=MONTH_LABELS,
             quarters=QUARTERS,
             display_year=display_year,
+            today_marker_percent=today_marker_percent,
             saml_enabled=saml_enabled(),
             saml_user=session.get('saml_user'),
         )

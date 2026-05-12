@@ -54,10 +54,8 @@
                   <div class="feature-name">{{ project.project_name }}</div>
                 </div>
                 <div class="feature-tags">
-                  <span>项目经理：{{ project.project_manager or '未填写' }}</span>
-                  <span>启动日期：{{ project.planned_start_date }}</span>
-                  <span>结束日期：{{ project.planned_end_date }}</span>
-                  <span>时间轴：{{ project.start_label }} ~ {{ project.end_label }}</span>
+                  <span>项目名称：{{ project.project_name }}</span>
+                  <span>项目工作量（人月）：{{ project.workload_person_month or '未填写' }}</span>
                 </div>
               </div>
 
@@ -67,6 +65,10 @@
                     <div class="timeline-grid-col"></div>
                   {% endfor %}
                 </div>
+
+                {% if today_marker_percent is not none %}
+                  <div class="timeline-today-marker" style="left: {{ today_marker_percent }}%;"></div>
+                {% endif %}
 
                 {% if project.has_schedule %}
                   <div class="timeline-bar" style="left: {{ project.start_percent }}%; width: {{ project.width_percent }}%;">
