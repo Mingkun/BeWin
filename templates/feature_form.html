@@ -29,16 +29,21 @@
     {% endwith %}
 
     <form method="post" class="card project-form">
+      <div class="card inner-card">
+        <div class="form-grid">
+          <label>项目名称
+            <select name="project_name" id="project_name" required>
+              <option value="">请选择项目</option>
+              {% for project in project_options %}
+                <option value="{{ project.project_name }}" data-project-code="{{ project.project_code or '' }}" {% if feature.project_name == project.project_name %}selected{% endif %}>{{ project.project_name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>项目编码<input type="text" id="project_code" value="{{ feature.project_code or '' }}" readonly tabindex="-1"></label>
+        </div>
+      </div>
+
       <div class="form-grid">
-        <label>项目名称
-          <select name="project_name" id="project_name" required>
-            <option value="">请选择项目</option>
-            {% for project in project_options %}
-              <option value="{{ project.project_name }}" data-project-code="{{ project.project_code or '' }}" {% if feature.project_name == project.project_name %}selected{% endif %}>{{ project.project_name }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <label>项目编码<input type="text" id="project_code" value="{{ feature.project_code or '' }}" readonly tabindex="-1"></label>
         <label class="block-field">关键特性<textarea name="feature_name" rows="3">{{ feature.feature_name or '' }}</textarea></label>
         <label>L4服务或服务组<textarea name="service_group" rows="3">{{ feature.service_group or '' }}</textarea></label>
         <label>服务交付PM<textarea name="delivery_pm" rows="2">{{ feature.delivery_pm or '' }}</textarea></label>
