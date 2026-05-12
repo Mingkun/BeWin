@@ -84,34 +84,31 @@
       </div>
 
       <div class="table-wrap card">
-        <table class="data-table resizable-table" id="project-data-table">
-          <colgroup>
-            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
-          </colgroup>
+        <table class="data-table clean-project-table">
           <thead>
             <tr>
-              <th class="sticky-col sticky-col-1" data-sort="text">项目名称<div class="col-resizer"></div></th>
-              <th class="sticky-col sticky-col-2" data-sort="text">项目编码<div class="col-resizer"></div></th>
-              <th data-sort="text">项目经理<div class="col-resizer"></div></th>
-              <th data-sort="text">立项状态<div class="col-resizer"></div></th>
-              <th data-sort="text">管控灶<div class="col-resizer"></div></th>
-              <th data-sort="text">投资主体<div class="col-resizer"></div></th>
-              <th data-sort="text">项目描述<div class="col-resizer"></div></th>
-              <th data-sort="date">计划启动日期<div class="col-resizer"></div></th>
-              <th data-sort="date">计划结束日期<div class="col-resizer"></div></th>
-              <th data-sort="number">工作量（人月）<div class="col-resizer"></div></th>
-              <th data-sort="number">研发费用预算（w）<div class="col-resizer"></div></th>
-              <th data-sort="number">人力预算（自有）<div class="col-resizer"></div></th>
-              <th data-sort="number">人力预算（OD）<div class="col-resizer"></div></th>
-              <th data-sort="number">人力预算（TM）<div class="col-resizer"></div></th>
-              <th class="actions-col" data-sort="none">操作<div class="col-resizer"></div></th>
+              <th>项目名称</th>
+              <th>项目编码</th>
+              <th>项目经理</th>
+              <th>立项状态</th>
+              <th>管控灶</th>
+              <th>投资主体</th>
+              <th>项目描述</th>
+              <th>计划启动日期</th>
+              <th>计划结束日期</th>
+              <th>工作量（人月）</th>
+              <th>研发费用预算（w）</th>
+              <th>人力预算（自有）</th>
+              <th>人力预算（OD）</th>
+              <th>人力预算（TM）</th>
+              <th class="actions-col">操作</th>
             </tr>
           </thead>
           <tbody>
             {% for project in projects %}
               <tr>
-                <td class="sticky-col sticky-col-1">{{ project.project_name or '未命名项目' }}</td>
-                <td class="sticky-col sticky-col-2">{{ project.project_code or '未填写' }}</td>
+                <td>{{ project.project_name or '未命名项目' }}</td>
+                <td>{{ project.project_code or '未填写' }}</td>
                 <td>{{ project.project_manager or '未填写' }}</td>
                 <td>{{ project.project_status or '未填写' }}</td>
                 <td>{{ project.control_gate or '未填写' }}</td>
@@ -141,143 +138,5 @@
       <div class="empty">当前还没有项目数据。你可以先新增项目。</div>
     {% endif %}
   </div>
-  <script>
-    (function () {
-      const table = document.getElementById('project-data-table');
-      if (!table) return;
-
-      const storageKey = 'releaseplan.projectTable.columnWidths';
-      const storageMetaKey = 'releaseplan.projectTable.columnMeta';
-      const cols = Array.from(table.querySelectorAll('colgroup col'));
-      const headers = Array.from(table.querySelectorAll('thead th'));
-      const tbody = table.querySelector('tbody');
-      const headerSignature = headers.map((header) => header.childNodes[0]?.textContent?.trim() || '').join('|');
-
-      function clearSavedWidths() {
-        localStorage.removeItem(storageKey);
-        localStorage.setItem(storageMetaKey, headerSignature);
-      }
-
-      function applySavedWidths() {
-        try {
-          const savedMeta = localStorage.getItem(storageMetaKey);
-          if (savedMeta && savedMeta !== headerSignature) {
-            clearSavedWidths();
-            return;
-          }
-          if (!savedMeta) {
-            localStorage.setItem(storageMetaKey, headerSignature);
-          }
-          const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
-          if (saved.length > cols.length) {
-            clearSavedWidths();
-            return;
-          }
-          saved.forEach((width, index) => {
-            if (cols[index] && width) cols[index].style.width = width;
-          });
-        } catch (error) {
-          console.warn('load column widths failed', error);
-          clearSavedWidths();
-        }
-      }
-
-      function saveWidths() {
-        const widths = cols.map((col) => col.style.width || '');
-        localStorage.setItem(storageMetaKey, headerSignature);
-        localStorage.setItem(storageKey, JSON.stringify(widths));
-      }
-
-      function updateStickyOffsets() {
-        const firstHeader = headers[0];
-        if (!firstHeader) return;
-        const firstWidth = firstHeader.getBoundingClientRect().width;
-        table.querySelectorAll('.sticky-col-2').forEach((cell) => {
-          cell.style.left = firstWidth + 'px';
-        });
-      }
-
-      applySavedWidths();
-      updateStickyOffsets();
-
-      function parseSortableValue(text, type) {
-        const value = (text || '').trim();
-        if (!value || value === '未填写' || type === 'none') return null;
-        if (type === 'number') {
-          const numeric = Number(value);
-          return Number.isNaN(numeric) ? null : numeric;
-        }
-        if (type === 'date') {
-          const normalized = value.replace(/年|月/g, '-').replace(/日/g, '').replace(/\//g, '-').replace(/\./g, '-');
-          const time = Date.parse(normalized);
-          return Number.isNaN(time) ? null : time;
-        }
-        return value.localeCompare ? value : String(value);
-      }
-
-      headers.forEach((header, headerIndex) => {
-        const sortType = header.dataset.sort;
-        if (sortType && sortType !== 'none') {
-          header.style.cursor = 'pointer';
-          header.addEventListener('click', (event) => {
-            if (event.target.classList.contains('col-resizer')) return;
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            const currentOrder = header.dataset.order === 'asc' ? 'asc' : 'desc';
-            const nextOrder = currentOrder === 'asc' ? 'desc' : 'asc';
-            headers.forEach((item) => delete item.dataset.order);
-            header.dataset.order = nextOrder;
-
-            rows.sort((rowA, rowB) => {
-              const valueA = parseSortableValue(rowA.children[headerIndex]?.innerText, sortType);
-              const valueB = parseSortableValue(rowB.children[headerIndex]?.innerText, sortType);
-              if (valueA === null && valueB === null) return 0;
-              if (valueA === null) return 1;
-              if (valueB === null) return -1;
-              if (sortType === 'text') {
-                return nextOrder === 'asc'
-                  ? String(rowA.children[headerIndex]?.innerText || '').localeCompare(String(rowB.children[headerIndex]?.innerText || ''))
-                  : String(rowB.children[headerIndex]?.innerText || '').localeCompare(String(rowA.children[headerIndex]?.innerText || ''));
-              }
-              return nextOrder === 'asc' ? valueA - valueB : valueB - valueA;
-            });
-
-            rows.forEach((row) => tbody.appendChild(row));
-            updateStickyOffsets();
-          });
-        }
-      });
-
-      headers.forEach((header, index) => {
-        const resizer = header.querySelector('.col-resizer');
-        if (!resizer || !cols[index]) return;
-
-        let startX = 0;
-        let startWidth = 0;
-
-        function onMouseMove(event) {
-          const nextWidth = Math.max(80, startWidth + event.clientX - startX);
-          cols[index].style.width = nextWidth + 'px';
-          updateStickyOffsets();
-        }
-
-        function onMouseUp() {
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-          saveWidths();
-          updateStickyOffsets();
-        }
-
-        resizer.addEventListener('mousedown', (event) => {
-          event.preventDefault();
-          startX = event.clientX;
-          startWidth = header.getBoundingClientRect().width;
-          document.addEventListener('mousemove', onMouseMove);
-          document.addEventListener('mouseup', onMouseUp);
-        });
-      });
-
-      window.addEventListener('resize', updateStickyOffsets);
-    })();
-  </script>
 </body>
 </html>
