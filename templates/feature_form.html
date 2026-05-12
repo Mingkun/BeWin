@@ -50,7 +50,7 @@
         <h3>月度排期</h3>
         <div class="month-grid-form">
           {% for month in months %}
-            <label>{{ month }}<textarea name="{{ month }}" rows="3">{{ feature[month] if feature and month in feature else '' }}</textarea></label>
+            <label>{{ month.split('/')[0] }}月底进展<textarea name="{{ month }}" rows="3">{{ feature[month] if feature and month in feature else '' }}</textarea></label>
           {% endfor %}
         </div>
       </div>
