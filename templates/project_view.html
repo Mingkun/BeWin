@@ -84,24 +84,27 @@
       </div>
 
       <div class="table-wrap card">
-        <table class="data-table clean-project-table">
+        <table class="data-table clean-project-table" id="project-data-table">
+          <colgroup>
+            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
+          </colgroup>
           <thead>
             <tr>
-              <th>项目名称</th>
-              <th>项目编码</th>
-              <th>项目经理</th>
-              <th>立项状态</th>
-              <th>管控灶</th>
-              <th>投资主体</th>
-              <th>项目描述</th>
-              <th>计划启动日期</th>
-              <th>计划结束日期</th>
-              <th>工作量（人月）</th>
-              <th>研发费用预算（w）</th>
-              <th>人力预算（自有）</th>
-              <th>人力预算（OD）</th>
-              <th>人力预算（TM）</th>
-              <th class="actions-col">操作</th>
+              <th data-sort="text">项目名称<div class="col-resizer"></div></th>
+              <th data-sort="text">项目编码<div class="col-resizer"></div></th>
+              <th data-sort="text">项目经理<div class="col-resizer"></div></th>
+              <th data-sort="text">立项状态<div class="col-resizer"></div></th>
+              <th data-sort="text">管控灶<div class="col-resizer"></div></th>
+              <th data-sort="text">投资主体<div class="col-resizer"></div></th>
+              <th data-sort="text">项目描述<div class="col-resizer"></div></th>
+              <th data-sort="date">计划启动日期<div class="col-resizer"></div></th>
+              <th data-sort="date">计划结束日期<div class="col-resizer"></div></th>
+              <th data-sort="number">工作量（人月）<div class="col-resizer"></div></th>
+              <th data-sort="number">研发费用预算（w）<div class="col-resizer"></div></th>
+              <th data-sort="number">人力预算（自有）<div class="col-resizer"></div></th>
+              <th data-sort="number">人力预算（OD）<div class="col-resizer"></div></th>
+              <th data-sort="number">人力预算（TM）<div class="col-resizer"></div></th>
+              <th class="actions-col" data-sort="none">操作<div class="col-resizer"></div></th>
             </tr>
           </thead>
           <tbody>
@@ -138,5 +141,105 @@
       <div class="empty">当前还没有项目数据。你可以先新增项目。</div>
     {% endif %}
   </div>
+  <script>
+    (function () {
+      const table = document.getElementById('project-data-table');
+      if (!table) return;
+
+      const storageKey = 'releaseplan.projectTable.columnWidths.v2';
+      const cols = Array.from(table.querySelectorAll('colgroup col'));
+      const headers = Array.from(table.querySelectorAll('thead th'));
+      const tbody = table.querySelector('tbody');
+
+      function loadWidths() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+          saved.forEach((width, index) => {
+            if (cols[index] && width) cols[index].style.width = width;
+          });
+        } catch (error) {
+          console.warn('load widths failed', error);
+        }
+      }
+
+      function saveWidths() {
+        localStorage.setItem(storageKey, JSON.stringify(cols.map((col) => col.style.width || '')));
+      }
+
+      function parseValue(text, type) {
+        const value = (text || '').trim();
+        if (!value || value === '未填写' || type === 'none') return null;
+        if (type === 'number') {
+          const numeric = Number(value);
+          return Number.isNaN(numeric) ? null : numeric;
+        }
+        if (type === 'date') {
+          const normalized = value.replace(/年|月/g, '-').replace(/日/g, '').replace(/\//g, '-').replace(/\./g, '-');
+          const time = Date.parse(normalized);
+          return Number.isNaN(time) ? null : time;
+        }
+        return value;
+      }
+
+      loadWidths();
+
+      headers.forEach((header, index) => {
+        const sortType = header.dataset.sort;
+        const resizer = header.querySelector('.col-resizer');
+
+        if (sortType && sortType !== 'none') {
+          header.classList.add('sortable-col');
+          header.addEventListener('click', (event) => {
+            if (event.target.classList.contains('col-resizer')) return;
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const current = header.dataset.order === 'asc' ? 'asc' : 'desc';
+            const next = current === 'asc' ? 'desc' : 'asc';
+            headers.forEach((item) => delete item.dataset.order);
+            header.dataset.order = next;
+
+            rows.sort((rowA, rowB) => {
+              const valueA = parseValue(rowA.children[index]?.innerText, sortType);
+              const valueB = parseValue(rowB.children[index]?.innerText, sortType);
+              if (valueA === null && valueB === null) return 0;
+              if (valueA === null) return 1;
+              if (valueB === null) return -1;
+              if (sortType === 'text') {
+                return next === 'asc'
+                  ? String(valueA).localeCompare(String(valueB), 'zh-Hans-CN')
+                  : String(valueB).localeCompare(String(valueA), 'zh-Hans-CN');
+              }
+              return next === 'asc' ? valueA - valueB : valueB - valueA;
+            });
+
+            rows.forEach((row) => tbody.appendChild(row));
+          });
+        }
+
+        if (!resizer || !cols[index]) return;
+        let startX = 0;
+        let startWidth = 0;
+
+        function onMouseMove(event) {
+          const width = Math.max(80, startWidth + event.clientX - startX);
+          cols[index].style.width = width + 'px';
+        }
+
+        function onMouseUp() {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+          saveWidths();
+        }
+
+        resizer.addEventListener('mousedown', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          startX = event.clientX;
+          startWidth = header.getBoundingClientRect().width;
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

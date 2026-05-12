@@ -821,6 +821,7 @@ body.theme-ios-dark .ios-preview-title {
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .data-table th,
@@ -830,15 +831,31 @@ body.theme-ios-dark .ios-preview-title {
   text-align: left;
   vertical-align: top;
   font-size: 14px;
+  word-break: break-word;
 }
 
 
 .data-table th {
   background: #f8fafc;
+  position: relative;
 }
 
 .clean-project-table {
   min-width: 1400px;
+}
+
+.sortable-col {
+  cursor: pointer;
+}
+
+.col-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
 }
 
 .clean-project-table td:nth-child(7) {
