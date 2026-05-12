@@ -18,9 +18,27 @@
       </div>
     </header>
 
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <form method="post" class="card project-form">
       <div class="form-grid">
-        <label>项目名称<textarea name="project_name" rows="2">{{ feature.project_name or '' }}</textarea></label>
+        <label>项目名称
+          <select name="project_name" id="project_name" required>
+            <option value="">请选择项目</option>
+            {% for project in project_options %}
+              <option value="{{ project.project_name }}" data-project-code="{{ project.project_code or '' }}" {% if feature.project_name == project.project_name %}selected{% endif %}>{{ project.project_name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>项目编码<input type="text" id="project_code" value="{{ feature.project_code or '' }}" readonly tabindex="-1"></label>
         <label>五层部门<textarea name="five_level_department" rows="2">{{ feature.five_level_department or '' }}</textarea></label>
         <label>服务交付PM<textarea name="delivery_pm" rows="2">{{ feature.delivery_pm or '' }}</textarea></label>
         <label>关键特性<textarea name="feature_name" rows="3">{{ feature.feature_name or '' }}</textarea></label>
@@ -46,5 +64,20 @@
       </div>
     </form>
   </div>
+  <script>
+    (function () {
+      const projectSelect = document.getElementById('project_name');
+      const projectCodeInput = document.getElementById('project_code');
+      if (!projectSelect || !projectCodeInput) return;
+
+      function syncProjectCode() {
+        const option = projectSelect.options[projectSelect.selectedIndex];
+        projectCodeInput.value = option ? (option.getAttribute('data-project-code') || '') : '';
+      }
+
+      projectSelect.addEventListener('change', syncProjectCode);
+      syncProjectCode();
+    })();
+  </script>
 </body>
 </html>

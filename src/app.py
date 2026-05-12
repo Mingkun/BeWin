@@ -618,6 +618,19 @@ def form_to_feature_data(form):
     return data
 
 
+def get_project_options():
+    rows = load_projects()
+    return [
+        {
+            "id": row.get("id"),
+            "project_name": row.get("project_name") or "",
+            "project_code": row.get("project_code") or "",
+        }
+        for row in rows
+        if (row.get("project_name") or "").strip()
+    ]
+
+
 def load_project_feature(feature_id):
     init_db()
     with get_conn() as conn:
@@ -1076,20 +1089,24 @@ def admin_project_delete(project_id):
 @app.route('/admin/features/new', methods=['GET', 'POST'])
 @login_required
 def admin_feature_new():
+    project_options = get_project_options()
     if request.method == 'POST':
         data = form_to_feature_data(request.form)
         with get_conn() as conn:
-            project_row = conn.execute("SELECT id FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (data['project_name'],)).fetchone()
-            project_id = project_row['id'] if project_row else None
+            project_row = conn.execute("SELECT id, project_name, project_code FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (data['project_name'],)).fetchone()
+            if not project_row:
+                flash('请选择项目表中已有的项目名称')
+                return render_template('feature_form.html', feature=data, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+            project_id = project_row['id']
             feature_month_columns = ', '.join([f'"{m}"' for m in MILESTONE_COLUMNS])
             feature_month_placeholders = ', '.join(['?'] * len(MILESTONE_COLUMNS))
             conn.execute(
                 f"INSERT INTO project_features (project_id, project_name, five_level_department, focus_work, feature_name, service_group, delivery_pm, {feature_month_columns}) VALUES (?, ?, ?, ?, ?, ?, ?, {feature_month_placeholders})",
-                [project_id, data['project_name'], data['five_level_department'], data['focus_work'], data['feature_name'], data['service_group'], data['delivery_pm'], *[data[m] for m in MILESTONE_COLUMNS]],
+                [project_id, project_row['project_name'], data['five_level_department'], data['focus_work'], data['feature_name'], data['service_group'], data['delivery_pm'], *[data[m] for m in MILESTONE_COLUMNS]],
             )
             conn.commit()
         return redirect(url_for('roadmap'))
-    return render_template('feature_form.html', feature={}, months=MILESTONE_COLUMNS, mode='new', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    return render_template('feature_form.html', feature={}, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
 
 
 @app.route('/admin/features/<int:feature_id>/edit', methods=['GET', 'POST'])
@@ -1098,11 +1115,15 @@ def admin_feature_edit(feature_id):
     feature = load_project_feature(feature_id)
     if not feature:
         return redirect(url_for('roadmap'))
+    project_options = get_project_options()
     if request.method == 'POST':
         data = form_to_feature_data(request.form)
         with get_conn() as conn:
-            project_row = conn.execute("SELECT id FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (data['project_name'],)).fetchone()
-            project_id = project_row['id'] if project_row else None
+            project_row = conn.execute("SELECT id, project_name, project_code FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (data['project_name'],)).fetchone()
+            if not project_row:
+                flash('请选择项目表中已有的项目名称')
+                return render_template('feature_form.html', feature=data, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+            project_id = project_row['id']
             set_clause = [
                 "project_id = ?",
                 "project_name = ?",
@@ -1112,11 +1133,14 @@ def admin_feature_edit(feature_id):
                 "service_group = ?",
                 "delivery_pm = ?",
             ] + [f'\"{month}\" = ?' for month in MILESTONE_COLUMNS] + ["updated_at = CURRENT_TIMESTAMP"]
-            values = [project_id, data['project_name'], data['five_level_department'], data['focus_work'], data['feature_name'], data['service_group'], data['delivery_pm'], *[data[m] for m in MILESTONE_COLUMNS], feature_id]
+            values = [project_id, project_row['project_name'], data['five_level_department'], data['focus_work'], data['feature_name'], data['service_group'], data['delivery_pm'], *[data[m] for m in MILESTONE_COLUMNS], feature_id]
             conn.execute(f"UPDATE project_features SET {', '.join(set_clause)} WHERE id = ?", values)
             conn.commit()
         return redirect(url_for('roadmap'))
-    return render_template('feature_form.html', feature=feature, months=MILESTONE_COLUMNS, mode='edit', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    feature = dict(feature)
+    selected_project = next((item for item in project_options if item['project_name'] == feature.get('project_name')), None)
+    feature['project_code'] = selected_project['project_code'] if selected_project else ''
+    return render_template('feature_form.html', feature=feature, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
 
 
 @app.route('/admin/projects/import-csv', methods=['POST'])
