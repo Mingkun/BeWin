@@ -123,6 +123,23 @@
   </div>
 
   <script>
+    const importPanel = document.getElementById('project-import-panel');
+    const showImportButton = document.getElementById('show-project-import');
+    const cancelImportButton = document.getElementById('cancel-project-import');
+
+    if (showImportButton && importPanel) {
+      showImportButton.addEventListener('click', () => {
+        importPanel.hidden = false;
+      });
+    }
+
+    if (cancelImportButton && importPanel) {
+      cancelImportButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        importPanel.hidden = true;
+      });
+    }
+
     document.querySelectorAll('.project-tab-button').forEach((button) => {
       button.addEventListener('click', () => {
         const target = button.getAttribute('data-tab-target');
@@ -133,7 +150,6 @@
         if (panel) panel.classList.add('active');
       });
     });
-
   </script>
 </body>
 </html>
