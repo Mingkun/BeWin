@@ -301,6 +301,22 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS requirements (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                requirement_code TEXT,
+                requirement_content TEXT NOT NULL,
+                submit_date TEXT NOT NULL,
+                close_date TEXT,
+                status TEXT NOT NULL DEFAULT 'open',
+                submitter TEXT
+            )
+            """
+        )
+        existing_requirement_columns = {row[1] for row in conn.execute("PRAGMA table_info(requirements)").fetchall()}
+        if 'submitter' not in existing_requirement_columns:
+            conn.execute("ALTER TABLE requirements ADD COLUMN submitter TEXT")
         conn.commit()
 
 
@@ -1029,19 +1045,49 @@ def requirements_page():
         if not requirement_text:
             flash('请输入需求内容')
             return redirect(url_for('requirements_page'))
-        REQUIREMENTS_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        with REQUIREMENTS_LOG_PATH.open('a', encoding='utf-8') as fh:
-            fh.write(f"\n## {created_at}\n\n{requirement_text}\n")
+        submit_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        submitter = session.get('saml_user', {}).get('name') if isinstance(session.get('saml_user'), dict) else None
+        with get_conn() as conn:
+            cursor = conn.execute(
+                "INSERT INTO requirements (requirement_content, submit_date, status, submitter) VALUES (?, ?, 'open', ?)",
+                (requirement_text, submit_date, submitter)
+            )
+            requirement_id = cursor.lastrowid
+            requirement_code = f"REQ{requirement_id:04d}"
+            conn.execute("UPDATE requirements SET requirement_code = ? WHERE id = ?", (requirement_code, requirement_id))
+            conn.commit()
         flash('需求已提交')
         return redirect(url_for('requirements_page'))
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT id, requirement_code, requirement_content, submit_date, close_date, status, submitter FROM requirements ORDER BY id DESC"
+        ).fetchall()
+    requirements = [dict(row) for row in rows]
     return render_template(
         'requirements.html',
         branding=get_branding(),
         saml_enabled=saml_enabled(),
         saml_user=session.get('saml_user'),
         example_text=example_text,
+        requirements=requirements,
     )
+
+
+@app.route('/requirements/<int:requirement_id>/status', methods=['POST'])
+@login_required
+def requirement_status_update(requirement_id):
+    status = (request.form.get('status') or 'open').strip().lower()
+    if status not in {'open', 'closed'}:
+        status = 'open'
+    close_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if status == 'closed' else None
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE requirements SET status = ?, close_date = ? WHERE id = ?",
+            (status, close_date, requirement_id)
+        )
+        conn.commit()
+    flash('需求状态已更新')
+    return redirect(url_for('requirements_page'))
 
 
 @app.route('/views/<view_key>')

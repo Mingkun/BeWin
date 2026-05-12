@@ -11,7 +11,7 @@
     <header class="toolbar">
       <div>
         <h1>需求</h1>
-        <p>用文本方式记录你对这个系统的新需求。</p>
+        <p>提交需求，并在页面中查看和维护需求状态。</p>
       </div>
       <div class="toolbar-actions">
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
@@ -30,7 +30,7 @@
 
     <form method="post" class="card settings-card ios-settings-form">
       <section class="settings-group">
-        <div class="settings-section-title">需求内容</div>
+        <div class="settings-section-title">提交需求</div>
         <div class="settings-section-desc">可以直接输入你想新增、调整、优化的功能需求。</div>
 
         <label class="ios-field">
@@ -48,6 +48,50 @@
         <button type="submit" class="button">提交需求</button>
       </div>
     </form>
+
+    <div class="card settings-card requirement-table-card">
+      <div class="settings-section-title">需求列表</div>
+      <div class="settings-section-desc">支持查看需求编号、内容、提交日期、关闭日期，并可修改状态。</div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>需求编号</th>
+              <th>需求内容</th>
+              <th>提交日期</th>
+              <th>关闭日期</th>
+              <th>当前状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in requirements %}
+            <tr>
+              <td>{{ item.requirement_code or ('REQ%04d' % item.id) }}</td>
+              <td>{{ item.requirement_content }}</td>
+              <td>{{ item.submit_date }}</td>
+              <td>{{ item.close_date or '' }}</td>
+              <td>{{ item.status }}</td>
+              <td>
+                <form method="post" action="{{ url_for('requirement_status_update', requirement_id=item.id) }}" class="inline-status-form">
+                  <select name="status">
+                    <option value="open" {% if item.status == 'open' %}selected{% endif %}>open</option>
+                    <option value="closed" {% if item.status == 'closed' %}selected{% endif %}>closed</option>
+                  </select>
+                  <button class="button secondary small" type="submit">保存</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6">当前还没有需求记录。</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </body>
 </html>

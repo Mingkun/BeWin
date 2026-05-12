@@ -318,6 +318,23 @@ header p {
   color: #475569;
 }
 
+.requirement-table-card {
+  margin-top: 20px;
+}
+
+.inline-status-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inline-status-form select {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 6px 10px;
+  background: #fff;
+}
+
 .ios-preview-subtitle {
   font-size: 14px;
   color: #475569;
