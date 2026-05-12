@@ -667,6 +667,10 @@ body.theme-ios-dark .ios-preview-title {
   justify-content: flex-end;
 }
 
+.import-panel[hidden] {
+  display: none !important;
+}
+
 .import-panel-form {
   display: flex;
   flex-direction: column;
