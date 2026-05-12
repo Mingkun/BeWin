@@ -173,7 +173,17 @@
         localStorage.setItem(storageKey, JSON.stringify(widths));
       }
 
+      function updateStickyOffsets() {
+        const firstHeader = headers[0];
+        if (!firstHeader) return;
+        const firstWidth = firstHeader.getBoundingClientRect().width;
+        table.querySelectorAll('.sticky-col-2').forEach((cell) => {
+          cell.style.left = firstWidth + 'px';
+        });
+      }
+
       applySavedWidths();
+      updateStickyOffsets();
 
       function parseSortableValue(text, type) {
         const value = (text || '').trim();
@@ -217,6 +227,7 @@
             });
 
             rows.forEach((row) => tbody.appendChild(row));
+            updateStickyOffsets();
           });
         }
       });
@@ -231,12 +242,14 @@
         function onMouseMove(event) {
           const nextWidth = Math.max(80, startWidth + event.clientX - startX);
           cols[index].style.width = nextWidth + 'px';
+          updateStickyOffsets();
         }
 
         function onMouseUp() {
           document.removeEventListener('mousemove', onMouseMove);
           document.removeEventListener('mouseup', onMouseUp);
           saveWidths();
+          updateStickyOffsets();
         }
 
         resizer.addEventListener('mousedown', (event) => {
@@ -247,6 +260,8 @@
           document.addEventListener('mouseup', onMouseUp);
         });
       });
+
+      window.addEventListener('resize', updateStickyOffsets);
     })();
   </script>
 </body>
