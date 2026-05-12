@@ -27,7 +27,7 @@
       <div class="project-lane-card" style="margin-bottom: 20px;">
         <div class="project-lane-title">
           <h2>项目甘特图</h2>
-          <div class="meta">按项目展示计划起止时间</div>
+          <div class="meta">按项目展示 {{ display_year }} 年计划起止时间</div>
         </div>
 
         <div class="roadmap-header-grid">
@@ -40,7 +40,7 @@
             </div>
             <div class="month-row">
               {% for month in month_labels %}
-                <div class="month-cell-head">{{ month }}</div>
+                <div class="month-cell-head">{{ display_year }}年{{ month }}</div>
               {% endfor %}
             </div>
           </div>
@@ -55,7 +55,9 @@
                 </div>
                 <div class="feature-tags">
                   <span>项目经理：{{ project.project_manager or '未填写' }}</span>
-                  <span>周期：{{ project.start_label }} ~ {{ project.end_label }}</span>
+                  <span>启动日期：{{ project.planned_start_date }}</span>
+                  <span>结束日期：{{ project.planned_end_date }}</span>
+                  <span>时间轴：{{ project.start_label }} ~ {{ project.end_label }}</span>
                 </div>
               </div>
 

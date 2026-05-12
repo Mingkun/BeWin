@@ -8,6 +8,7 @@ import os
 import sqlite3
 from functools import wraps
 from pathlib import Path
+from datetime import datetime
 
 try:
     from onelogin.saml2.auth import OneLogin_Saml2_Auth
@@ -513,20 +514,29 @@ def load_project(project_id):
         return dict(row) if row else None
 
 
-def build_project_gantt(project_rows):
+def parse_date_parts(date_text):
+    value = (date_text or '').strip()
+    if not value:
+        return None, None
+    for fmt in ('%Y-%m-%d', '%Y/%m/%d', '%Y.%m.%d', '%Y-%m', '%Y/%m', '%Y.%m'):
+        try:
+            parsed = datetime.strptime(value, fmt)
+            return parsed.year, parsed.month
+        except ValueError:
+            continue
+    return None, None
+
+
+def build_project_gantt(project_rows, display_year):
     gantt_projects = []
     for row in project_rows:
         start_value = (row.get("planned_start_date") or "").strip()
         end_value = (row.get("planned_end_date") or "").strip()
+        start_year, start_month = parse_date_parts(start_value)
+        end_year, end_month = parse_date_parts(end_value)
 
-        start_index = None
-        end_index = None
-        for index in range(12):
-            month_no = index + 1
-            if start_index is None and f"-{month_no:02d}-" in start_value:
-                start_index = index
-            if end_index is None and f"-{month_no:02d}-" in end_value:
-                end_index = index
+        start_index = start_month - 1 if start_year == display_year and start_month else None
+        end_index = end_month - 1 if end_year == display_year and end_month else None
 
         if start_index is not None and end_index is None:
             end_index = start_index
@@ -539,6 +549,8 @@ def build_project_gantt(project_rows):
             "id": row.get("id"),
             "project_name": (row.get("project_name") or "").strip() or "未命名项目",
             "project_manager": (row.get("project_manager") or "").strip(),
+            "planned_start_date": start_value or '未填写',
+            "planned_end_date": end_value or '未填写',
             "start_label": MONTH_LABELS[start_index] if start_index is not None else "-",
             "end_label": MONTH_LABELS[end_index] if end_index is not None else "-",
             "start_percent": (start_index / 12 * 100) if start_index is not None else 0,
@@ -1022,12 +1034,14 @@ def view_placeholder(view_key):
 
     if view_key == 'department-pipeline-load':
         project_rows = load_projects()
+        display_year = datetime.utcnow().year
         return render_template(
             'project_view.html',
             projects=project_rows,
-            gantt_projects=build_project_gantt(project_rows),
+            gantt_projects=build_project_gantt(project_rows, display_year),
             month_labels=MONTH_LABELS,
             quarters=QUARTERS,
+            display_year=display_year,
             saml_enabled=saml_enabled(),
             saml_user=session.get('saml_user'),
         )
