@@ -16,6 +16,8 @@
         {% if current_user %}
           <span class="user-chip">已登录</span>
           <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+        {% else %}
+          <a class="button secondary" href="{{ url_for('oauth_login', next=request.path) }}">登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         <a class="button" href="{{ url_for('admin_project_new') }}">新增项目</a>

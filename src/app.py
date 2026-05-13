@@ -2,7 +2,7 @@ from flask import Flask, redirect, render_template, request, session, url_for, R
 import requests
 import secrets
 from io import StringIO
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 from werkzeug.middleware.proxy_fix import ProxyFix
 import csv
 import json
@@ -162,6 +162,62 @@ def get_current_user():
     return session.get('oauth_user')
 
 
+def get_current_user_roles():
+    user = get_current_user() or {}
+    roles = user.get('roles') or []
+    if isinstance(roles, str):
+        roles = [roles]
+    return [str(role).strip().lower() for role in roles if str(role).strip()]
+
+
+def is_admin_user(user=None):
+    user = user if user is not None else get_current_user()
+    if not isinstance(user, dict):
+        return False
+    roles = user.get('roles') or []
+    if isinstance(roles, str):
+        roles = [roles]
+    normalized = {str(role).strip().lower() for role in roles if str(role).strip()}
+    admin_roles = {
+        role.strip().lower()
+        for role in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_ROLES', 'admin,administrator,releaseplan-admin').split(','))
+        if role.strip()
+    }
+    if normalized & admin_roles:
+        return True
+    admin_emails = {
+        item.strip().lower()
+        for item in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_EMAILS', '').split(','))
+        if item.strip()
+    }
+    email = (user.get('email') or '').strip().lower()
+    return bool(email and email in admin_emails)
+
+
+def can_edit(user=None):
+    mode = auth_mode()
+    if mode == 'none':
+        return True
+    return is_admin_user(user)
+
+
+def build_auth_context():
+    user = get_current_user()
+    return {
+        'auth_mode': auth_mode(),
+        'current_user': user,
+        'can_edit': can_edit(user),
+        'user_roles': get_current_user_roles(),
+    }
+
+
+def require_admin():
+    if can_edit():
+        return None
+    flash('当前账号只有只读权限')
+    return redirect(url_for('index'))
+
+
 def login_required(view_func):
     @wraps(view_func)
     def wrapped(*args, **kwargs):
@@ -170,7 +226,7 @@ def login_required(view_func):
             return view_func(*args, **kwargs)
         if get_current_user():
             return view_func(*args, **kwargs)
-        return redirect(url_for('oauth_login', next=request.path))
+        return redirect(url_for('oauth_login', next=request.full_path if request.query_string else request.path))
     return wrapped
 
 
@@ -948,7 +1004,11 @@ def oauth_redirect_uri():
     configured = os.getenv('RELEASEPLAN_OAUTH_REDIRECT_URI', '').strip()
     if configured:
         return configured
-    return url_for('oauth_callback', _external=True)
+    prefix = (request.headers.get('X-Forwarded-Prefix') or '').strip()
+    callback_path = '/auth/callback'
+    if prefix:
+        callback_path = f"{prefix.rstrip('/')}/auth/callback"
+    return url_for('oauth_callback', _external=True, _scheme=request.headers.get('X-Forwarded-Proto', request.scheme)).replace('/auth/callback', callback_path, 1)
 
 
 def build_oauth_user(userinfo):
@@ -979,7 +1039,6 @@ def oauth_login():
         'scope': oauth_scope(),
         'state': state,
     }
-    from urllib.parse import urlencode
     return redirect(oauth_authorize_url() + ('&' if '?' in oauth_authorize_url() else '?') + urlencode(query))
 
 
@@ -1040,7 +1099,7 @@ def oauth_logout():
 @app.route('/')
 @login_required
 def index():
-    return render_template('home.html', auth_mode=auth_mode(), current_user=get_current_user(), branding=get_branding(), home_cards=get_home_cards())
+    return render_template('home.html', branding=get_branding(), home_cards=get_home_cards(), **build_auth_context())
 
 
 @app.route('/roadmap')
@@ -1054,15 +1113,17 @@ def roadmap():
         project_groups=project_groups,
         month_labels=MONTH_LABELS,
         quarters=QUARTERS,
-        auth_mode=auth_mode(),
-        current_user=get_current_user(),
         branding=get_branding(),
+        **build_auth_context(),
     )
 
 
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings_page():
+    denied = require_admin()
+    if denied:
+        return denied
     if request.method == 'POST':
         updates = {
             "RELEASEPLAN_HOME_TITLE": (request.form.get('home_title') or '').strip() or 'ReleasePlan',
@@ -1084,7 +1145,7 @@ def settings_page():
         os.environ.update(updates)
         flash('设置已保存并立即生效')
         return redirect(url_for('settings_page'))
-    return render_template('settings.html', branding=get_branding(), home_cards=get_home_cards(), confirmation_code=get_confirmation_code(), auth_mode=auth_mode(), current_user=get_current_user())
+    return render_template('settings.html', branding=get_branding(), home_cards=get_home_cards(), confirmation_code=get_confirmation_code(), **build_auth_context())
 
 
 @app.route('/requirements', methods=['GET', 'POST'])
@@ -1118,9 +1179,8 @@ def requirements_page():
     return render_template(
         'requirements.html',
         branding=get_branding(),
-        auth_mode=auth_mode(),
-        current_user=get_current_user(),
         example_text=example_text,
+        **build_auth_context(),
         requirements=requirements,
     )
 
@@ -1128,6 +1188,9 @@ def requirements_page():
 @app.route('/requirements/<int:requirement_id>/status', methods=['POST'])
 @login_required
 def requirement_status_update(requirement_id):
+    denied = require_admin()
+    if denied:
+        return denied
     status = (request.form.get('status') or 'open').strip().lower()
     if status not in {'open', 'closed'}:
         status = 'open'
@@ -1204,12 +1267,15 @@ def view_placeholder(view_key):
     view_config = view_map.get(view_key)
     if not view_config:
         return redirect(url_for('index'))
-    return render_template('view_placeholder.html', auth_mode=auth_mode(), current_user=get_current_user(), **view_config)
+    return render_template('view_placeholder.html', **view_config, **build_auth_context())
 
 
 @app.route('/admin/projects/new', methods=['GET', 'POST'])
 @login_required
 def admin_project_new():
+    denied = require_admin()
+    if denied:
+        return denied
     if request.method == 'POST':
         if not require_confirmation_code(request.form):
             flash('二次确认码错误')
@@ -1229,12 +1295,15 @@ def admin_project_new():
             )
             conn.commit()
         return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
-    return render_template('project_form.html', project={}, mode='new', auth_mode=auth_mode(), current_user=get_current_user())
+    return render_template('project_form.html', project={}, mode='new', **build_auth_context())
 
 
 @app.route('/admin/projects/<int:project_id>/edit', methods=['GET', 'POST'])
 @login_required
 def admin_project_edit(project_id):
+    denied = require_admin()
+    if denied:
+        return denied
     project = load_project(project_id)
     if not project:
         return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
@@ -1277,12 +1346,15 @@ def admin_project_edit(project_id):
             )
             conn.commit()
         return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
-    return render_template('project_form.html', project=project, mode='edit', auth_mode=auth_mode(), current_user=get_current_user())
+    return render_template('project_form.html', project=project, mode='edit', **build_auth_context())
 
 
 @app.route('/admin/projects/<int:project_id>/delete', methods=['POST'])
 @login_required
 def admin_project_delete(project_id):
+    denied = require_admin()
+    if denied:
+        return denied
     if not require_confirmation_code(request.form):
         flash('二次确认码错误')
         return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
@@ -1295,6 +1367,9 @@ def admin_project_delete(project_id):
 @app.route('/admin/features/new', methods=['GET', 'POST'])
 @login_required
 def admin_feature_new():
+    denied = require_admin()
+    if denied:
+        return denied
     project_options = get_project_options()
     if request.method == 'POST':
         if not require_confirmation_code(request.form):
@@ -1315,12 +1390,15 @@ def admin_feature_new():
             )
             conn.commit()
         return redirect(url_for('roadmap'))
-    return render_template('feature_form.html', feature={}, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, auth_mode=auth_mode(), current_user=get_current_user())
+    return render_template('feature_form.html', feature={}, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, **build_auth_context())
 
 
 @app.route('/admin/features/<int:feature_id>/edit', methods=['GET', 'POST'])
 @login_required
 def admin_feature_edit(feature_id):
+    denied = require_admin()
+    if denied:
+        return denied
     feature = load_project_feature(feature_id)
     if not feature:
         return redirect(url_for('roadmap'))
@@ -1352,12 +1430,15 @@ def admin_feature_edit(feature_id):
     feature = dict(feature)
     selected_project = next((item for item in project_options if item['project_name'] == feature.get('project_name')), None)
     feature['project_code'] = selected_project['project_code'] if selected_project else ''
-    return render_template('feature_form.html', feature=feature, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, auth_mode=auth_mode(), current_user=get_current_user())
+    return render_template('feature_form.html', feature=feature, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, **build_auth_context())
 
 
 @app.route('/admin/projects/import-csv', methods=['POST'])
 @login_required
 def admin_projects_import_csv():
+    denied = require_admin()
+    if denied:
+        return denied
     file = request.files.get('csv_file')
     if file and file.filename:
         import_project_csv_file(file, replace=True)
@@ -1416,12 +1497,15 @@ def admin_projects_export_csv():
 def admin_service_resources():
     seed_service_resources_if_empty()
     rows = load_service_resources()
-    return render_template('service_resource_list.html', records=rows, auth_mode=auth_mode(), current_user=get_current_user())
+    return render_template('service_resource_list.html', records=rows, **build_auth_context())
 
 
 @app.route('/admin/service-resources/new', methods=['GET', 'POST'])
 @login_required
 def admin_service_resource_new():
+    denied = require_admin()
+    if denied:
+        return denied
     if request.method == 'POST':
         if not require_confirmation_code(request.form):
             flash('二次确认码错误')
@@ -1454,12 +1538,15 @@ def admin_service_resource_new():
             )
             conn.commit()
         return redirect(url_for('admin_service_resources'))
-    return render_template('service_resource_form.html', record={}, mode='new', auth_mode=auth_mode(), current_user=get_current_user())
+    return render_template('service_resource_form.html', record={}, mode='new', **build_auth_context())
 
 
 @app.route('/admin/service-resources/<int:record_id>/edit', methods=['GET', 'POST'])
 @login_required
 def admin_service_resource_edit(record_id):
+    denied = require_admin()
+    if denied:
+        return denied
     record = load_service_resource(record_id)
     return_to = request.args.get('return_to') or '/views/cloud-service-view'
     if not record:
@@ -1499,12 +1586,15 @@ def admin_service_resource_edit(record_id):
             )
             conn.commit()
         return redirect(return_to)
-    return render_template('service_resource_form.html', record=record, mode='edit', return_to=return_to, auth_mode=auth_mode(), current_user=get_current_user())
+    return render_template('service_resource_form.html', record=record, mode='edit', return_to=return_to, **build_auth_context())
 
 
 @app.route('/admin/service-resources/<int:record_id>/delete', methods=['POST'])
 @login_required
 def admin_service_resource_delete(record_id):
+    denied = require_admin()
+    if denied:
+        return denied
     if not require_confirmation_code(request.form):
         flash('二次确认码错误')
         return redirect(url_for('admin_service_resources'))
@@ -1517,6 +1607,9 @@ def admin_service_resource_delete(record_id):
 @app.route('/admin/service-resources/import-csv', methods=['POST'])
 @login_required
 def admin_service_resources_import_csv():
+    denied = require_admin()
+    if denied:
+        return denied
     file = request.files.get('csv_file')
     if file and file.filename:
         import_service_resource_csv_file(file, replace=True)
@@ -1562,6 +1655,9 @@ def admin_service_resources_export_csv():
 @app.route('/views/cloud-service-view/<int:record_id>/edit', methods=['POST'])
 @login_required
 def cloud_service_view_edit(record_id):
+    denied = require_admin()
+    if denied:
+        return denied
     data = form_to_service_resource_data(request.form)
     with get_conn() as conn:
         conn.execute(

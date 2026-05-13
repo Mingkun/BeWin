@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% if mode == 'edit' %}编辑服务资源记录{% else %}新增服务资源记录{% endif %}</title>
+  <title>{% if mode == 'edit' %}编辑服务资源记录{% else %}新增服务资源记录{% else %}
+          <a class="button secondary" href="{{ url_for('oauth_login', next=request.path) }}">登录</a>
+        {% endif %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
