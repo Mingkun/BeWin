@@ -54,6 +54,15 @@ export PROXY_URL='http://username:password@proxy-host:proxy-port'
 ./run-docker.sh
 ```
 
+Dockerfile also includes proxy placeholders, so you can build directly with:
+
+```bash
+docker build \
+  --build-arg http_proxy='http://username:password@proxy-host:proxy-port' \
+  --build-arg https_proxy='http://username:password@proxy-host:proxy-port' \
+  -t releaseplan:latest .
+```
+
 Then visit:
 
 - `http://<server-ip>:5010/`
@@ -72,6 +81,7 @@ docker compose up -d --build
 - Host `./data` is mounted to `/app/data`
 - Host `./docs` is mounted to `/app/docs`
 - Default published port: `5010`
+- Dockerfile defaults to common China mirrors for apt and pip, to reduce overseas download failures
 - If `PROXY_URL` is set, it is passed to both `docker build` and `docker run`
 
 ### Common Docker commands
@@ -122,6 +132,15 @@ To uninstall the service:
 Copy/edit `.env` as needed:
 
 - `RELEASEPLAN_SECRET_KEY`
+- `RELEASEPLAN_OAUTH_ENABLED`
+- `RELEASEPLAN_OAUTH_AUTHORIZE_URL`
+- `RELEASEPLAN_OAUTH_TOKEN_URL`
+- `RELEASEPLAN_OAUTH_USERINFO_URL`
+- `RELEASEPLAN_OAUTH_CLIENT_ID`
+- `RELEASEPLAN_OAUTH_CLIENT_SECRET`
+- `RELEASEPLAN_OAUTH_SCOPE`
+- `RELEASEPLAN_OAUTH_REDIRECT_URI`
+- `RELEASEPLAN_OAUTH_LOGOUT_URL`
 - `RELEASEPLAN_SAML_ENABLED`
 - `RELEASEPLAN_SAML_SETTINGS`
 - `HOST`

@@ -1,4 +1,6 @@
 from flask import Flask, redirect, render_template, request, session, url_for, Response, flash
+import requests
+import secrets
 from io import StringIO
 from urllib.parse import quote
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -160,6 +162,22 @@ def saml_enabled():
     return os.getenv("RELEASEPLAN_SAML_ENABLED", "false").lower() == "true"
 
 
+def oauth_enabled():
+    return os.getenv("RELEASEPLAN_OAUTH_ENABLED", "false").lower() == "true"
+
+
+def auth_mode():
+    if oauth_enabled():
+        return 'oauth2'
+    if saml_enabled():
+        return 'saml'
+    return 'none'
+
+
+def get_current_user():
+    return session.get('oauth_user') or session.get('saml_user')
+
+
 def load_saml_settings():
     if not SAML_SETTINGS_PATH.exists():
         return None
@@ -189,10 +207,13 @@ def get_saml_auth(req):
 def login_required(view_func):
     @wraps(view_func)
     def wrapped(*args, **kwargs):
-        if not saml_enabled():
+        mode = auth_mode()
+        if mode == 'none':
             return view_func(*args, **kwargs)
-        if session.get('saml_user'):
+        if get_current_user():
             return view_func(*args, **kwargs)
+        if mode == 'oauth2':
+            return redirect(url_for('oauth_login', next=request.path))
         return redirect(url_for('saml_login', next=request.path))
     return wrapped
 
@@ -943,6 +964,123 @@ def seed_service_resources_if_empty():
     import_service_resource_rows([normalize_service_resource_row(row) for row in seed_rows], replace=True)
 
 
+def oauth_authorize_url():
+    return os.getenv('RELEASEPLAN_OAUTH_AUTHORIZE_URL', '').strip()
+
+
+def oauth_token_url():
+    return os.getenv('RELEASEPLAN_OAUTH_TOKEN_URL', '').strip()
+
+
+def oauth_userinfo_url():
+    return os.getenv('RELEASEPLAN_OAUTH_USERINFO_URL', '').strip()
+
+
+def oauth_client_id():
+    return os.getenv('RELEASEPLAN_OAUTH_CLIENT_ID', '').strip()
+
+
+def oauth_client_secret():
+    return os.getenv('RELEASEPLAN_OAUTH_CLIENT_SECRET', '').strip()
+
+
+def oauth_scope():
+    return os.getenv('RELEASEPLAN_OAUTH_SCOPE', 'openid profile email').strip()
+
+
+def oauth_redirect_uri():
+    configured = os.getenv('RELEASEPLAN_OAUTH_REDIRECT_URI', '').strip()
+    if configured:
+        return configured
+    return url_for('oauth_callback', _external=True)
+
+
+def build_oauth_user(userinfo):
+    roles = userinfo.get('roles') or userinfo.get('role') or []
+    if isinstance(roles, str):
+        roles = [roles]
+    return {
+        'user_id': userinfo.get('sub') or userinfo.get('id') or userinfo.get('user_id') or '',
+        'name': userinfo.get('name') or userinfo.get('preferred_username') or userinfo.get('login') or '',
+        'email': userinfo.get('email') or '',
+        'roles': roles,
+        'raw': userinfo,
+    }
+
+
+@app.route('/auth/login')
+def oauth_login():
+    if not oauth_enabled():
+        return redirect(url_for('index'))
+    state = secrets.token_urlsafe(24)
+    next_url = request.args.get('next') or '/'
+    session['oauth_state'] = state
+    session['oauth_next'] = next_url
+    query = {
+        'client_id': oauth_client_id(),
+        'redirect_uri': oauth_redirect_uri(),
+        'response_type': 'code',
+        'scope': oauth_scope(),
+        'state': state,
+    }
+    from urllib.parse import urlencode
+    return redirect(oauth_authorize_url() + ('&' if '?' in oauth_authorize_url() else '?') + urlencode(query))
+
+
+@app.route('/auth/callback')
+def oauth_callback():
+    if not oauth_enabled():
+        return redirect(url_for('index'))
+    code = request.args.get('code', '').strip()
+    state = request.args.get('state', '').strip()
+    if not code:
+        return Response('OAuth2 登录失败: 缺少 code', status=400)
+    if not state or state != session.get('oauth_state'):
+        return Response('OAuth2 登录失败: state 校验失败', status=400)
+
+    token_resp = requests.post(
+        oauth_token_url(),
+        data={
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': oauth_redirect_uri(),
+            'client_id': oauth_client_id(),
+            'client_secret': oauth_client_secret(),
+        },
+        timeout=15,
+    )
+    if token_resp.status_code >= 400:
+        return Response('OAuth2 登录失败: token 交换失败', status=400)
+    token_data = token_resp.json()
+    access_token = token_data.get('access_token')
+    if not access_token:
+        return Response('OAuth2 登录失败: 缺少 access_token', status=400)
+
+    userinfo_resp = requests.get(
+        oauth_userinfo_url(),
+        headers={'Authorization': f'Bearer {access_token}'},
+        timeout=15,
+    )
+    if userinfo_resp.status_code >= 400:
+        return Response('OAuth2 登录失败: 获取用户信息失败', status=400)
+    userinfo = userinfo_resp.json()
+    session.pop('oauth_state', None)
+    session['oauth_user'] = build_oauth_user(userinfo)
+    next_url = session.pop('oauth_next', None) or '/'
+    return redirect(next_url)
+
+
+@app.route('/auth/logout')
+def oauth_logout():
+    session.pop('oauth_user', None)
+    session.pop('oauth_state', None)
+    session.pop('oauth_next', None)
+    logout_url = os.getenv('RELEASEPLAN_OAUTH_LOGOUT_URL', '').strip()
+    if logout_url:
+        return redirect(logout_url)
+    return redirect(url_for('index'))
+
+
 @app.route('/saml/login')
 def saml_login():
     if not saml_enabled():
@@ -1000,7 +1138,7 @@ def saml_metadata():
 @app.route('/')
 @login_required
 def index():
-    return render_template('home.html', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'), branding=get_branding(), home_cards=get_home_cards())
+    return render_template('home.html', saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user(), branding=get_branding(), home_cards=get_home_cards())
 
 
 @app.route('/roadmap')
@@ -1014,8 +1152,8 @@ def roadmap():
         project_groups=project_groups,
         month_labels=MONTH_LABELS,
         quarters=QUARTERS,
-        saml_enabled=saml_enabled(),
-        saml_user=session.get('saml_user'),
+        saml_enabled=saml_enabled(), auth_mode=auth_mode(),
+        saml_user=get_current_user(),
         branding=get_branding(),
     )
 
@@ -1044,7 +1182,7 @@ def settings_page():
         os.environ.update(updates)
         flash('设置已保存并立即生效')
         return redirect(url_for('settings_page'))
-    return render_template('settings.html', branding=get_branding(), home_cards=get_home_cards(), confirmation_code=get_confirmation_code(), saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    return render_template('settings.html', branding=get_branding(), home_cards=get_home_cards(), confirmation_code=get_confirmation_code(), saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
 
 
 @app.route('/requirements', methods=['GET', 'POST'])
@@ -1057,7 +1195,8 @@ def requirements_page():
             flash('请输入需求内容')
             return redirect(url_for('requirements_page'))
         submit_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        submitter = session.get('saml_user', {}).get('name') if isinstance(session.get('saml_user'), dict) else None
+        current_user = get_current_user()
+        submitter = current_user.get('name') if isinstance(current_user, dict) else None
         with get_conn() as conn:
             cursor = conn.execute(
                 "INSERT INTO requirements (requirement_content, submit_date, status, submitter) VALUES (?, ?, 'open', ?)",
@@ -1077,8 +1216,8 @@ def requirements_page():
     return render_template(
         'requirements.html',
         branding=get_branding(),
-        saml_enabled=saml_enabled(),
-        saml_user=session.get('saml_user'),
+        saml_enabled=saml_enabled(), auth_mode=auth_mode(),
+        saml_user=get_current_user(),
         example_text=example_text,
         requirements=requirements,
     )
@@ -1121,8 +1260,8 @@ def view_placeholder(view_key):
                 'service': service_keyword,
             },
             filter_options=filter_options,
-            saml_enabled=saml_enabled(),
-            saml_user=session.get('saml_user'),
+            saml_enabled=saml_enabled(), auth_mode=auth_mode(),
+            saml_user=get_current_user(),
         )
 
     if view_key == 'department-pipeline-load':
@@ -1142,8 +1281,8 @@ def view_placeholder(view_key):
             quarters=QUARTERS,
             display_year=display_year,
             today_marker_percent=today_marker_percent,
-            saml_enabled=saml_enabled(),
-            saml_user=session.get('saml_user'),
+            saml_enabled=saml_enabled(), auth_mode=auth_mode(),
+            saml_user=get_current_user(),
         )
 
     view_map = {
@@ -1163,7 +1302,7 @@ def view_placeholder(view_key):
     view_config = view_map.get(view_key)
     if not view_config:
         return redirect(url_for('index'))
-    return render_template('view_placeholder.html', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'), **view_config)
+    return render_template('view_placeholder.html', saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user(), **view_config)
 
 
 @app.route('/admin/projects/new', methods=['GET', 'POST'])
@@ -1172,7 +1311,7 @@ def admin_project_new():
     if request.method == 'POST':
         if not require_confirmation_code(request.form):
             flash('二次确认码错误')
-            return render_template('project_form.html', project=request.form, mode='new', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+            return render_template('project_form.html', project=request.form, mode='new', saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
         data = form_to_project_data(request.form)
         sql_columns = [
             "project_status", "control_gate", "investment_subject", "project_code", "project_name", "project_description",
@@ -1188,7 +1327,7 @@ def admin_project_new():
             )
             conn.commit()
         return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
-    return render_template('project_form.html', project={}, mode='new', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    return render_template('project_form.html', project={}, mode='new', saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
 
 
 @app.route('/admin/projects/<int:project_id>/edit', methods=['GET', 'POST'])
@@ -1202,7 +1341,7 @@ def admin_project_edit(project_id):
             flash('二次确认码错误')
             form_project = dict(request.form)
             form_project['id'] = project_id
-            return render_template('project_form.html', project=form_project, mode='edit', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+            return render_template('project_form.html', project=form_project, mode='edit', saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
         data = form_to_project_data(request.form)
         set_clause = [
             "project_status = ?",
@@ -1236,7 +1375,7 @@ def admin_project_edit(project_id):
             )
             conn.commit()
         return redirect(url_for('view_placeholder', view_key='department-pipeline-load'))
-    return render_template('project_form.html', project=project, mode='edit', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    return render_template('project_form.html', project=project, mode='edit', saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
 
 
 @app.route('/admin/projects/<int:project_id>/delete', methods=['POST'])
@@ -1258,13 +1397,13 @@ def admin_feature_new():
     if request.method == 'POST':
         if not require_confirmation_code(request.form):
             flash('二次确认码错误')
-            return render_template('feature_form.html', feature=request.form, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+            return render_template('feature_form.html', feature=request.form, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
         data = form_to_feature_data(request.form)
         with get_conn() as conn:
             project_row = conn.execute("SELECT id, project_name, project_code FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (data['project_name'],)).fetchone()
             if not project_row:
                 flash('请选择项目表中已有的项目名称')
-                return render_template('feature_form.html', feature=data, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+                return render_template('feature_form.html', feature=data, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
             project_id = project_row['id']
             feature_month_columns = ', '.join([f'"{m}"' for m in MILESTONE_COLUMNS])
             feature_month_placeholders = ', '.join(['?'] * len(MILESTONE_COLUMNS))
@@ -1274,7 +1413,7 @@ def admin_feature_new():
             )
             conn.commit()
         return redirect(url_for('roadmap'))
-    return render_template('feature_form.html', feature={}, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    return render_template('feature_form.html', feature={}, months=MILESTONE_COLUMNS, mode='new', project_options=project_options, saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
 
 
 @app.route('/admin/features/<int:feature_id>/edit', methods=['GET', 'POST'])
@@ -1287,13 +1426,13 @@ def admin_feature_edit(feature_id):
     if request.method == 'POST':
         if not require_confirmation_code(request.form):
             flash('二次确认码错误')
-            return render_template('feature_form.html', feature=request.form, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+            return render_template('feature_form.html', feature=request.form, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
         data = form_to_feature_data(request.form)
         with get_conn() as conn:
             project_row = conn.execute("SELECT id, project_name, project_code FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (data['project_name'],)).fetchone()
             if not project_row:
                 flash('请选择项目表中已有的项目名称')
-                return render_template('feature_form.html', feature=data, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+                return render_template('feature_form.html', feature=data, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
             project_id = project_row['id']
             set_clause = [
                 "project_id = ?",
@@ -1311,7 +1450,7 @@ def admin_feature_edit(feature_id):
     feature = dict(feature)
     selected_project = next((item for item in project_options if item['project_name'] == feature.get('project_name')), None)
     feature['project_code'] = selected_project['project_code'] if selected_project else ''
-    return render_template('feature_form.html', feature=feature, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    return render_template('feature_form.html', feature=feature, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
 
 
 @app.route('/admin/projects/import-csv', methods=['POST'])
@@ -1375,7 +1514,7 @@ def admin_projects_export_csv():
 def admin_service_resources():
     seed_service_resources_if_empty()
     rows = load_service_resources()
-    return render_template('service_resource_list.html', records=rows, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    return render_template('service_resource_list.html', records=rows, saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
 
 
 @app.route('/admin/service-resources/new', methods=['GET', 'POST'])
@@ -1384,7 +1523,7 @@ def admin_service_resource_new():
     if request.method == 'POST':
         if not require_confirmation_code(request.form):
             flash('二次确认码错误')
-            return render_template('service_resource_form.html', record=request.form, mode='new', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+            return render_template('service_resource_form.html', record=request.form, mode='new', saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
         data = form_to_service_resource_data(request.form)
         with get_conn() as conn:
             conn.execute(
@@ -1413,7 +1552,7 @@ def admin_service_resource_new():
             )
             conn.commit()
         return redirect(url_for('admin_service_resources'))
-    return render_template('service_resource_form.html', record={}, mode='new', saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    return render_template('service_resource_form.html', record={}, mode='new', saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
 
 
 @app.route('/admin/service-resources/<int:record_id>/edit', methods=['GET', 'POST'])
@@ -1428,7 +1567,7 @@ def admin_service_resource_edit(record_id):
             flash('二次确认码错误')
             form_record = dict(request.form)
             form_record['id'] = record_id
-            return render_template('service_resource_form.html', record=form_record, mode='edit', return_to=return_to, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+            return render_template('service_resource_form.html', record=form_record, mode='edit', return_to=return_to, saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
         data = form_to_service_resource_data(request.form)
         with get_conn() as conn:
             conn.execute(
@@ -1458,7 +1597,7 @@ def admin_service_resource_edit(record_id):
             )
             conn.commit()
         return redirect(return_to)
-    return render_template('service_resource_form.html', record=record, mode='edit', return_to=return_to, saml_enabled=saml_enabled(), saml_user=session.get('saml_user'))
+    return render_template('service_resource_form.html', record=record, mode='edit', return_to=return_to, saml_enabled=saml_enabled(), auth_mode=auth_mode(), saml_user=get_current_user())
 
 
 @app.route('/admin/service-resources/<int:record_id>/delete', methods=['POST'])
