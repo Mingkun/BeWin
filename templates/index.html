@@ -13,9 +13,9 @@
         <h1>关键特性路标图</h1>
       </div>
       <div class="toolbar-actions">
-        {% if saml_enabled and saml_user %}
+        {% if current_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="{{ url_for('saml_logout') }}">退出登录</a>
+          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         <a class="button secondary" href="{{ url_for('admin_feature_new') }}">新增关键特性</a>

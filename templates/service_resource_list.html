@@ -14,9 +14,9 @@
         <p>维护云服务相关的人力投入、HC 和 HCS 数据。</p>
       </div>
       <div class="toolbar-actions">
-        {% if saml_enabled and saml_user %}
+        {% if current_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="{{ url_for('saml_logout') }}">退出登录</a>
+          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         <a class="button secondary" href="{{ url_for('view_placeholder', view_key='cloud-service-view') }}">返回云服务视图</a>

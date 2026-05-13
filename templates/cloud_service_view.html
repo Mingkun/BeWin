@@ -14,22 +14,22 @@
         <p>按服务粒度查看资源投入情况，点击单条记录的编辑按钮后再进入编辑。</p>
       </div>
       <div class="toolbar-actions">
-        {% if saml_enabled and saml_user %}
+        {% if current_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="{{ url_for('saml_logout') }}">退出登录</a>
+          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         <a class="button" href="{{ url_for('admin_service_resources') }}">维护服务资源数据</a>
-        <a class="button secondary" href="/releaseplan/admin/service-resources/template-csv">下载 CSV 模板</a>
-        <a class="button secondary" href="/releaseplan/admin/service-resources/export-csv">导出当前 CSV</a>
-        <form method="post" action="/releaseplan/admin/service-resources/import-csv" enctype="multipart/form-data" class="inline-upload-form">
+        <a class="button secondary" href="{{ url_for('admin_service_resources_template_csv') }}">下载 CSV 模板</a>
+        <a class="button secondary" href="{{ url_for('admin_service_resources_export_csv') }}">导出当前 CSV</a>
+        <form method="post" action="{{ url_for('admin_service_resources_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">从 CSV 导入</button>
         </form>
       </div>
     </header>
 
-    <form class="card filter-form" method="get" action="/releaseplan/views/cloud-service-view">
+    <form class="card filter-form" method="get" action="{{ url_for('view_placeholder', view_key='cloud-service-view') }}">
       <div class="form-grid form-grid-3">
         <label>五层部门
           <select name="department">
@@ -51,7 +51,7 @@
           <span>操作</span>
           <div class="toolbar-actions">
             <button class="button" type="submit">查询</button>
-            <a class="button secondary" href="/releaseplan/views/cloud-service-view">重置</a>
+            <a class="button secondary" href="{{ url_for('view_placeholder', view_key='cloud-service-view') }}">重置</a>
           </div>
         </label>
       </div>
@@ -102,7 +102,7 @@
                 <td>{{ record.hcs_od or '' }}</td>
                 <td>{{ record.hcs_tm or '' }}</td>
                 <td>
-                  <a class="button small" href="/releaseplan/admin/service-resources/{{ record.id }}/edit?return_to=/releaseplan/views/cloud-service-view">编辑</a>
+                  <a class="button small" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}?return_to={{ url_for('view_placeholder', view_key='cloud-service-view') | urlencode }}">编辑</a>
                 </td>
               </tr>
             {% endfor %}
