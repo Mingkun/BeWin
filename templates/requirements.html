@@ -28,6 +28,7 @@
       {% endif %}
     {% endwith %}
 
+    {% if user_features.submit_requirement %}
     <form method="post" class="card settings-card ios-settings-form">
       <section class="settings-group">
         <div class="settings-section-title">提交需求</div>
@@ -48,6 +49,7 @@
         <button type="submit" class="button">提交需求</button>
       </div>
     </form>
+    {% endif %}
 
     <div class="card settings-card requirement-table-card">
       <div class="settings-section-title">需求列表</div>
@@ -74,6 +76,7 @@
               <td>{{ item.close_date or '' }}</td>
               <td>{{ item.status }}</td>
               <td>
+                {% if user_features.manage_requirement_status %}
                 <form method="post" action="{{ url_for('requirement_status_update', requirement_id=item.id) }}" class="inline-status-form">
                   <select name="status">
                     <option value="open" {% if item.status == 'open' %}selected{% endif %}>open</option>
@@ -81,6 +84,9 @@
                   </select>
                   <button class="button secondary small" type="submit">保存</button>
                 </form>
+                {% else %}
+                -
+                {% endif %}
               </td>
             </tr>
             {% else %}

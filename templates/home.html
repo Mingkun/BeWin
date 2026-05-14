@@ -16,8 +16,10 @@
         {% if current_user %}
           <span class="user-chip">已登录（{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}）</span>
         {% endif %}
+        {% if user_features.submit_requirement or user_features.manage_requirement_status %}
         <a class="button secondary" href="{{ url_for('requirements_page') }}">需求</a>
-        {% if can_edit %}
+        {% endif %}
+        {% if user_features.view_system %}
         <a class="button secondary settings-button" href="{{ url_for('settings_page') }}"><span class="settings-icon">⚙</span><span>系统</span></a>
         {% endif %}
         {% if current_user %}
