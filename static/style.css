@@ -915,29 +915,111 @@ body.theme-ios-dark .ios-preview-title {
 }
 
 .inline-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
 }
 
 .actions-col {
   white-space: nowrap;
-  width: 110px;
-  min-width: 110px;
+  width: 76px;
+  min-width: 76px;
   text-align: right;
-  padding-right: 8px;
+  padding-right: 6px;
+  overflow: visible;
 }
 
 .compact-actions {
   display: inline-flex;
   justify-content: flex-end;
-  gap: 6px;
+  align-items: center;
+  gap: 4px;
   flex-wrap: nowrap;
   margin-left: auto;
+  max-width: 100%;
 }
 
-.compact-actions form {
+.compact-actions form,
+.inline-actions form {
   margin: 0;
+}
+
+.inline-delete-form {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.delete-popover {
+  position: absolute;
+  top: -6px;
+  right: calc(100% + 6px);
+  transform: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  white-space: nowrap;
+  z-index: 20;
+}
+
+.delete-popover[hidden] {
+  display: none !important;
+}
+
+.delete-popover-text {
+  font-size: 12px;
+  color: #475569;
+}
+
+.delete-popover-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.button.tiny {
+  min-height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+
+.icon-action,
+.icon-action:link,
+.icon-action:visited,
+.icon-action:hover,
+.icon-action:active {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  text-decoration: none !important;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.icon-action:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.icon-action.danger:hover {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .inline-upload-form {
@@ -1001,6 +1083,10 @@ body.theme-ios-dark .ios-preview-title {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.project-form .toolbar-actions {
+  justify-content: flex-end;
 }
 
 .form-grid {
