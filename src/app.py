@@ -350,6 +350,8 @@ def local_admin_enabled():
 
 
 def auth_mode():
+    if oauth_enabled() and local_admin_enabled():
+        return 'hybrid'
     if oauth_enabled():
         return 'oauth2'
     if local_admin_enabled():
@@ -402,11 +404,15 @@ def can_edit(user=None):
 
 def build_auth_context():
     user = get_current_user()
+    auth_type = (user or {}).get('auth_type') if isinstance(user, dict) else None
+    role_labels = get_current_user_roles()
     return {
         'auth_mode': auth_mode(),
         'current_user': user,
         'can_edit': can_edit(user),
-        'user_roles': get_current_user_roles(),
+        'user_roles': role_labels,
+        'login_source_label': 'SSO' if auth_type == 'oauth2' else '本地' if auth_type == 'local' else '',
+        'role_label': '管理员' if 'admin' in role_labels else '只读' if 'guest' in role_labels else '',
     }
 
 
@@ -453,7 +459,7 @@ def login_required(view_func):
             return view_func(*args, **kwargs)
         if get_current_user():
             return view_func(*args, **kwargs)
-        if mode == 'local':
+        if mode in {'local', 'hybrid'}:
             return redirect(url_for('local_login', next=request.full_path if request.query_string else request.path))
         return redirect(url_for('oauth_login', next=request.full_path if request.query_string else request.path))
     return wrapped
@@ -1244,12 +1250,57 @@ def build_oauth_user(userinfo):
     roles = userinfo.get('roles') or userinfo.get('role') or []
     if isinstance(roles, str):
         roles = [roles]
+    normalized_roles = [str(role).strip().lower() for role in roles if str(role).strip()]
+    email = (userinfo.get('email') or '').strip().lower()
+    username = (userinfo.get('preferred_username') or userinfo.get('login') or userinfo.get('name') or '').strip().lower()
+
+    admin_roles = {
+        role.strip().lower()
+        for role in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_ROLES', 'admin,administrator,releaseplan-admin').split(','))
+        if role.strip()
+    }
+    guest_roles = {
+        role.strip().lower()
+        for role in (os.getenv('RELEASEPLAN_OAUTH_GUEST_ROLES', 'guest,viewer,readonly,releaseplan-guest').split(','))
+        if role.strip()
+    }
+    admin_emails = {
+        item.strip().lower()
+        for item in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_EMAILS', '').split(','))
+        if item.strip()
+    }
+    guest_emails = {
+        item.strip().lower()
+        for item in (os.getenv('RELEASEPLAN_OAUTH_GUEST_EMAILS', '').split(','))
+        if item.strip()
+    }
+    admin_usernames = {
+        item.strip().lower()
+        for item in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_USERNAMES', '').split(','))
+        if item.strip()
+    }
+    guest_usernames = {
+        item.strip().lower()
+        for item in (os.getenv('RELEASEPLAN_OAUTH_GUEST_USERNAMES', '').split(','))
+        if item.strip()
+    }
+
+    final_roles = []
+    if set(normalized_roles) & admin_roles or (email and email in admin_emails) or (username and username in admin_usernames):
+        final_roles = ['admin']
+    elif set(normalized_roles) & guest_roles or (email and email in guest_emails) or (username and username in guest_usernames):
+        final_roles = ['guest']
+    else:
+        default_role = (os.getenv('RELEASEPLAN_OAUTH_DEFAULT_ROLE') or 'guest').strip().lower()
+        final_roles = ['admin'] if default_role == 'admin' else ['guest']
+
     return {
         'user_id': userinfo.get('sub') or userinfo.get('id') or userinfo.get('user_id') or '',
         'name': userinfo.get('name') or userinfo.get('preferred_username') or userinfo.get('login') or '',
         'email': userinfo.get('email') or '',
-        'roles': roles,
+        'roles': final_roles,
         'raw': userinfo,
+        'auth_type': 'oauth2',
     }
 
 

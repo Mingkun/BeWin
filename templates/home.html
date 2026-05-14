@@ -14,7 +14,7 @@
       </div>
       <div class="toolbar-actions">
         {% if current_user %}
-          <span class="user-chip">已登录</span>
+          <span class="user-chip">已登录（{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}）</span>
         {% endif %}
         <a class="button secondary" href="{{ url_for('requirements_page') }}">需求</a>
         {% if can_edit %}

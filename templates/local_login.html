@@ -9,8 +9,8 @@
 <body class="theme-{{ branding.theme }}">
   <div class="page settings-page">
     <div class="card settings-card" style="max-width: 460px; margin: 80px auto 0;">
-      <h1 style="margin-top: 0;">管理员登录</h1>
-      <p class="settings-section-desc">SSO 接入前，先使用内置管理员账号登录。</p>
+      <h1 style="margin-top: 0;">登录</h1>
+      <p class="settings-section-desc">支持本地账号登录。{% if auth_mode == 'hybrid' %}如果你有 SSO 账号，也可以直接走 SSO 登录。{% endif %}</p>
       {% with messages = get_flashed_messages() %}
         {% if messages %}
           <div class="flash-card" style="padding-left: 0; padding-right: 0; box-shadow: none; background: transparent;">
@@ -20,6 +20,11 @@
           </div>
         {% endif %}
       {% endwith %}
+      {% if auth_mode == 'hybrid' %}
+      <div class="toolbar-actions" style="justify-content: flex-end; margin-bottom: 16px;">
+        <a class="button" href="{{ url_for('oauth_login', next=next) }}">SSO 登录</a>
+      </div>
+      {% endif %}
       <form method="post" class="ios-settings-form" style="background: transparent; box-shadow: none; padding: 0;">
         <input type="hidden" name="next" value="{{ next }}">
         <label class="ios-field">
