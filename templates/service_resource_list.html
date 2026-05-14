@@ -22,13 +22,17 @@
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         <a class="button secondary" href="{{ url_for('view_placeholder', view_key='cloud-service-view') }}">返回云服务视图</a>
+        {% if can_edit %}
         <a class="button" href="{{ url_for('admin_service_resource_new') }}">新增记录</a>
+        {% endif %}
         <a class="button secondary" href="{{ url_for('admin_service_resources_template_csv') }}">下载 CSV 模板</a>
         <a class="button secondary" href="{{ url_for('admin_service_resources_export_csv') }}">导出当前 CSV</a>
+        {% if can_edit %}
         <form method="post" action="{{ url_for('admin_service_resources_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">从 CSV 导入</button>
         </form>
+        {% endif %}
       </div>
     </header>
 
@@ -70,6 +74,7 @@
                 <td>{{ record.hcs_od or '' }}</td>
                 <td>{{ record.hcs_tm or '' }}</td>
                 <td>
+                  {% if can_edit %}
                   <div class="inline-actions">
                     <a class="icon-action" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}" title="编辑" aria-label="编辑">✏️</a>
                     <form method="post" action="{{ url_for('admin_service_resource_delete', record_id=record.id) }}" class="inline-delete-form">
@@ -83,6 +88,9 @@
                       </div>
                     </form>
                   </div>
+                  {% else %}
+                  -
+                  {% endif %}
                 </td>
               </tr>
             {% endfor %}

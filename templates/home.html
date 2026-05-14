@@ -20,7 +20,9 @@
           <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('requirements_page') }}">需求</a>
+        {% if can_edit %}
         <a class="button secondary settings-button" href="{{ url_for('settings_page') }}"><span class="settings-icon">⚙</span><span>系统</span></a>
+        {% endif %}
       </div>
     </header>
 

@@ -142,6 +142,8 @@ def save_env_settings(updates):
         "RELEASEPLAN_AUTO_BACKUP_SCHEDULE",
         "RELEASEPLAN_LOCAL_ADMIN_USERNAME",
         "RELEASEPLAN_LOCAL_ADMIN_PASSWORD",
+        "RELEASEPLAN_LOCAL_GUEST_USERNAME",
+        "RELEASEPLAN_LOCAL_GUEST_PASSWORD",
         "HOST",
         "PORT",
     ]
@@ -340,9 +342,11 @@ def oauth_enabled():
 
 
 def local_admin_enabled():
-    username = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_USERNAME') or '').strip()
-    password = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_PASSWORD') or '').strip()
-    return bool(username and password)
+    admin_username = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_USERNAME') or '').strip()
+    admin_password = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_PASSWORD') or '').strip()
+    guest_username = (os.getenv('RELEASEPLAN_LOCAL_GUEST_USERNAME') or '').strip()
+    guest_password = (os.getenv('RELEASEPLAN_LOCAL_GUEST_PASSWORD') or '').strip()
+    return bool((admin_username and admin_password) or (guest_username and guest_password))
 
 
 def auth_mode():
@@ -409,6 +413,12 @@ def build_auth_context():
 def verify_local_admin(username, password):
     expected_username = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_USERNAME') or '').strip()
     expected_password = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_PASSWORD') or '').strip()
+    return username == expected_username and password == expected_password
+
+
+def verify_local_guest(username, password):
+    expected_username = (os.getenv('RELEASEPLAN_LOCAL_GUEST_USERNAME') or '').strip()
+    expected_password = (os.getenv('RELEASEPLAN_LOCAL_GUEST_PASSWORD') or '').strip()
     return username == expected_username and password == expected_password
 
 
@@ -1330,6 +1340,15 @@ def local_login():
                 'name': username,
                 'email': '',
                 'roles': ['admin'],
+                'auth_type': 'local',
+            }
+            return redirect(next_url)
+        if verify_local_guest(username, password):
+            session['local_user'] = {
+                'user_id': username,
+                'name': username,
+                'email': '',
+                'roles': ['guest'],
                 'auth_type': 'local',
             }
             return redirect(next_url)

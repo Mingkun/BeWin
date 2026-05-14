@@ -20,7 +20,9 @@
           <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
+        {% if can_edit %}
         <a class="button" href="{{ url_for('admin_project_new') }}">新增项目</a>
+        {% endif %}
       </div>
     </header>
 
@@ -126,6 +128,7 @@
                 <td>{{ project.headcount_budget_od or '未填写' }}</td>
                 <td>{{ project.headcount_budget_tm or '未填写' }}</td>
                 <td class="actions-col">
+                  {% if can_edit %}
                   <div class="inline-actions compact-actions">
                     <a class="icon-action" href="{{ url_for('admin_project_edit', project_id=project.id) }}" title="修改" aria-label="修改">✏️</a>
                     <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" class="inline-delete-form">
@@ -139,6 +142,9 @@
                       </div>
                     </form>
                   </div>
+                  {% else %}
+                  -
+                  {% endif %}
                 </td>
               </tr>
             {% endfor %}
