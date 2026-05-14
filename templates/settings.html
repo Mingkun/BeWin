@@ -123,15 +123,15 @@
         <button class="system-card-header" type="button" data-toggle>
           <div>
             <div class="system-card-title">备份</div>
-            <div class="system-card-desc">手动和自动备份全部业务数据</div>
+            <div class="system-card-desc">手动和自动备份全部业务数据，可查看历史并一键恢复</div>
           </div>
           <span class="system-card-chevron">›</span>
         </button>
 
         <div class="system-card-body" hidden>
           <div class="settings-group">
-            <div class="settings-section-title">业务数据备份</div>
-            <div class="settings-section-desc">支持手动立即备份，也支持自动定时备份全部业务数据。当前备份会包含 data、docs 和 .env。</div>
+            <div class="settings-section-title">自动备份</div>
+            <div class="settings-section-desc">支持开启每天自动备份，并设置每天执行的具体时间。</div>
 
             <label class="ios-field">
               <span class="ios-field-label">备份目录</span>
@@ -142,19 +142,44 @@
               <span class="ios-field-label">自动备份</span>
               <div class="ios-toggle-row">
                 <input type="checkbox" name="auto_backup_enabled" {% if backup_config.auto_backup_enabled %}checked{% endif %}>
-                <span class="ios-toggle-text">启用自动备份</span>
+                <span class="ios-toggle-text">启用每天自动备份</span>
               </div>
             </label>
 
             <label class="ios-field">
-              <span class="ios-field-label">自动备份 Cron</span>
-              <input type="text" name="auto_backup_schedule" value="{{ backup_config.auto_backup_schedule }}" placeholder="例如：0 3 * * *">
+              <span class="ios-field-label">每天备份时间</span>
+              <input type="time" name="auto_backup_time" value="{{ backup_config.auto_backup_time }}">
             </label>
 
             <div class="backup-action-row">
               <button type="submit" name="action" value="run_backup_now" class="button warning">立即手动备份</button>
               <button type="submit" name="action" value="save_settings" class="button">保存备份设置</button>
             </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-section-title">备份历史</div>
+            <div class="settings-section-desc">可查看自动/手动备份时间、备份内容，并选择一个备份恢复到当前系统。</div>
+
+            {% if backup_history %}
+            <div class="backup-history-list">
+              {% for item in backup_history %}
+              <div class="backup-history-item">
+                <div class="backup-history-main">
+                  <div class="backup-history-title">{{ item.filename }}</div>
+                  <div class="backup-history-meta">备份时间：{{ item.created_at }} ｜ 类型：{{ '自动备份' if item.backup_type == 'auto' else '手动备份' if item.backup_type == 'manual' else '未知' }}</div>
+                  <div class="backup-history-meta">备份内容：{{ item.contents | join('、') }}</div>
+                </div>
+                <div class="backup-history-actions">
+                  <input type="hidden" name="backup_filename" value="{{ item.filename }}">
+                  <button type="submit" name="action" value="restore_backup" class="button danger" formaction="{{ url_for('settings_page') }}" onclick="this.form.backup_filename.value='{{ item.filename }}'; return confirm('确认恢复这个备份到系统？');">一键恢复</button>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty">暂无备份历史</div>
+            {% endif %}
           </div>
         </div>
       </section>

@@ -11,6 +11,8 @@ import sqlite3
 from functools import wraps
 from pathlib import Path
 from datetime import datetime
+import shutil
+import zipfile
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 PROJECT_CSV_PATH = BASE_DIR / "docs" / "project_table.csv"
@@ -125,6 +127,7 @@ def save_env_settings(updates):
         "RELEASEPLAN_THEME",
         "RELEASEPLAN_BACKUP_DIR",
         "RELEASEPLAN_AUTO_BACKUP_ENABLED",
+        "RELEASEPLAN_AUTO_BACKUP_TIME",
         "RELEASEPLAN_AUTO_BACKUP_SCHEDULE",
         "HOST",
         "PORT",
@@ -146,31 +149,101 @@ def get_backup_dir():
     return Path(configured) if configured else BASE_DIR / 'backups'
 
 
-def get_backup_config():
-    return {
-        'backup_dir': str(get_backup_dir()),
-        'auto_backup_enabled': (os.getenv('RELEASEPLAN_AUTO_BACKUP_ENABLED', 'false').lower() == 'true'),
-        'auto_backup_schedule': (os.getenv('RELEASEPLAN_AUTO_BACKUP_SCHEDULE') or '0 3 * * *').strip() or '0 3 * * *',
-    }
-
-
 def ensure_backup_dir():
     backup_dir = get_backup_dir()
     backup_dir.mkdir(parents=True, exist_ok=True)
     return backup_dir
 
 
-def build_backup_archive():
-    import zipfile
+def get_backup_manifest_path():
+    return ensure_backup_dir() / 'backup_manifest.json'
 
-    backup_dir = ensure_backup_dir()
-    timestamp = datetime.utcnow().strftime('%Y%m%d-%H%M%S')
-    archive_path = backup_dir / f'releaseplan-backup-{timestamp}.zip'
-    include_paths = [
+
+def get_backup_include_paths():
+    return [
         BASE_DIR / 'data',
         BASE_DIR / 'docs',
         BASE_DIR / '.env',
     ]
+
+
+def get_backup_config():
+    daily_time = (os.getenv('RELEASEPLAN_AUTO_BACKUP_TIME') or '03:00').strip() or '03:00'
+    return {
+        'backup_dir': str(get_backup_dir()),
+        'auto_backup_enabled': (os.getenv('RELEASEPLAN_AUTO_BACKUP_ENABLED', 'false').lower() == 'true'),
+        'auto_backup_time': daily_time,
+        'auto_backup_schedule': f"{daily_time.split(':')[1]} {daily_time.split(':')[0]} * * *",
+    }
+
+
+def load_backup_manifest():
+    manifest_path = get_backup_manifest_path()
+    if not manifest_path.exists():
+        return []
+    try:
+        return json.loads(manifest_path.read_text(encoding='utf-8'))
+    except Exception:
+        return []
+
+
+def save_backup_manifest(items):
+    manifest_path = get_backup_manifest_path()
+    manifest_path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding='utf-8')
+
+
+def list_backup_history():
+    ensure_backup_dir()
+    manifest = load_backup_manifest()
+    merged = []
+    seen = set()
+    for item in manifest:
+        filename = item.get('filename')
+        if not filename:
+            continue
+        archive_path = get_backup_dir() / filename
+        if archive_path.exists():
+            stat = archive_path.stat()
+            item['size_bytes'] = stat.st_size
+            item['exists'] = True
+            merged.append(item)
+            seen.add(filename)
+    for archive_path in sorted(get_backup_dir().glob('releaseplan-backup-*.zip'), reverse=True):
+        if archive_path.name in seen:
+            continue
+        stat = archive_path.stat()
+        merged.append({
+            'filename': archive_path.name,
+            'created_at': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
+            'backup_type': 'unknown',
+            'contents': ['data', 'docs', '.env'],
+            'size_bytes': stat.st_size,
+            'exists': True,
+        })
+    merged.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+    return merged
+
+
+def record_backup_history(archive_path, backup_type='manual'):
+    history = load_backup_manifest()
+    stat = archive_path.stat()
+    history = [item for item in history if item.get('filename') != archive_path.name]
+    history.insert(0, {
+        'filename': archive_path.name,
+        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'backup_type': backup_type,
+        'contents': ['data', 'docs', '.env'],
+        'size_bytes': stat.st_size,
+        'exists': True,
+    })
+    save_backup_manifest(history[:200])
+
+
+def build_backup_archive(backup_type='manual'):
+    backup_dir = ensure_backup_dir()
+    timestamp = datetime.utcnow().strftime('%Y%m%d-%H%M%S')
+    archive_path = backup_dir / f'releaseplan-backup-{timestamp}.zip'
+    include_paths = get_backup_include_paths()
 
     with zipfile.ZipFile(archive_path, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
         for path in include_paths:
@@ -182,17 +255,58 @@ def build_backup_archive():
                         zf.write(child, child.relative_to(BASE_DIR))
             elif path.is_file():
                 zf.write(path, path.relative_to(BASE_DIR))
+    record_backup_history(archive_path, backup_type=backup_type)
     return archive_path
 
 
-def write_auto_backup_crontab(enabled, schedule):
+def restore_backup_archive(filename):
+    archive_path = ensure_backup_dir() / filename
+    if not archive_path.exists() or archive_path.suffix.lower() != '.zip' or '/' in filename or '..' in filename:
+        raise FileNotFoundError(filename)
+
+    restore_tmp_dir = ensure_backup_dir() / '_restore_tmp'
+    if restore_tmp_dir.exists():
+        shutil.rmtree(restore_tmp_dir)
+    restore_tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(archive_path, 'r') as zf:
+        zf.extractall(restore_tmp_dir)
+
+    for relative in ['data', 'docs', '.env']:
+        src = restore_tmp_dir / relative
+        dst = BASE_DIR / relative
+        if not src.exists():
+            continue
+        if src.is_dir():
+            if dst.exists():
+                shutil.rmtree(dst)
+            shutil.copytree(src, dst)
+        else:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+
+    shutil.rmtree(restore_tmp_dir, ignore_errors=True)
+    return archive_path
+
+
+def write_auto_backup_crontab(enabled, daily_time):
     cron_file = Path('/etc/cron.d/releaseplan-backup')
     if not enabled:
         if cron_file.exists():
             cron_file.unlink()
         return
 
-    cmd = f'cd {BASE_DIR} && /usr/bin/python3 {BASE_DIR / "src/app.py"} --backup-now >> /var/log/releaseplan-backup.log 2>&1'
+    try:
+        hour_text, minute_text = daily_time.split(':', 1)
+        hour = int(hour_text)
+        minute = int(minute_text)
+        if not (0 <= hour <= 23 and 0 <= minute <= 59):
+            raise ValueError
+    except ValueError:
+        raise ValueError('invalid daily time')
+
+    schedule = f'{minute} {hour} * * *'
+    cmd = f'cd {BASE_DIR} && /usr/bin/python3 {BASE_DIR / "src/app.py"} --backup-now --backup-type auto >> /var/log/releaseplan-backup.log 2>&1'
     content = f'{schedule} root {cmd}\n'
     cron_file.write_text(content, encoding='utf-8')
 
@@ -1176,12 +1290,21 @@ def settings_page():
     if request.method == 'POST':
         action = (request.form.get('action') or 'save_settings').strip()
         if action == 'run_backup_now':
-            archive_path = build_backup_archive()
+            archive_path = build_backup_archive(backup_type='manual')
             flash(f'手动备份已完成：{archive_path}')
             return redirect(url_for('settings_page'))
 
+        if action == 'restore_backup':
+            backup_filename = (request.form.get('backup_filename') or '').strip()
+            if not backup_filename:
+                flash('请选择要恢复的备份')
+                return redirect(url_for('settings_page'))
+            restore_backup_archive(backup_filename)
+            flash(f'备份已恢复：{backup_filename}')
+            return redirect(url_for('settings_page'))
+
         auto_backup_enabled = (request.form.get('auto_backup_enabled') or '').strip() == 'on'
-        auto_backup_schedule = (request.form.get('auto_backup_schedule') or '0 3 * * *').strip() or '0 3 * * *'
+        auto_backup_time = (request.form.get('auto_backup_time') or '03:00').strip() or '03:00'
         backup_dir = (request.form.get('backup_dir') or '').strip() or str(BASE_DIR / 'backups')
 
         updates = {
@@ -1200,11 +1323,12 @@ def settings_page():
             "RELEASEPLAN_CARD_5_KEY": (request.form.get('card_5_key') or 'cloud-service-view').strip() or 'cloud-service-view',
             "RELEASEPLAN_BACKUP_DIR": backup_dir,
             "RELEASEPLAN_AUTO_BACKUP_ENABLED": 'true' if auto_backup_enabled else 'false',
-            "RELEASEPLAN_AUTO_BACKUP_SCHEDULE": auto_backup_schedule,
+            "RELEASEPLAN_AUTO_BACKUP_TIME": auto_backup_time,
+            "RELEASEPLAN_AUTO_BACKUP_SCHEDULE": f"{auto_backup_time.split(':')[1]} {auto_backup_time.split(':')[0]} * * *" if ':' in auto_backup_time else '0 3 * * *',
         }
         save_env_settings(updates)
         os.environ.update(updates)
-        write_auto_backup_crontab(auto_backup_enabled, auto_backup_schedule)
+        write_auto_backup_crontab(auto_backup_enabled, auto_backup_time)
         flash('系统设置已保存并立即生效')
         return redirect(url_for('settings_page'))
     return render_template(
@@ -1212,6 +1336,7 @@ def settings_page():
         branding=get_branding(),
         home_cards=get_home_cards(),
         backup_config=get_backup_config(),
+        backup_history=list_backup_history(),
         **build_auth_context(),
     )
 
@@ -1733,7 +1858,8 @@ if __name__ == '__main__':
     import sys
 
     if '--backup-now' in sys.argv:
-        archive_path = build_backup_archive()
+        backup_type = 'auto' if '--backup-type' in sys.argv and 'auto' in sys.argv else 'manual'
+        archive_path = build_backup_archive(backup_type=backup_type)
         print(archive_path)
         raise SystemExit(0)
 
