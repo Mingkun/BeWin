@@ -171,9 +171,27 @@
                   <div class="backup-history-meta">备份内容：{{ item.contents | join('、') }}</div>
                 </div>
                 <div class="backup-history-actions">
+                  <div class="backup-inline-action">
+                    <button type="button" class="button danger js-backup-popover-toggle">一键恢复</button>
+                    <div class="backup-popover" hidden>
+                      <div class="backup-popover-text">确认恢复这个备份到系统？</div>
+                      <div class="backup-popover-actions">
+                        <button type="submit" name="action" value="restore_backup" class="button tiny danger" formaction="{{ url_for('settings_page') }}" onclick="this.form.backup_filename.value='{{ item.filename }}';">恢复</button>
+                        <button type="button" class="button tiny secondary js-backup-popover-cancel">取消</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="backup-inline-action">
+                    <button type="button" class="button secondary js-backup-popover-toggle">备份</button>
+                    <div class="backup-popover" hidden>
+                      <div class="backup-popover-text">确认删除这个备份文件？</div>
+                      <div class="backup-popover-actions">
+                        <button type="submit" name="action" value="delete_backup" class="button tiny secondary" formaction="{{ url_for('settings_page') }}" onclick="this.form.backup_filename.value='{{ item.filename }}';">确认</button>
+                        <button type="button" class="button tiny secondary js-backup-popover-cancel">取消</button>
+                      </div>
+                    </div>
+                  </div>
                   <input type="hidden" name="backup_filename" value="{{ item.filename }}">
-                  <button type="submit" name="action" value="restore_backup" class="button danger" formaction="{{ url_for('settings_page') }}" onclick="this.form.backup_filename.value='{{ item.filename }}'; return confirm('确认恢复这个备份到系统？');">一键恢复</button>
-                  <button type="submit" name="action" value="delete_backup" class="button secondary" formaction="{{ url_for('settings_page') }}" onclick="this.form.backup_filename.value='{{ item.filename }}'; return confirm('确认删除这个备份文件？');">删除备份</button>
                 </div>
               </div>
               {% endfor %}
@@ -198,6 +216,33 @@
           const expanded = !body.hidden;
           body.hidden = expanded;
           card.classList.toggle('expanded', !expanded);
+        });
+      });
+
+      document.querySelectorAll('.backup-inline-action').forEach((wrap) => {
+        const toggle = wrap.querySelector('.js-backup-popover-toggle');
+        const popover = wrap.querySelector('.backup-popover');
+        const cancel = wrap.querySelector('.js-backup-popover-cancel');
+        if (!toggle || !popover || !cancel) return;
+
+        toggle.addEventListener('click', (event) => {
+          event.preventDefault();
+          document.querySelectorAll('.backup-popover').forEach((item) => {
+            if (item !== popover) item.hidden = true;
+          });
+          popover.hidden = !popover.hidden;
+        });
+
+        cancel.addEventListener('click', (event) => {
+          event.preventDefault();
+          popover.hidden = true;
+        });
+      });
+
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('.backup-inline-action')) return;
+        document.querySelectorAll('.backup-popover').forEach((item) => {
+          item.hidden = true;
         });
       });
     })();
