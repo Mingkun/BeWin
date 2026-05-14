@@ -123,6 +123,9 @@ def save_env_settings(updates):
         "RELEASEPLAN_BROWSER_TITLE",
         "RELEASEPLAN_ROADMAP_BROWSER_TITLE",
         "RELEASEPLAN_THEME",
+        "RELEASEPLAN_BACKUP_DIR",
+        "RELEASEPLAN_AUTO_BACKUP_ENABLED",
+        "RELEASEPLAN_AUTO_BACKUP_SCHEDULE",
         "HOST",
         "PORT",
     ]
@@ -136,6 +139,62 @@ def save_env_settings(updates):
         if key not in used:
             merged_lines.append(f"{key}={value}")
     env_path.write_text("\n".join(merged_lines) + "\n", encoding="utf-8")
+
+
+def get_backup_dir():
+    configured = (os.getenv('RELEASEPLAN_BACKUP_DIR') or '').strip()
+    return Path(configured) if configured else BASE_DIR / 'backups'
+
+
+def get_backup_config():
+    return {
+        'backup_dir': str(get_backup_dir()),
+        'auto_backup_enabled': (os.getenv('RELEASEPLAN_AUTO_BACKUP_ENABLED', 'false').lower() == 'true'),
+        'auto_backup_schedule': (os.getenv('RELEASEPLAN_AUTO_BACKUP_SCHEDULE') or '0 3 * * *').strip() or '0 3 * * *',
+    }
+
+
+def ensure_backup_dir():
+    backup_dir = get_backup_dir()
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    return backup_dir
+
+
+def build_backup_archive():
+    import zipfile
+
+    backup_dir = ensure_backup_dir()
+    timestamp = datetime.utcnow().strftime('%Y%m%d-%H%M%S')
+    archive_path = backup_dir / f'releaseplan-backup-{timestamp}.zip'
+    include_paths = [
+        BASE_DIR / 'data',
+        BASE_DIR / 'docs',
+        BASE_DIR / '.env',
+    ]
+
+    with zipfile.ZipFile(archive_path, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+        for path in include_paths:
+            if not path.exists():
+                continue
+            if path.is_dir():
+                for child in path.rglob('*'):
+                    if child.is_file():
+                        zf.write(child, child.relative_to(BASE_DIR))
+            elif path.is_file():
+                zf.write(path, path.relative_to(BASE_DIR))
+    return archive_path
+
+
+def write_auto_backup_crontab(enabled, schedule):
+    cron_file = Path('/etc/cron.d/releaseplan-backup')
+    if not enabled:
+        if cron_file.exists():
+            cron_file.unlink()
+        return
+
+    cmd = f'cd {BASE_DIR} && /usr/bin/python3 {BASE_DIR / "src/app.py"} --backup-now >> /var/log/releaseplan-backup.log 2>&1'
+    content = f'{schedule} root {cmd}\n'
+    cron_file.write_text(content, encoding='utf-8')
 
 
 def oauth_enabled():
@@ -1115,6 +1174,16 @@ def settings_page():
     if denied:
         return denied
     if request.method == 'POST':
+        action = (request.form.get('action') or 'save_settings').strip()
+        if action == 'run_backup_now':
+            archive_path = build_backup_archive()
+            flash(f'手动备份已完成：{archive_path}')
+            return redirect(url_for('settings_page'))
+
+        auto_backup_enabled = (request.form.get('auto_backup_enabled') or '').strip() == 'on'
+        auto_backup_schedule = (request.form.get('auto_backup_schedule') or '0 3 * * *').strip() or '0 3 * * *'
+        backup_dir = (request.form.get('backup_dir') or '').strip() or str(BASE_DIR / 'backups')
+
         updates = {
             "RELEASEPLAN_HOME_TITLE": (request.form.get('home_title') or '').strip() or 'ReleasePlan',
             "RELEASEPLAN_BROWSER_TITLE": (request.form.get('browser_title') or '').strip() or 'ReleasePlan 入口',
@@ -1129,12 +1198,22 @@ def settings_page():
             "RELEASEPLAN_CARD_3_KEY": (request.form.get('card_3_key') or 'department-budget-resource').strip() or 'department-budget-resource',
             "RELEASEPLAN_CARD_4_KEY": (request.form.get('card_4_key') or 'project-budget-resource').strip() or 'project-budget-resource',
             "RELEASEPLAN_CARD_5_KEY": (request.form.get('card_5_key') or 'cloud-service-view').strip() or 'cloud-service-view',
+            "RELEASEPLAN_BACKUP_DIR": backup_dir,
+            "RELEASEPLAN_AUTO_BACKUP_ENABLED": 'true' if auto_backup_enabled else 'false',
+            "RELEASEPLAN_AUTO_BACKUP_SCHEDULE": auto_backup_schedule,
         }
         save_env_settings(updates)
         os.environ.update(updates)
-        flash('设置已保存并立即生效')
+        write_auto_backup_crontab(auto_backup_enabled, auto_backup_schedule)
+        flash('系统设置已保存并立即生效')
         return redirect(url_for('settings_page'))
-    return render_template('settings.html', branding=get_branding(), home_cards=get_home_cards(), **build_auth_context())
+    return render_template(
+        'settings.html',
+        branding=get_branding(),
+        home_cards=get_home_cards(),
+        backup_config=get_backup_config(),
+        **build_auth_context(),
+    )
 
 
 @app.route('/requirements', methods=['GET', 'POST'])
@@ -1651,4 +1730,11 @@ def cloud_service_view_edit(record_id):
 
 
 if __name__ == '__main__':
+    import sys
+
+    if '--backup-now' in sys.argv:
+        archive_path = build_backup_archive()
+        print(archive_path)
+        raise SystemExit(0)
+
     app.run(host='0.0.0.0', port=5010, debug=False)

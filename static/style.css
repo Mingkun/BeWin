@@ -344,6 +344,27 @@ header p {
   margin-top: 6px;
 }
 
+.ios-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ios-checkbox-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.ios-toggle-text {
+  font-size: 14px;
+  color: #475569;
+}
+
+.backup-action-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
 body.theme-ios-dark .ios-settings-form {
   background: rgba(17, 24, 39, 0.78);
 }

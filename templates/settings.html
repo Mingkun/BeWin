@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>设置</title>
+  <title>系统</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="theme-{{ branding.theme }}">
   <div class="page settings-page">
     <header class="toolbar">
       <div>
-        <h1>设置</h1>
-        <p>配置首页标题、浏览器标签标题和主题风格。</p>
+        <h1>系统</h1>
+        <p>配置首页展示，并管理业务数据备份。</p>
       </div>
       <div class="toolbar-actions">
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
@@ -42,7 +42,6 @@
           <span class="ios-field-label">首页浏览器标题</span>
           <input type="text" name="browser_title" value="{{ branding.browser_title }}" placeholder="例如：可按需修改 入口">
         </label>
-
       </section>
 
       <section class="settings-group">
@@ -60,8 +59,33 @@
             <span class="ios-chevron">›</span>
           </div>
         </label>
+      </section>
+
+      <section class="settings-group">
+        <div class="settings-section-title">业务数据备份</div>
+        <div class="settings-section-desc">支持手动立即备份，也支持自动定时备份全部业务数据。当前备份会包含 data、docs 和 .env。</div>
 
         <label class="ios-field">
+          <span class="ios-field-label">备份目录</span>
+          <input type="text" name="backup_dir" value="{{ backup_config.backup_dir }}" placeholder="例如：/work/ReleasePlan/backups">
+        </label>
+
+        <label class="ios-field ios-checkbox-field">
+          <span class="ios-field-label">自动备份</span>
+          <div class="ios-toggle-row">
+            <input type="checkbox" name="auto_backup_enabled" {% if backup_config.auto_backup_enabled %}checked{% endif %}>
+            <span class="ios-toggle-text">启用自动备份</span>
+          </div>
+        </label>
+
+        <label class="ios-field">
+          <span class="ios-field-label">自动备份 Cron</span>
+          <input type="text" name="auto_backup_schedule" value="{{ backup_config.auto_backup_schedule }}" placeholder="例如：0 3 * * *">
+        </label>
+
+        <div class="backup-action-row">
+          <button type="submit" name="action" value="run_backup_now" class="button warning">立即手动备份</button>
+        </div>
       </section>
 
       <section class="settings-group">
@@ -107,7 +131,7 @@
       </section>
 
       <div class="toolbar-actions settings-actions">
-        <button type="submit" class="button">保存设置</button>
+        <button type="submit" name="action" value="save_settings" class="button">保存系统设置</button>
       </div>
     </form>
   </div>
