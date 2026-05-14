@@ -493,6 +493,10 @@ header p {
   align-items: end;
 }
 
+.permission-rule-row-wide {
+  grid-template-columns: 180px 160px minmax(0, 1fr) 160px auto;
+}
+
 .permission-feature-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -197,6 +197,79 @@ FEATURE_KEYS = [
     'import_export_data',
 ]
 
+PERMISSION_PRESETS = [
+    {
+        'key': 'super_admin',
+        'label': '超级管理员',
+        'role': 'admin',
+        'features': {key: True for key in FEATURE_KEYS},
+    },
+    {
+        'key': 'readonly_guest',
+        'label': '只读访客',
+        'role': 'guest',
+        'features': {
+            'view_system': False,
+            'manage_permissions': False,
+            'manage_backup': False,
+            'submit_requirement': False,
+            'manage_requirement_status': False,
+            'manage_projects': False,
+            'manage_features': False,
+            'manage_service_resources': False,
+            'import_export_data': False,
+        },
+    },
+    {
+        'key': 'requirement_submitter',
+        'label': '需求提交人',
+        'role': 'guest',
+        'features': {
+            'view_system': False,
+            'manage_permissions': False,
+            'manage_backup': False,
+            'submit_requirement': True,
+            'manage_requirement_status': False,
+            'manage_projects': False,
+            'manage_features': False,
+            'manage_service_resources': False,
+            'import_export_data': False,
+        },
+    },
+    {
+        'key': 'project_editor',
+        'label': '项目维护人',
+        'role': 'guest',
+        'features': {
+            'view_system': False,
+            'manage_permissions': False,
+            'manage_backup': False,
+            'submit_requirement': True,
+            'manage_requirement_status': False,
+            'manage_projects': True,
+            'manage_features': True,
+            'manage_service_resources': False,
+            'import_export_data': True,
+        },
+    },
+    {
+        'key': 'service_editor',
+        'label': '云服务维护人',
+        'role': 'guest',
+        'features': {
+            'view_system': False,
+            'manage_permissions': False,
+            'manage_backup': False,
+            'submit_requirement': True,
+            'manage_requirement_status': False,
+            'manage_projects': False,
+            'manage_features': False,
+            'manage_service_resources': True,
+            'import_export_data': True,
+        },
+    },
+]
+
 
 def default_feature_flags(role):
     role = normalize_permission_role(role)
@@ -229,6 +302,19 @@ def normalize_feature_flags(raw, role):
         if key in raw:
             normalized[key] = bool(raw[key])
     return normalized
+
+
+def get_permission_presets():
+    presets = []
+    for item in PERMISSION_PRESETS:
+        role = normalize_permission_role(item.get('role'))
+        presets.append({
+            'key': item.get('key'),
+            'label': item.get('label'),
+            'role': role,
+            'features': normalize_feature_flags(item.get('features'), role),
+        })
+    return presets
 
 
 def match_permission_rule(username='', email=''):
@@ -1654,6 +1740,7 @@ def settings_page():
         backup_config=get_backup_config(),
         backup_history=list_backup_history(),
         permission_rules=load_permission_rules(),
+        permission_presets=get_permission_presets(),
         **build_auth_context(),
     )
 
