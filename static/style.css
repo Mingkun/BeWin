@@ -20,6 +20,27 @@ body.theme-ios-dark .roadmap-header-grid {
   border-color: rgba(148, 163, 184, 0.2);
 }
 
+body.theme-ios-dark .button {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: none;
+}
+
+body.theme-ios-dark .button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+body.theme-ios-dark .button.warning {
+  color: #fdba74;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+body.theme-ios-dark .button.danger {
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
 body.theme-ios-dark .entry-card-title,
 body.theme-ios-dark header p,
 body.theme-ios-dark .entry-card-desc,
@@ -158,16 +179,23 @@ header p {
   justify-content: center;
   padding: 10px 14px;
   border-radius: 10px;
-  background: #2563eb;
-  color: #fff;
+  background: #ffffff;
+  color: #334155;
   text-decoration: none;
-  border: 0;
+  border: 1px solid #dbe3ee;
   cursor: pointer;
   font-size: 14px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.button:hover {
+  background: #f8fafc;
 }
 
 .button.secondary {
-  background: #64748b;
+  background: #ffffff;
+  color: #334155;
+  border-color: #dbe3ee;
 }
 
 .button.home-button {
@@ -182,11 +210,15 @@ header p {
 }
 
 .button.warning {
-  background: #d97706;
+  background: #ffffff;
+  color: #b45309;
+  border-color: #fcd9a7;
 }
 
 .button.danger {
-  background: #dc2626;
+  background: #ffffff;
+  color: #dc2626;
+  border-color: #fecaca;
 }
 
 .button.small {
