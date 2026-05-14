@@ -185,9 +185,50 @@ def save_permission_rules(items):
     path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding='utf-8')
 
 
+FEATURE_KEYS = [
+    'view_system',
+    'manage_permissions',
+    'manage_backup',
+    'submit_requirement',
+    'manage_requirement_status',
+    'manage_projects',
+    'manage_features',
+    'manage_service_resources',
+    'import_export_data',
+]
+
+
+def default_feature_flags(role):
+    role = normalize_permission_role(role)
+    if role == 'admin':
+        return {key: True for key in FEATURE_KEYS}
+    return {
+        'view_system': False,
+        'manage_permissions': False,
+        'manage_backup': False,
+        'submit_requirement': True,
+        'manage_requirement_status': False,
+        'manage_projects': False,
+        'manage_features': False,
+        'manage_service_resources': False,
+        'import_export_data': True,
+    }
+
+
 def normalize_permission_role(role_text):
     role = (role_text or '').strip().lower()
     return 'admin' if role == 'admin' else 'guest'
+
+
+def normalize_feature_flags(raw, role):
+    defaults = default_feature_flags(role)
+    if not isinstance(raw, dict):
+        return defaults
+    normalized = defaults.copy()
+    for key in FEATURE_KEYS:
+        if key in raw:
+            normalized[key] = bool(raw[key])
+    return normalized
 
 
 def match_permission_rule(username='', email=''):
@@ -198,10 +239,17 @@ def match_permission_rule(username='', email=''):
         rule_value = (item.get('value') or '').strip().lower()
         if not rule_value:
             continue
+        matched = False
         if rule_type == 'username' and username and username == rule_value:
-            return normalize_permission_role(item.get('role'))
+            matched = True
         if rule_type == 'email' and email and email == rule_value:
-            return normalize_permission_role(item.get('role'))
+            matched = True
+        if matched:
+            role = normalize_permission_role(item.get('role'))
+            return {
+                'role': role,
+                'features': normalize_feature_flags(item.get('features'), role),
+            }
     return None
 
 
@@ -412,6 +460,18 @@ def get_current_user_roles():
     return [str(role).strip().lower() for role in roles if str(role).strip()]
 
 
+def get_current_user_features(user=None):
+    user = user if user is not None else get_current_user()
+    if not isinstance(user, dict):
+        return default_feature_flags('guest')
+    features = user.get('features') or {}
+    roles = user.get('roles') or []
+    if isinstance(roles, str):
+        roles = [roles]
+    role = 'admin' if 'admin' in [str(role).strip().lower() for role in roles] else 'guest'
+    return normalize_feature_flags(features, role)
+
+
 def is_admin_user(user=None):
     user = user if user is not None else get_current_user()
     if not isinstance(user, dict):
@@ -423,11 +483,16 @@ def is_admin_user(user=None):
     return 'admin' in normalized
 
 
-def can_edit(user=None):
+def can_access(feature_key, user=None):
     mode = auth_mode()
     if mode == 'none':
         return True
-    return is_admin_user(user)
+    features = get_current_user_features(user)
+    return bool(features.get(feature_key))
+
+
+def can_edit(user=None):
+    return can_access('manage_projects', user) or can_access('manage_features', user) or can_access('manage_service_resources', user) or can_access('manage_backup', user) or can_access('manage_permissions', user)
 
 
 def build_auth_context():
@@ -439,6 +504,7 @@ def build_auth_context():
         'current_user': user,
         'can_edit': can_edit(user),
         'user_roles': role_labels,
+        'user_features': get_current_user_features(user),
         'login_source_label': 'SSO' if auth_type == 'oauth2' else '本地' if auth_type == 'local' else '',
         'role_label': '管理员' if 'admin' in role_labels else '只读' if 'guest' in role_labels else '',
     }
@@ -472,10 +538,17 @@ def normalize_next_url(next_url):
     return value
 
 
-def require_admin():
-    if can_edit():
+def require_feature(feature_key, message='当前账号没有该操作权限'):
+    if can_access(feature_key):
         return None
-    flash('当前账号只有只读权限')
+    flash(message)
+    return redirect(url_for('index'))
+
+
+def require_admin():
+    if is_admin_user():
+        return None
+    flash('当前账号没有管理员权限')
     return redirect(url_for('index'))
 
 
@@ -1325,11 +1398,16 @@ def build_oauth_user(userinfo):
             default_role = (os.getenv('RELEASEPLAN_OAUTH_DEFAULT_ROLE') or 'guest').strip().lower()
             final_roles = ['admin'] if default_role == 'admin' else ['guest']
 
+    features = default_feature_flags(final_roles[0] if final_roles else 'guest')
+    if matched_role:
+        features = matched_role.get('features') or features
+
     return {
         'user_id': userinfo.get('sub') or userinfo.get('id') or userinfo.get('user_id') or '',
         'name': userinfo.get('name') or userinfo.get('preferred_username') or userinfo.get('login') or '',
         'email': userinfo.get('email') or '',
         'roles': final_roles,
+        'features': normalize_feature_flags(features, final_roles[0] if final_roles else 'guest'),
         'raw': userinfo,
         'auth_type': 'oauth2',
     }
@@ -1417,22 +1495,26 @@ def local_login():
         password = request.form.get('password') or ''
         next_url = normalize_next_url(request.form.get('next') or request.args.get('next') or '/')
         if verify_local_admin(username, password):
-            matched_role = match_permission_rule(username=username, email='')
+            matched_rule = match_permission_rule(username=username, email='')
+            role = (matched_rule or {}).get('role') or 'admin'
             session['local_user'] = {
                 'user_id': username,
                 'name': username,
                 'email': '',
-                'roles': [matched_role or 'admin'],
+                'roles': [role],
+                'features': normalize_feature_flags((matched_rule or {}).get('features'), role),
                 'auth_type': 'local',
             }
             return redirect(next_url)
         if verify_local_guest(username, password):
-            matched_role = match_permission_rule(username=username, email='')
+            matched_rule = match_permission_rule(username=username, email='')
+            role = (matched_rule or {}).get('role') or 'guest'
             session['local_user'] = {
                 'user_id': username,
                 'name': username,
                 'email': '',
-                'roles': [matched_role or 'guest'],
+                'roles': [role],
+                'features': normalize_feature_flags((matched_rule or {}).get('features'), role),
                 'auth_type': 'local',
             }
             return redirect(next_url)
@@ -1466,17 +1548,23 @@ def roadmap():
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings_page():
-    denied = require_admin()
+    denied = require_feature('view_system', '当前账号不能访问系统页')
     if denied:
         return denied
     if request.method == 'POST':
         action = (request.form.get('action') or 'save_settings').strip()
         if action == 'run_backup_now':
+            denied = require_feature('manage_backup', '当前账号不能执行备份操作')
+            if denied:
+                return denied
             archive_path = build_backup_archive(backup_type='manual')
             flash(f'手动备份已完成：{archive_path}')
             return redirect(url_for('settings_page'))
 
         if action == 'restore_backup':
+            denied = require_feature('manage_backup', '当前账号不能执行恢复操作')
+            if denied:
+                return denied
             backup_filename = (request.form.get('backup_filename') or '').strip()
             if not backup_filename:
                 flash('请选择要恢复的备份')
@@ -1486,6 +1574,9 @@ def settings_page():
             return redirect(url_for('settings_page'))
 
         if action == 'delete_backup':
+            denied = require_feature('manage_backup', '当前账号不能删除备份')
+            if denied:
+                return denied
             backup_filename = (request.form.get('backup_filename') or '').strip()
             if not backup_filename:
                 flash('请选择要删除的备份')
@@ -1495,20 +1586,34 @@ def settings_page():
             return redirect(url_for('settings_page'))
 
         if action == 'save_permissions':
+            denied = require_feature('manage_permissions', '当前账号不能修改权限配置')
+            if denied:
+                return denied
             rule_types = request.form.getlist('permission_type[]')
             rule_values = request.form.getlist('permission_value[]')
             rule_roles = request.form.getlist('permission_role[]')
+            feature_keys = FEATURE_KEYS
+            feature_matrix = {
+                key: request.form.getlist(f'permission_feature_{key}[]')
+                for key in feature_keys
+            }
             rules = []
-            for idx in range(max(len(rule_types), len(rule_values), len(rule_roles))):
+            total = max(len(rule_types), len(rule_values), len(rule_roles))
+            for idx in range(total):
                 rule_type = (rule_types[idx] if idx < len(rule_types) else '').strip().lower()
                 rule_value = (rule_values[idx] if idx < len(rule_values) else '').strip()
                 rule_role = normalize_permission_role(rule_roles[idx] if idx < len(rule_roles) else 'guest')
                 if rule_type not in {'username', 'email'} or not rule_value:
                     continue
+                features = default_feature_flags(rule_role)
+                for key in feature_keys:
+                    values = feature_matrix.get(key) or []
+                    features[key] = idx < len(values) and values[idx] == 'on'
                 rules.append({
                     'type': rule_type,
                     'value': rule_value,
                     'role': rule_role,
+                    'features': normalize_feature_flags(features, rule_role),
                 })
             save_permission_rules(rules)
             flash('权限配置已保存并立即生效')
@@ -1556,6 +1661,9 @@ def settings_page():
 @app.route('/requirements', methods=['GET', 'POST'])
 @login_required
 def requirements_page():
+    denied = require_feature('submit_requirement', '当前账号不能提交需求') if request.method == 'POST' else None
+    if denied:
+        return denied
     example_text = "示例：项目视图增加按项目经理筛选，并支持导出当前筛选结果为 Excel。"
     if request.method == 'POST':
         requirement_text = (request.form.get('requirement_text') or '').strip()
@@ -1593,7 +1701,7 @@ def requirements_page():
 @app.route('/requirements/<int:requirement_id>/status', methods=['POST'])
 @login_required
 def requirement_status_update(requirement_id):
-    denied = require_admin()
+    denied = require_feature('manage_requirement_status', '当前账号不能修改需求状态')
     if denied:
         return denied
     status = (request.form.get('status') or 'open').strip().lower()
@@ -1678,7 +1786,7 @@ def view_placeholder(view_key):
 @app.route('/admin/projects/new', methods=['GET', 'POST'])
 @login_required
 def admin_project_new():
-    denied = require_admin()
+    denied = require_feature('manage_projects', '当前账号不能管理项目')
     if denied:
         return denied
     if request.method == 'POST':
@@ -1703,7 +1811,7 @@ def admin_project_new():
 @app.route('/admin/projects/<int:project_id>/edit', methods=['GET', 'POST'])
 @login_required
 def admin_project_edit(project_id):
-    denied = require_admin()
+    denied = require_feature('manage_projects', '当前账号不能管理项目')
     if denied:
         return denied
     project = load_project(project_id)
@@ -1749,7 +1857,7 @@ def admin_project_edit(project_id):
 @app.route('/admin/projects/<int:project_id>/delete', methods=['POST'])
 @login_required
 def admin_project_delete(project_id):
-    denied = require_admin()
+    denied = require_feature('manage_projects', '当前账号不能管理项目')
     if denied:
         return denied
     with get_conn() as conn:
@@ -1761,7 +1869,7 @@ def admin_project_delete(project_id):
 @app.route('/admin/features/new', methods=['GET', 'POST'])
 @login_required
 def admin_feature_new():
-    denied = require_admin()
+    denied = require_feature('manage_features', '当前账号不能管理关键特性')
     if denied:
         return denied
     project_options = get_project_options()
@@ -1787,7 +1895,7 @@ def admin_feature_new():
 @app.route('/admin/features/<int:feature_id>/edit', methods=['GET', 'POST'])
 @login_required
 def admin_feature_edit(feature_id):
-    denied = require_admin()
+    denied = require_feature('manage_features', '当前账号不能管理关键特性')
     if denied:
         return denied
     feature = load_project_feature(feature_id)
@@ -1824,7 +1932,7 @@ def admin_feature_edit(feature_id):
 @app.route('/admin/projects/import-csv', methods=['POST'])
 @login_required
 def admin_projects_import_csv():
-    denied = require_admin()
+    denied = require_feature('import_export_data', '当前账号不能导入项目数据')
     if denied:
         return denied
     file = request.files.get('csv_file')
@@ -1891,7 +1999,7 @@ def admin_service_resources():
 @app.route('/admin/service-resources/new', methods=['GET', 'POST'])
 @login_required
 def admin_service_resource_new():
-    denied = require_admin()
+    denied = require_feature('manage_service_resources', '当前账号不能管理云服务数据')
     if denied:
         return denied
     if request.method == 'POST':
@@ -1929,7 +2037,7 @@ def admin_service_resource_new():
 @app.route('/admin/service-resources/<int:record_id>/edit', methods=['GET', 'POST'])
 @login_required
 def admin_service_resource_edit(record_id):
-    denied = require_admin()
+    denied = require_feature('manage_service_resources', '当前账号不能管理云服务数据')
     if denied:
         return denied
     record = load_service_resource(record_id)
@@ -1972,7 +2080,7 @@ def admin_service_resource_edit(record_id):
 @app.route('/admin/service-resources/<int:record_id>/delete', methods=['POST'])
 @login_required
 def admin_service_resource_delete(record_id):
-    denied = require_admin()
+    denied = require_feature('manage_service_resources', '当前账号不能管理云服务数据')
     if denied:
         return denied
     with get_conn() as conn:
@@ -1984,7 +2092,7 @@ def admin_service_resource_delete(record_id):
 @app.route('/admin/service-resources/import-csv', methods=['POST'])
 @login_required
 def admin_service_resources_import_csv():
-    denied = require_admin()
+    denied = require_feature('import_export_data', '当前账号不能导入云服务数据')
     if denied:
         return denied
     file = request.files.get('csv_file')
@@ -2032,7 +2140,7 @@ def admin_service_resources_export_csv():
 @app.route('/views/cloud-service-view/<int:record_id>/edit', methods=['POST'])
 @login_required
 def cloud_service_view_edit(record_id):
-    denied = require_admin()
+    denied = require_feature('manage_service_resources', '当前账号不能管理云服务数据')
     if denied:
         return denied
     data = form_to_service_resource_data(request.form)

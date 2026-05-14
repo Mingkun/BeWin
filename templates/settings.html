@@ -123,7 +123,7 @@
         <button class="system-card-header" type="button" data-toggle>
           <div>
             <div class="system-card-title">权限配置</div>
-            <div class="system-card-desc">基于本地用户名或 SSO 邮箱配置 admin / guest 权限</div>
+            <div class="system-card-desc">基于本地用户名或 SSO 邮箱配置角色和功能权限</div>
           </div>
           <span class="system-card-chevron">›</span>
         </button>
@@ -131,67 +131,95 @@
         <div class="system-card-body" hidden>
           <div class="settings-group">
             <div class="settings-section-title">权限规则</div>
-            <div class="settings-section-desc">支持两种匹配方式：username 适用于本地账号，email 适用于 SSO 邮箱。规则保存后立即生效。</div>
+            <div class="settings-section-desc">支持 username（本地账号）和 email（SSO 邮箱）两种规则。除了角色外，还可单独控制系统页、备份、项目、关键特性、云服务、导入导出等权限。</div>
 
             <div class="permission-rule-list" id="permission-rule-list">
               {% for item in permission_rules %}
-              <div class="permission-rule-row">
-                <label class="ios-field ios-select-field">
-                  <span class="ios-field-label">匹配类型</span>
-                  <div class="ios-select-wrap">
-                    <select name="permission_type[]">
-                      <option value="username" {% if item.type == 'username' %}selected{% endif %}>用户名</option>
-                      <option value="email" {% if item.type == 'email' %}selected{% endif %}>邮箱</option>
-                    </select>
-                    <span class="ios-chevron">›</span>
-                  </div>
-                </label>
-                <label class="ios-field">
-                  <span class="ios-field-label">匹配值</span>
-                  <input type="text" name="permission_value[]" value="{{ item.value }}" placeholder="例如：admin 或 someone@company.com">
-                </label>
-                <label class="ios-field ios-select-field">
-                  <span class="ios-field-label">权限</span>
-                  <div class="ios-select-wrap">
-                    <select name="permission_role[]">
-                      <option value="admin" {% if item.role == 'admin' %}selected{% endif %}>管理员</option>
-                      <option value="guest" {% if item.role == 'guest' %}selected{% endif %}>只读</option>
-                    </select>
-                    <span class="ios-chevron">›</span>
-                  </div>
-                </label>
-                <button type="button" class="button secondary js-remove-permission-row">删除</button>
+              <div class="permission-rule-card">
+                <div class="permission-rule-row">
+                  <label class="ios-field ios-select-field">
+                    <span class="ios-field-label">匹配类型</span>
+                    <div class="ios-select-wrap">
+                      <select name="permission_type[]">
+                        <option value="username" {% if item.type == 'username' %}selected{% endif %}>用户名</option>
+                        <option value="email" {% if item.type == 'email' %}selected{% endif %}>邮箱</option>
+                      </select>
+                      <span class="ios-chevron">›</span>
+                    </div>
+                  </label>
+                  <label class="ios-field">
+                    <span class="ios-field-label">匹配值</span>
+                    <input type="text" name="permission_value[]" value="{{ item.value }}" placeholder="例如：admin 或 someone@company.com">
+                  </label>
+                  <label class="ios-field ios-select-field">
+                    <span class="ios-field-label">角色</span>
+                    <div class="ios-select-wrap">
+                      <select name="permission_role[]">
+                        <option value="admin" {% if item.role == 'admin' %}selected{% endif %}>管理员</option>
+                        <option value="guest" {% if item.role == 'guest' %}selected{% endif %}>只读</option>
+                      </select>
+                      <span class="ios-chevron">›</span>
+                    </div>
+                  </label>
+                  <button type="button" class="button secondary js-remove-permission-row">删除</button>
+                </div>
+
+                <div class="permission-feature-grid">
+                  {% set features = item.features or {} %}
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">系统页</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_view_system[]" {% if features.view_system %}checked{% endif %}><span class="ios-toggle-text">允许访问系统页</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">权限配置</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_permissions[]" {% if features.manage_permissions %}checked{% endif %}><span class="ios-toggle-text">允许修改权限</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">备份管理</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_backup[]" {% if features.manage_backup %}checked{% endif %}><span class="ios-toggle-text">允许备份/恢复/删除</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">提交需求</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_submit_requirement[]" {% if features.submit_requirement %}checked{% endif %}><span class="ios-toggle-text">允许提交需求</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">需求状态</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_requirement_status[]" {% if features.manage_requirement_status %}checked{% endif %}><span class="ios-toggle-text">允许改需求状态</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">项目管理</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_projects[]" {% if features.manage_projects %}checked{% endif %}><span class="ios-toggle-text">允许改项目</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">关键特性</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_features[]" {% if features.manage_features %}checked{% endif %}><span class="ios-toggle-text">允许改关键特性</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">云服务数据</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_service_resources[]" {% if features.manage_service_resources %}checked{% endif %}><span class="ios-toggle-text">允许改云服务数据</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">导入导出</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_import_export_data[]" {% if features.import_export_data %}checked{% endif %}><span class="ios-toggle-text">允许导入导出</span></div></label>
+                </div>
               </div>
               {% endfor %}
             </div>
 
             <template id="permission-rule-template">
-              <div class="permission-rule-row">
-                <label class="ios-field ios-select-field">
-                  <span class="ios-field-label">匹配类型</span>
-                  <div class="ios-select-wrap">
-                    <select name="permission_type[]">
-                      <option value="username">用户名</option>
-                      <option value="email">邮箱</option>
-                    </select>
-                    <span class="ios-chevron">›</span>
-                  </div>
-                </label>
-                <label class="ios-field">
-                  <span class="ios-field-label">匹配值</span>
-                  <input type="text" name="permission_value[]" value="" placeholder="例如：admin 或 someone@company.com">
-                </label>
-                <label class="ios-field ios-select-field">
-                  <span class="ios-field-label">权限</span>
-                  <div class="ios-select-wrap">
-                    <select name="permission_role[]">
-                      <option value="admin">管理员</option>
-                      <option value="guest" selected>只读</option>
-                    </select>
-                    <span class="ios-chevron">›</span>
-                  </div>
-                </label>
-                <button type="button" class="button secondary js-remove-permission-row">删除</button>
+              <div class="permission-rule-card">
+                <div class="permission-rule-row">
+                  <label class="ios-field ios-select-field">
+                    <span class="ios-field-label">匹配类型</span>
+                    <div class="ios-select-wrap">
+                      <select name="permission_type[]">
+                        <option value="username">用户名</option>
+                        <option value="email">邮箱</option>
+                      </select>
+                      <span class="ios-chevron">›</span>
+                    </div>
+                  </label>
+                  <label class="ios-field">
+                    <span class="ios-field-label">匹配值</span>
+                    <input type="text" name="permission_value[]" value="" placeholder="例如：admin 或 someone@company.com">
+                  </label>
+                  <label class="ios-field ios-select-field">
+                    <span class="ios-field-label">角色</span>
+                    <div class="ios-select-wrap">
+                      <select name="permission_role[]">
+                        <option value="admin">管理员</option>
+                        <option value="guest" selected>只读</option>
+                      </select>
+                      <span class="ios-chevron">›</span>
+                    </div>
+                  </label>
+                  <button type="button" class="button secondary js-remove-permission-row">删除</button>
+                </div>
+                <div class="permission-feature-grid">
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">系统页</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_view_system[]"><span class="ios-toggle-text">允许访问系统页</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">权限配置</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_permissions[]"><span class="ios-toggle-text">允许修改权限</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">备份管理</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_backup[]"><span class="ios-toggle-text">允许备份/恢复/删除</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">提交需求</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_submit_requirement[]" checked><span class="ios-toggle-text">允许提交需求</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">需求状态</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_requirement_status[]"><span class="ios-toggle-text">允许改需求状态</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">项目管理</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_projects[]"><span class="ios-toggle-text">允许改项目</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">关键特性</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_features[]"><span class="ios-toggle-text">允许改关键特性</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">云服务数据</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_manage_service_resources[]"><span class="ios-toggle-text">允许改云服务数据</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">导入导出</span><div class="ios-toggle-row"><input type="checkbox" name="permission_feature_import_export_data[]" checked><span class="ios-toggle-text">允许导入导出</span></div></label>
+                </div>
               </div>
             </template>
 
@@ -308,7 +336,7 @@
           if (button.dataset.bound === '1') return;
           button.dataset.bound = '1';
           button.addEventListener('click', () => {
-            const row = button.closest('.permission-rule-row');
+            const row = button.closest('.permission-rule-card');
             if (row) row.remove();
           });
         });

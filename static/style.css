@@ -476,11 +476,27 @@ header p {
   gap: 12px;
 }
 
+.permission-rule-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
 .permission-rule-row {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr) 180px auto;
   gap: 12px;
   align-items: end;
+}
+
+.permission-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .backup-history-item {
@@ -599,7 +615,8 @@ body.theme-ios-dark .system-card-body {
   border-top-color: rgba(148, 163, 184, 0.18);
 }
 
-body.theme-ios-dark .backup-history-item {
+body.theme-ios-dark .backup-history-item,
+body.theme-ios-dark .permission-rule-card {
   background: rgba(31, 41, 55, 0.95);
   border-color: rgba(148, 163, 184, 0.18);
 }
@@ -1460,7 +1477,8 @@ body.theme-ios-dark .backup-popover-text {
   .month-grid-form,
   .form-grid-3,
   .backup-history-item,
-  .permission-rule-row {
+  .permission-rule-row,
+  .permission-feature-grid {
     grid-template-columns: 1fr;
     flex-direction: column;
   }
