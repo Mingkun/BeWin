@@ -164,6 +164,47 @@ def get_backup_dir():
     return Path(configured) if configured else BASE_DIR / 'backups'
 
 
+def get_permission_rules_path():
+    return BASE_DIR / 'data' / 'permission_rules.json'
+
+
+def load_permission_rules():
+    path = get_permission_rules_path()
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding='utf-8'))
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+def save_permission_rules(items):
+    path = get_permission_rules_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding='utf-8')
+
+
+def normalize_permission_role(role_text):
+    role = (role_text or '').strip().lower()
+    return 'admin' if role == 'admin' else 'guest'
+
+
+def match_permission_rule(username='', email=''):
+    username = (username or '').strip().lower()
+    email = (email or '').strip().lower()
+    for item in load_permission_rules():
+        rule_type = (item.get('type') or '').strip().lower()
+        rule_value = (item.get('value') or '').strip().lower()
+        if not rule_value:
+            continue
+        if rule_type == 'username' and username and username == rule_value:
+            return normalize_permission_role(item.get('role'))
+        if rule_type == 'email' and email and email == rule_value:
+            return normalize_permission_role(item.get('role'))
+    return None
+
+
 def ensure_backup_dir():
     backup_dir = get_backup_dir()
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -379,20 +420,7 @@ def is_admin_user(user=None):
     if isinstance(roles, str):
         roles = [roles]
     normalized = {str(role).strip().lower() for role in roles if str(role).strip()}
-    admin_roles = {
-        role.strip().lower()
-        for role in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_ROLES', 'admin,administrator,releaseplan-admin').split(','))
-        if role.strip()
-    }
-    if normalized & admin_roles:
-        return True
-    admin_emails = {
-        item.strip().lower()
-        for item in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_EMAILS', '').split(','))
-        if item.strip()
-    }
-    email = (user.get('email') or '').strip().lower()
-    return bool(email and email in admin_emails)
+    return 'admin' in normalized
 
 
 def can_edit(user=None):
@@ -1254,45 +1282,48 @@ def build_oauth_user(userinfo):
     email = (userinfo.get('email') or '').strip().lower()
     username = (userinfo.get('preferred_username') or userinfo.get('login') or userinfo.get('name') or '').strip().lower()
 
-    admin_roles = {
-        role.strip().lower()
-        for role in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_ROLES', 'admin,administrator,releaseplan-admin').split(','))
-        if role.strip()
-    }
-    guest_roles = {
-        role.strip().lower()
-        for role in (os.getenv('RELEASEPLAN_OAUTH_GUEST_ROLES', 'guest,viewer,readonly,releaseplan-guest').split(','))
-        if role.strip()
-    }
-    admin_emails = {
-        item.strip().lower()
-        for item in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_EMAILS', '').split(','))
-        if item.strip()
-    }
-    guest_emails = {
-        item.strip().lower()
-        for item in (os.getenv('RELEASEPLAN_OAUTH_GUEST_EMAILS', '').split(','))
-        if item.strip()
-    }
-    admin_usernames = {
-        item.strip().lower()
-        for item in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_USERNAMES', '').split(','))
-        if item.strip()
-    }
-    guest_usernames = {
-        item.strip().lower()
-        for item in (os.getenv('RELEASEPLAN_OAUTH_GUEST_USERNAMES', '').split(','))
-        if item.strip()
-    }
-
-    final_roles = []
-    if set(normalized_roles) & admin_roles or (email and email in admin_emails) or (username and username in admin_usernames):
-        final_roles = ['admin']
-    elif set(normalized_roles) & guest_roles or (email and email in guest_emails) or (username and username in guest_usernames):
-        final_roles = ['guest']
+    matched_role = match_permission_rule(username=username, email=email)
+    if matched_role:
+        final_roles = [matched_role]
     else:
-        default_role = (os.getenv('RELEASEPLAN_OAUTH_DEFAULT_ROLE') or 'guest').strip().lower()
-        final_roles = ['admin'] if default_role == 'admin' else ['guest']
+        admin_roles = {
+            role.strip().lower()
+            for role in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_ROLES', 'admin,administrator,releaseplan-admin').split(','))
+            if role.strip()
+        }
+        guest_roles = {
+            role.strip().lower()
+            for role in (os.getenv('RELEASEPLAN_OAUTH_GUEST_ROLES', 'guest,viewer,readonly,releaseplan-guest').split(','))
+            if role.strip()
+        }
+        admin_emails = {
+            item.strip().lower()
+            for item in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_EMAILS', '').split(','))
+            if item.strip()
+        }
+        guest_emails = {
+            item.strip().lower()
+            for item in (os.getenv('RELEASEPLAN_OAUTH_GUEST_EMAILS', '').split(','))
+            if item.strip()
+        }
+        admin_usernames = {
+            item.strip().lower()
+            for item in (os.getenv('RELEASEPLAN_OAUTH_ADMIN_USERNAMES', '').split(','))
+            if item.strip()
+        }
+        guest_usernames = {
+            item.strip().lower()
+            for item in (os.getenv('RELEASEPLAN_OAUTH_GUEST_USERNAMES', '').split(','))
+            if item.strip()
+        }
+
+        if set(normalized_roles) & admin_roles or (email and email in admin_emails) or (username and username in admin_usernames):
+            final_roles = ['admin']
+        elif set(normalized_roles) & guest_roles or (email and email in guest_emails) or (username and username in guest_usernames):
+            final_roles = ['guest']
+        else:
+            default_role = (os.getenv('RELEASEPLAN_OAUTH_DEFAULT_ROLE') or 'guest').strip().lower()
+            final_roles = ['admin'] if default_role == 'admin' else ['guest']
 
     return {
         'user_id': userinfo.get('sub') or userinfo.get('id') or userinfo.get('user_id') or '',
@@ -1386,20 +1417,22 @@ def local_login():
         password = request.form.get('password') or ''
         next_url = normalize_next_url(request.form.get('next') or request.args.get('next') or '/')
         if verify_local_admin(username, password):
+            matched_role = match_permission_rule(username=username, email='')
             session['local_user'] = {
                 'user_id': username,
                 'name': username,
                 'email': '',
-                'roles': ['admin'],
+                'roles': [matched_role or 'admin'],
                 'auth_type': 'local',
             }
             return redirect(next_url)
         if verify_local_guest(username, password):
+            matched_role = match_permission_rule(username=username, email='')
             session['local_user'] = {
                 'user_id': username,
                 'name': username,
                 'email': '',
-                'roles': ['guest'],
+                'roles': [matched_role or 'guest'],
                 'auth_type': 'local',
             }
             return redirect(next_url)
@@ -1461,6 +1494,26 @@ def settings_page():
             flash(f'备份已删除：{backup_filename}')
             return redirect(url_for('settings_page'))
 
+        if action == 'save_permissions':
+            rule_types = request.form.getlist('permission_type[]')
+            rule_values = request.form.getlist('permission_value[]')
+            rule_roles = request.form.getlist('permission_role[]')
+            rules = []
+            for idx in range(max(len(rule_types), len(rule_values), len(rule_roles))):
+                rule_type = (rule_types[idx] if idx < len(rule_types) else '').strip().lower()
+                rule_value = (rule_values[idx] if idx < len(rule_values) else '').strip()
+                rule_role = normalize_permission_role(rule_roles[idx] if idx < len(rule_roles) else 'guest')
+                if rule_type not in {'username', 'email'} or not rule_value:
+                    continue
+                rules.append({
+                    'type': rule_type,
+                    'value': rule_value,
+                    'role': rule_role,
+                })
+            save_permission_rules(rules)
+            flash('权限配置已保存并立即生效')
+            return redirect(url_for('settings_page'))
+
         auto_backup_enabled = (request.form.get('auto_backup_enabled') or '').strip() == 'on'
         auto_backup_time = (request.form.get('auto_backup_time') or '03:00').strip() or '03:00'
         backup_dir = (request.form.get('backup_dir') or '').strip() or str(BASE_DIR / 'backups')
@@ -1495,6 +1548,7 @@ def settings_page():
         home_cards=get_home_cards(),
         backup_config=get_backup_config(),
         backup_history=list_backup_history(),
+        permission_rules=load_permission_rules(),
         **build_auth_context(),
     )
 

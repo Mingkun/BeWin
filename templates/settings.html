@@ -122,6 +122,90 @@
       <section class="card system-card collapsible-card" data-collapsible>
         <button class="system-card-header" type="button" data-toggle>
           <div>
+            <div class="system-card-title">权限配置</div>
+            <div class="system-card-desc">基于本地用户名或 SSO 邮箱配置 admin / guest 权限</div>
+          </div>
+          <span class="system-card-chevron">›</span>
+        </button>
+
+        <div class="system-card-body" hidden>
+          <div class="settings-group">
+            <div class="settings-section-title">权限规则</div>
+            <div class="settings-section-desc">支持两种匹配方式：username 适用于本地账号，email 适用于 SSO 邮箱。规则保存后立即生效。</div>
+
+            <div class="permission-rule-list" id="permission-rule-list">
+              {% for item in permission_rules %}
+              <div class="permission-rule-row">
+                <label class="ios-field ios-select-field">
+                  <span class="ios-field-label">匹配类型</span>
+                  <div class="ios-select-wrap">
+                    <select name="permission_type[]">
+                      <option value="username" {% if item.type == 'username' %}selected{% endif %}>用户名</option>
+                      <option value="email" {% if item.type == 'email' %}selected{% endif %}>邮箱</option>
+                    </select>
+                    <span class="ios-chevron">›</span>
+                  </div>
+                </label>
+                <label class="ios-field">
+                  <span class="ios-field-label">匹配值</span>
+                  <input type="text" name="permission_value[]" value="{{ item.value }}" placeholder="例如：admin 或 someone@company.com">
+                </label>
+                <label class="ios-field ios-select-field">
+                  <span class="ios-field-label">权限</span>
+                  <div class="ios-select-wrap">
+                    <select name="permission_role[]">
+                      <option value="admin" {% if item.role == 'admin' %}selected{% endif %}>管理员</option>
+                      <option value="guest" {% if item.role == 'guest' %}selected{% endif %}>只读</option>
+                    </select>
+                    <span class="ios-chevron">›</span>
+                  </div>
+                </label>
+                <button type="button" class="button secondary js-remove-permission-row">删除</button>
+              </div>
+              {% endfor %}
+            </div>
+
+            <template id="permission-rule-template">
+              <div class="permission-rule-row">
+                <label class="ios-field ios-select-field">
+                  <span class="ios-field-label">匹配类型</span>
+                  <div class="ios-select-wrap">
+                    <select name="permission_type[]">
+                      <option value="username">用户名</option>
+                      <option value="email">邮箱</option>
+                    </select>
+                    <span class="ios-chevron">›</span>
+                  </div>
+                </label>
+                <label class="ios-field">
+                  <span class="ios-field-label">匹配值</span>
+                  <input type="text" name="permission_value[]" value="" placeholder="例如：admin 或 someone@company.com">
+                </label>
+                <label class="ios-field ios-select-field">
+                  <span class="ios-field-label">权限</span>
+                  <div class="ios-select-wrap">
+                    <select name="permission_role[]">
+                      <option value="admin">管理员</option>
+                      <option value="guest" selected>只读</option>
+                    </select>
+                    <span class="ios-chevron">›</span>
+                  </div>
+                </label>
+                <button type="button" class="button secondary js-remove-permission-row">删除</button>
+              </div>
+            </template>
+
+            <div class="backup-action-row">
+              <button type="button" class="button" id="add-permission-rule">新增规则</button>
+              <button type="submit" name="action" value="save_permissions" class="button">保存权限配置</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card system-card collapsible-card" data-collapsible>
+        <button class="system-card-header" type="button" data-toggle>
+          <div>
             <div class="system-card-title">备份</div>
             <div class="system-card-desc">手动和自动备份全部业务数据，可查看历史并一键恢复</div>
           </div>
@@ -218,6 +302,30 @@
           card.classList.toggle('expanded', !expanded);
         });
       });
+
+      function bindPermissionRowRemove(scope) {
+        scope.querySelectorAll('.js-remove-permission-row').forEach((button) => {
+          if (button.dataset.bound === '1') return;
+          button.dataset.bound = '1';
+          button.addEventListener('click', () => {
+            const row = button.closest('.permission-rule-row');
+            if (row) row.remove();
+          });
+        });
+      }
+
+      bindPermissionRowRemove(document);
+
+      const addPermissionRuleButton = document.getElementById('add-permission-rule');
+      const permissionRuleList = document.getElementById('permission-rule-list');
+      const permissionRuleTemplate = document.getElementById('permission-rule-template');
+      if (addPermissionRuleButton && permissionRuleList && permissionRuleTemplate) {
+        addPermissionRuleButton.addEventListener('click', () => {
+          const fragment = permissionRuleTemplate.content.cloneNode(true);
+          permissionRuleList.appendChild(fragment);
+          bindPermissionRowRemove(permissionRuleList);
+        });
+      }
 
       document.querySelectorAll('.backup-inline-action').forEach((wrap) => {
         const toggle = wrap.querySelector('.js-backup-popover-toggle');

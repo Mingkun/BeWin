@@ -470,6 +470,19 @@ header p {
   gap: 12px;
 }
 
+.permission-rule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.permission-rule-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) 180px auto;
+  gap: 12px;
+  align-items: end;
+}
+
 .backup-history-item {
   display: flex;
   justify-content: space-between;
@@ -1446,7 +1459,8 @@ body.theme-ios-dark .backup-popover-text {
   .form-grid,
   .month-grid-form,
   .form-grid-3,
-  .backup-history-item {
+  .backup-history-item,
+  .permission-rule-row {
     grid-template-columns: 1fr;
     flex-direction: column;
   }
