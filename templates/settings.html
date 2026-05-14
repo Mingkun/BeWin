@@ -173,6 +173,7 @@
                 <div class="backup-history-actions">
                   <input type="hidden" name="backup_filename" value="{{ item.filename }}">
                   <button type="submit" name="action" value="restore_backup" class="button danger" formaction="{{ url_for('settings_page') }}" onclick="this.form.backup_filename.value='{{ item.filename }}'; return confirm('确认恢复这个备份到系统？');">一键恢复</button>
+                  <button type="submit" name="action" value="delete_backup" class="button secondary" formaction="{{ url_for('settings_page') }}" onclick="this.form.backup_filename.value='{{ item.filename }}'; return confirm('确认删除这个备份文件？');">删除备份</button>
                 </div>
               </div>
               {% endfor %}

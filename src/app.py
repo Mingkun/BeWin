@@ -289,6 +289,17 @@ def restore_backup_archive(filename):
     return archive_path
 
 
+def delete_backup_archive(filename):
+    archive_path = ensure_backup_dir() / filename
+    if not archive_path.exists() or archive_path.suffix.lower() != '.zip' or '/' in filename or '..' in filename:
+        raise FileNotFoundError(filename)
+
+    archive_path.unlink()
+    history = [item for item in load_backup_manifest() if item.get('filename') != filename]
+    save_backup_manifest(history)
+    return filename
+
+
 def write_auto_backup_crontab(enabled, daily_time):
     cron_file = Path('/etc/cron.d/releaseplan-backup')
     if not enabled:
@@ -1301,6 +1312,15 @@ def settings_page():
                 return redirect(url_for('settings_page'))
             restore_backup_archive(backup_filename)
             flash(f'备份已恢复：{backup_filename}')
+            return redirect(url_for('settings_page'))
+
+        if action == 'delete_backup':
+            backup_filename = (request.form.get('backup_filename') or '').strip()
+            if not backup_filename:
+                flash('请选择要删除的备份')
+                return redirect(url_for('settings_page'))
+            delete_backup_archive(backup_filename)
+            flash(f'备份已删除：{backup_filename}')
             return redirect(url_for('settings_page'))
 
         auto_backup_enabled = (request.form.get('auto_backup_enabled') or '').strip() == 'on'
