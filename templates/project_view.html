@@ -17,7 +17,7 @@
           <span class="user-chip">已登录</span>
           <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
         {% else %}
-          <a class="button secondary" href="{{ url_for('oauth_login', next=request.path) }}">登录</a>
+          <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         <a class="button" href="{{ url_for('admin_project_new') }}">新增项目</a>
@@ -127,8 +127,18 @@
                 <td>{{ project.headcount_budget_tm or '未填写' }}</td>
                 <td class="actions-col">
                   <div class="inline-actions compact-actions">
-                    <a class="button small" href="{{ url_for('admin_project_edit', project_id=project.id) }}">修改</a>
-                    <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" onsubmit="return confirm('确认删除这条项目数据吗？');">
+                    <a class="icon-action" href="{{ url_for('admin_project_edit', project_id=project.id) }}" title="修改" aria-label="修改">✏️</a>
+                    <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" class="inline-delete-form">
+                      <button class="icon-action danger delete-trigger" type="button" title="删除" aria-label="删除">🗑</button>
+                      <div class="delete-popover" hidden>
+                        <span class="delete-popover-text">确认删除？</span>
+                        <div class="delete-popover-actions">
+                          <button class="button tiny danger" type="submit">删</button>
+                          <button class="button tiny secondary delete-cancel" type="button">取消</button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
                 </td>
               </tr>
             {% endfor %}
@@ -141,6 +151,32 @@
   </div>
   <script>
     (function () {
+      document.querySelectorAll('.inline-delete-form').forEach((form) => {
+        const trigger = form.querySelector('.delete-trigger');
+        const popover = form.querySelector('.delete-popover');
+        const cancel = form.querySelector('.delete-cancel');
+        if (!trigger || !popover || !cancel) return;
+
+        trigger.addEventListener('click', (event) => {
+          event.preventDefault();
+          document.querySelectorAll('.delete-popover').forEach((item) => {
+            if (item !== popover) item.hidden = true;
+          });
+          popover.hidden = !popover.hidden;
+        });
+
+        cancel.addEventListener('click', () => {
+          popover.hidden = true;
+        });
+      });
+
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('.inline-delete-form')) return;
+        document.querySelectorAll('.delete-popover').forEach((item) => {
+          item.hidden = true;
+        });
+      });
+
       const table = document.getElementById('project-data-table');
       if (!table) return;
 

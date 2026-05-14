@@ -17,7 +17,7 @@
           <span class="user-chip">已登录</span>
           <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
         {% else %}
-          <a class="button secondary" href="{{ url_for('oauth_login', next=request.path) }}">登录</a>
+          <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('requirements_page') }}">需求</a>
         <a class="button secondary settings-button" href="{{ url_for('settings_page') }}"><span class="settings-icon">⚙</span><span>系统</span></a>

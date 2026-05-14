@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% if mode == 'edit' %}编辑服务资源记录{% else %}新增服务资源记录{% else %}
-          <a class="button secondary" href="{{ url_for('oauth_login', next=request.path) }}">登录</a>
-        {% endif %}</title>
+  <title>{% if mode == 'edit' %}编辑服务资源记录{% else %}新增服务资源记录{% endif %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -19,6 +17,8 @@
         {% if current_user %}
           <span class="user-chip">已登录</span>
           <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+        {% else %}
+          <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
         <a class="button secondary" href="{{ return_to or url_for('admin_service_resources') }}">返回列表</a>
       </div>
@@ -49,8 +49,6 @@
         <label>HCS（OD）<input name="hcs_od" value="{{ record.hcs_od or '' }}" data-summary-target="summary_od"></label>
         <label>HCS（TM）<input name="hcs_tm" value="{{ record.hcs_tm or '' }}" data-summary-target="summary_tm"></label>
       </div>
-
-      <div class="card inner-card">
 
       <div class="toolbar-actions">
         <a class="button secondary" href="{{ return_to or url_for('admin_service_resources') }}">取消</a>

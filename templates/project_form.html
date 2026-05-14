@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% if mode == 'edit' %}编辑项目{% else %}新增项目{% else %}
-          <a class="button secondary" href="{{ url_for('oauth_login', next=request.path) }}">登录</a>
-        {% endif %}</title>
+  <title>{% if mode == 'edit' %}编辑项目{% else %}新增项目{% endif %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -19,6 +17,8 @@
         {% if current_user %}
           <span class="user-chip">已登录</span>
           <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+        {% else %}
+          <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('view_placeholder', view_key='department-pipeline-load') }}">返回项目视图</a>
       </div>
@@ -54,8 +54,6 @@
         <label>人力预算（OD）<textarea name="headcount_budget_od" rows="2">{{ project.headcount_budget_od or '' }}</textarea></label>
         <label>人力预算（TM）<textarea name="headcount_budget_tm" rows="2">{{ project.headcount_budget_tm or '' }}</textarea></label>
       </div>
-
-      <div class="card inner-card">
 
       <div class="toolbar-actions">
         <a class="button secondary" href="{{ url_for('view_placeholder', view_key='department-pipeline-load') }}">取消</a>

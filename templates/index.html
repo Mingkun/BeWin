@@ -17,7 +17,7 @@
           <span class="user-chip">已登录</span>
           <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
         {% else %}
-          <a class="button secondary" href="{{ url_for('oauth_login', next=request.path) }}">登录</a>
+          <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         <a class="button secondary" href="{{ url_for('admin_feature_new') }}">新增关键特性</a>

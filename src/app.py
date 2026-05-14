@@ -11,10 +11,21 @@ import sqlite3
 from functools import wraps
 from pathlib import Path
 from datetime import datetime
+import hashlib
 import shutil
 import zipfile
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+ENV_PATH = BASE_DIR / '.env'
+if ENV_PATH.exists():
+    for raw_line in ENV_PATH.read_text(encoding='utf-8').splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
 PROJECT_CSV_PATH = BASE_DIR / "docs" / "project_table.csv"
 FEATURE_CSV_PATH = BASE_DIR / "docs" / "feature_table.csv"
 DB_PATH = BASE_DIR / "data" / "releaseplan.db"
@@ -129,6 +140,8 @@ def save_env_settings(updates):
         "RELEASEPLAN_AUTO_BACKUP_ENABLED",
         "RELEASEPLAN_AUTO_BACKUP_TIME",
         "RELEASEPLAN_AUTO_BACKUP_SCHEDULE",
+        "RELEASEPLAN_LOCAL_ADMIN_USERNAME",
+        "RELEASEPLAN_LOCAL_ADMIN_PASSWORD",
         "HOST",
         "PORT",
     ]
@@ -326,14 +339,22 @@ def oauth_enabled():
     return os.getenv("RELEASEPLAN_OAUTH_ENABLED", "false").lower() == "true"
 
 
+def local_admin_enabled():
+    username = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_USERNAME') or '').strip()
+    password = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_PASSWORD') or '').strip()
+    return bool(username and password)
+
+
 def auth_mode():
     if oauth_enabled():
         return 'oauth2'
+    if local_admin_enabled():
+        return 'local'
     return 'none'
 
 
 def get_current_user():
-    return session.get('oauth_user')
+    return session.get('oauth_user') or session.get('local_user')
 
 
 def get_current_user_roles():
@@ -385,6 +406,12 @@ def build_auth_context():
     }
 
 
+def verify_local_admin(username, password):
+    expected_username = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_USERNAME') or '').strip()
+    expected_password = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_PASSWORD') or '').strip()
+    return username == expected_username and password == expected_password
+
+
 def require_admin():
     if can_edit():
         return None
@@ -400,6 +427,8 @@ def login_required(view_func):
             return view_func(*args, **kwargs)
         if get_current_user():
             return view_func(*args, **kwargs)
+        if mode == 'local':
+            return redirect(url_for('local_login', next=request.full_path if request.query_string else request.path))
         return redirect(url_for('oauth_login', next=request.full_path if request.query_string else request.path))
     return wrapped
 
@@ -1262,12 +1291,35 @@ def oauth_callback():
 @app.route('/auth/logout')
 def oauth_logout():
     session.pop('oauth_user', None)
+    session.pop('local_user', None)
     session.pop('oauth_state', None)
     session.pop('oauth_next', None)
     logout_url = os.getenv('RELEASEPLAN_OAUTH_LOGOUT_URL', '').strip()
-    if logout_url:
+    if logout_url and oauth_enabled():
         return redirect(logout_url)
     return redirect(url_for('index'))
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def local_login():
+    if auth_mode() != 'local':
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        username = (request.form.get('username') or '').strip()
+        password = request.form.get('password') or ''
+        next_url = (request.form.get('next') or request.args.get('next') or '/').strip() or '/'
+        if verify_local_admin(username, password):
+            session['local_user'] = {
+                'user_id': username,
+                'name': username,
+                'email': '',
+                'roles': ['admin'],
+                'auth_type': 'local',
+            }
+            return redirect(next_url)
+        flash('账号或密码错误')
+        return redirect(url_for('local_login', next=next_url))
+    return render_template('local_login.html', next=request.args.get('next') or '/', branding=get_branding(), **build_auth_context())
 
 
 @app.route('/')
