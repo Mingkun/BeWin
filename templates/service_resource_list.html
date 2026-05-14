@@ -16,9 +16,6 @@
       <div class="toolbar-actions">
         {% if current_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
-        {% else %}
-          <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         <a class="button secondary" href="{{ url_for('view_placeholder', view_key='cloud-service-view') }}">返回云服务视图</a>
@@ -32,6 +29,11 @@
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">从 CSV 导入</button>
         </form>
+        {% endif %}
+        {% if current_user %}
+          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+        {% else %}
+          <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
       </div>
     </header>

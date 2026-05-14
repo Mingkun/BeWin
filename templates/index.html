@@ -15,9 +15,6 @@
       <div class="toolbar-actions">
         {% if current_user %}
           <span class="user-chip">已登录</span>
-          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
-        {% else %}
-          <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
         <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
         {% if can_edit %}
@@ -27,6 +24,11 @@
         <a class="button secondary" href="{{ url_for('admin_projects_export_csv') }}">导出数据</a>
         {% if can_edit %}
         <button class="button warning" type="button" id="show-project-import" onclick="document.getElementById('project-import-panel').hidden = false;">导入数据</button>
+        {% endif %}
+        {% if current_user %}
+          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+        {% else %}
+          <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
       </div>
     </header>

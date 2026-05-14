@@ -16,11 +16,13 @@
       <div class="toolbar-actions">
         {% if current_user %}
           <span class="user-chip">已登录</span>
+        {% endif %}
+        <a class="button secondary" href="{{ url_for('view_placeholder', view_key='department-pipeline-load') }}">返回项目视图</a>
+        {% if current_user %}
           <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
         {% else %}
           <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
-        <a class="button secondary" href="{{ url_for('view_placeholder', view_key='department-pipeline-load') }}">返回项目视图</a>
       </div>
     </header>
 
