@@ -170,6 +170,17 @@ header p {
   background: #64748b;
 }
 
+.button.home-button {
+  background: linear-gradient(135deg, #0f59ff 0%, #12b5ff 55%, #67e8f9 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 89, 255, 0.28);
+}
+
+.button.home-button:hover {
+  filter: brightness(1.04);
+  box-shadow: 0 14px 30px rgba(15, 89, 255, 0.34);
+}
+
 .button.warning {
   background: #d97706;
 }

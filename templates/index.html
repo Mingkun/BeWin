@@ -16,7 +16,7 @@
         {% if current_user %}
           <span class="user-chip">已登录</span>
         {% endif %}
-        <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
         {% if can_edit %}
         <a class="button secondary" href="{{ url_for('admin_feature_new') }}">新增关键特性</a>
         {% endif %}
