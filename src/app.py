@@ -412,14 +412,19 @@ def verify_local_admin(username, password):
     return username == expected_username and password == expected_password
 
 
+def get_releaseplan_root_path():
+    return (request.headers.get('X-Forwarded-Prefix') or '/releaseplan').rstrip('/') or '/releaseplan'
+
+
 def normalize_next_url(next_url):
+    default_path = get_releaseplan_root_path()
     value = (next_url or '').strip()
-    if not value:
-        return '/'
+    if not value or value == '/':
+        return default_path
     if value.startswith('http://') or value.startswith('https://') or value.startswith('//'):
-        return '/'
+        return default_path
     if not value.startswith('/'):
-        return '/'
+        return default_path
     return value
 
 
