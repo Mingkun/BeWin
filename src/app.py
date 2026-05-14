@@ -412,6 +412,17 @@ def verify_local_admin(username, password):
     return username == expected_username and password == expected_password
 
 
+def normalize_next_url(next_url):
+    value = (next_url or '').strip()
+    if not value:
+        return '/'
+    if value.startswith('http://') or value.startswith('https://') or value.startswith('//'):
+        return '/'
+    if not value.startswith('/'):
+        return '/'
+    return value
+
+
 def require_admin():
     if can_edit():
         return None
@@ -1232,7 +1243,7 @@ def oauth_login():
     if not oauth_enabled():
         return redirect(url_for('index'))
     state = secrets.token_urlsafe(24)
-    next_url = request.args.get('next') or '/'
+    next_url = normalize_next_url(request.args.get('next') or '/')
     session['oauth_state'] = state
     session['oauth_next'] = next_url
     query = {
@@ -1284,7 +1295,7 @@ def oauth_callback():
     userinfo = userinfo_resp.json()
     session.pop('oauth_state', None)
     session['oauth_user'] = build_oauth_user(userinfo)
-    next_url = session.pop('oauth_next', None) or '/'
+    next_url = normalize_next_url(session.pop('oauth_next', None) or '/')
     return redirect(next_url)
 
 
@@ -1307,7 +1318,7 @@ def local_login():
     if request.method == 'POST':
         username = (request.form.get('username') or '').strip()
         password = request.form.get('password') or ''
-        next_url = (request.form.get('next') or request.args.get('next') or '/').strip() or '/'
+        next_url = normalize_next_url(request.form.get('next') or request.args.get('next') or '/')
         if verify_local_admin(username, password):
             session['local_user'] = {
                 'user_id': username,
@@ -1319,7 +1330,7 @@ def local_login():
             return redirect(next_url)
         flash('账号或密码错误')
         return redirect(url_for('local_login', next=next_url))
-    return render_template('local_login.html', next=request.args.get('next') or '/', branding=get_branding(), **build_auth_context())
+    return render_template('local_login.html', next=normalize_next_url(request.args.get('next') or '/'), branding=get_branding(), **build_auth_context())
 
 
 @app.route('/')
