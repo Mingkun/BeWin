@@ -28,112 +28,153 @@
       {% endif %}
     {% endwith %}
 
-    <form method="post" class="card settings-card ios-settings-form">
-      <section class="settings-group">
-        <div class="settings-section-title">品牌文案</div>
-        <div class="settings-section-desc">控制首页主标题，以及浏览器标签页显示的名称。</div>
-
-        <label class="ios-field">
-          <span class="ios-field-label">首页主标题</span>
-          <input type="text" name="home_title" value="{{ branding.home_title }}" placeholder="例如：可按需修改">
-        </label>
-
-        <label class="ios-field">
-          <span class="ios-field-label">首页浏览器标题</span>
-          <input type="text" name="browser_title" value="{{ branding.browser_title }}" placeholder="例如：可按需修改 入口">
-        </label>
-      </section>
-
-      <section class="settings-group">
-        <div class="settings-section-title">主题风格</div>
-        <div class="settings-section-desc">当前可在默认、iOS 浅色、iOS 深色之间切换。</div>
-
-        <label class="ios-field ios-select-field">
-          <span class="ios-field-label">主题</span>
-          <div class="ios-select-wrap">
-            <select name="theme">
-              <option value="ios-light" {% if branding.theme == 'ios-light' %}selected{% endif %}>iOS 浅色</option>
-              <option value="ios-dark" {% if branding.theme == 'ios-dark' %}selected{% endif %}>iOS 深色</option>
-              <option value="default" {% if branding.theme == 'default' %}selected{% endif %}>默认</option>
-            </select>
-            <span class="ios-chevron">›</span>
+    <form method="post" class="ios-settings-form system-settings-form">
+      <section class="card system-card collapsible-card" data-collapsible>
+        <button class="system-card-header" type="button" data-toggle>
+          <div>
+            <div class="system-card-title">设置</div>
+            <div class="system-card-desc">首页标题、主题和卡片展示配置</div>
           </div>
-        </label>
-      </section>
+          <span class="system-card-chevron">›</span>
+        </button>
 
-      <section class="settings-group">
-        <div class="settings-section-title">业务数据备份</div>
-        <div class="settings-section-desc">支持手动立即备份，也支持自动定时备份全部业务数据。当前备份会包含 data、docs 和 .env。</div>
+        <div class="system-card-body" hidden>
+          <div class="settings-group">
+            <div class="settings-section-title">品牌文案</div>
+            <div class="settings-section-desc">控制首页主标题，以及浏览器标签页显示的名称。</div>
 
-        <label class="ios-field">
-          <span class="ios-field-label">备份目录</span>
-          <input type="text" name="backup_dir" value="{{ backup_config.backup_dir }}" placeholder="例如：/work/ReleasePlan/backups">
-        </label>
+            <label class="ios-field">
+              <span class="ios-field-label">首页主标题</span>
+              <input type="text" name="home_title" value="{{ branding.home_title }}" placeholder="例如：可按需修改">
+            </label>
 
-        <label class="ios-field ios-checkbox-field">
-          <span class="ios-field-label">自动备份</span>
-          <div class="ios-toggle-row">
-            <input type="checkbox" name="auto_backup_enabled" {% if backup_config.auto_backup_enabled %}checked{% endif %}>
-            <span class="ios-toggle-text">启用自动备份</span>
+            <label class="ios-field">
+              <span class="ios-field-label">首页浏览器标题</span>
+              <input type="text" name="browser_title" value="{{ branding.browser_title }}" placeholder="例如：可按需修改 入口">
+            </label>
           </div>
-        </label>
 
-        <label class="ios-field">
-          <span class="ios-field-label">自动备份 Cron</span>
-          <input type="text" name="auto_backup_schedule" value="{{ backup_config.auto_backup_schedule }}" placeholder="例如：0 3 * * *">
-        </label>
+          <div class="settings-group">
+            <div class="settings-section-title">主题风格</div>
+            <div class="settings-section-desc">当前可在默认、iOS 浅色、iOS 深色之间切换。</div>
 
-        <div class="backup-action-row">
-          <button type="submit" name="action" value="run_backup_now" class="button warning">立即手动备份</button>
-        </div>
-      </section>
+            <label class="ios-field ios-select-field">
+              <span class="ios-field-label">主题</span>
+              <div class="ios-select-wrap">
+                <select name="theme">
+                  <option value="ios-light" {% if branding.theme == 'ios-light' %}selected{% endif %}>iOS 浅色</option>
+                  <option value="ios-dark" {% if branding.theme == 'ios-dark' %}selected{% endif %}>iOS 深色</option>
+                  <option value="default" {% if branding.theme == 'default' %}selected{% endif %}>默认</option>
+                </select>
+                <span class="ios-chevron">›</span>
+              </div>
+            </label>
+          </div>
 
-      <section class="settings-group">
-        <div class="settings-section-title">首页卡片</div>
-        <div class="settings-section-desc">可以调整首页卡片名称，也可以调整 1 到 5 的展示顺序。</div>
+          <div class="settings-group">
+            <div class="settings-section-title">首页卡片</div>
+            <div class="settings-section-desc">可以调整首页卡片名称，也可以调整 1 到 5 的展示顺序。</div>
 
-        {% for card in home_cards %}
-        <label class="ios-field">
-          <span class="ios-field-label">卡片 {{ loop.index }} 名称</span>
-          <input type="text" name="card_{{ loop.index }}_title" value="{{ card.title }}">
-        </label>
-        {% endfor %}
+            {% for card in home_cards %}
+            <label class="ios-field">
+              <span class="ios-field-label">卡片 {{ loop.index }} 名称</span>
+              <input type="text" name="card_{{ loop.index }}_title" value="{{ card.title }}">
+            </label>
+            {% endfor %}
 
-        <div class="ios-order-grid">
-          {% for pos in range(1, 6) %}
-          <label class="ios-field ios-select-field">
-            <span class="ios-field-label">第 {{ pos }} 个卡片</span>
-            <div class="ios-select-wrap">
-              <select name="card_{{ pos }}_key">
-                {% for option in [
-                  ('roadmap', '关键特性视图'),
-                  ('department-budget-resource', '投资视图'),
-                  ('project-budget-resource', '资源视图'),
-                  ('department-pipeline-load', '项目视图'),
-                  ('cloud-service-view', '云服务视图')
-                ] %}
-                  <option value="{{ option[0] }}" {% if home_cards[pos - 1].key == option[0] %}selected{% endif %}>{{ option[1] }}</option>
-                {% endfor %}
-              </select>
-              <span class="ios-chevron">›</span>
+            <div class="ios-order-grid">
+              {% for pos in range(1, 6) %}
+              <label class="ios-field ios-select-field">
+                <span class="ios-field-label">第 {{ pos }} 个卡片</span>
+                <div class="ios-select-wrap">
+                  <select name="card_{{ pos }}_key">
+                    {% for option in [
+                      ('roadmap', '关键特性视图'),
+                      ('department-budget-resource', '投资视图'),
+                      ('project-budget-resource', '资源视图'),
+                      ('department-pipeline-load', '项目视图'),
+                      ('cloud-service-view', '云服务视图')
+                    ] %}
+                      <option value="{{ option[0] }}" {% if home_cards[pos - 1].key == option[0] %}selected{% endif %}>{{ option[1] }}</option>
+                    {% endfor %}
+                  </select>
+                  <span class="ios-chevron">›</span>
+                </div>
+              </label>
+              {% endfor %}
             </div>
-          </label>
-          {% endfor %}
+          </div>
+
+          <div class="settings-group settings-preview-group">
+            <div class="settings-section-title">预览提示</div>
+            <div class="ios-preview-card">
+              <div class="ios-preview-title">{{ branding.home_title }}</div>
+              <div class="ios-preview-subtitle">浏览器标签页会显示为：{{ branding.browser_title }}</div>
+            </div>
+          </div>
+
+          <div class="toolbar-actions settings-actions">
+            <button type="submit" name="action" value="save_settings" class="button">保存设置</button>
+          </div>
         </div>
       </section>
 
-      <section class="settings-group settings-preview-group">
-        <div class="settings-section-title">预览提示</div>
-        <div class="ios-preview-card">
-          <div class="ios-preview-title">{{ branding.home_title }}</div>
-          <div class="ios-preview-subtitle">浏览器标签页会显示为：{{ branding.browser_title }}</div>
+      <section class="card system-card collapsible-card" data-collapsible>
+        <button class="system-card-header" type="button" data-toggle>
+          <div>
+            <div class="system-card-title">备份</div>
+            <div class="system-card-desc">手动和自动备份全部业务数据</div>
+          </div>
+          <span class="system-card-chevron">›</span>
+        </button>
+
+        <div class="system-card-body" hidden>
+          <div class="settings-group">
+            <div class="settings-section-title">业务数据备份</div>
+            <div class="settings-section-desc">支持手动立即备份，也支持自动定时备份全部业务数据。当前备份会包含 data、docs 和 .env。</div>
+
+            <label class="ios-field">
+              <span class="ios-field-label">备份目录</span>
+              <input type="text" name="backup_dir" value="{{ backup_config.backup_dir }}" placeholder="例如：/work/ReleasePlan/backups">
+            </label>
+
+            <label class="ios-field ios-checkbox-field">
+              <span class="ios-field-label">自动备份</span>
+              <div class="ios-toggle-row">
+                <input type="checkbox" name="auto_backup_enabled" {% if backup_config.auto_backup_enabled %}checked{% endif %}>
+                <span class="ios-toggle-text">启用自动备份</span>
+              </div>
+            </label>
+
+            <label class="ios-field">
+              <span class="ios-field-label">自动备份 Cron</span>
+              <input type="text" name="auto_backup_schedule" value="{{ backup_config.auto_backup_schedule }}" placeholder="例如：0 3 * * *">
+            </label>
+
+            <div class="backup-action-row">
+              <button type="submit" name="action" value="run_backup_now" class="button warning">立即手动备份</button>
+              <button type="submit" name="action" value="save_settings" class="button">保存备份设置</button>
+            </div>
+          </div>
         </div>
       </section>
-
-      <div class="toolbar-actions settings-actions">
-        <button type="submit" name="action" value="save_settings" class="button">保存系统设置</button>
-      </div>
     </form>
   </div>
+
+  <script>
+    (function () {
+      document.querySelectorAll('[data-collapsible]').forEach((card) => {
+        const toggle = card.querySelector('[data-toggle]');
+        const body = card.querySelector('.system-card-body');
+        if (!toggle || !body) return;
+
+        toggle.addEventListener('click', () => {
+          const expanded = !body.hidden;
+          body.hidden = expanded;
+          card.classList.toggle('expanded', !expanded);
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
