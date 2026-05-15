@@ -322,13 +322,14 @@ def match_permission_rule(username='', email=''):
     email = (email or '').strip().lower()
     for item in load_permission_rules():
         rule_type = (item.get('type') or '').strip().lower()
-        rule_value = (item.get('value') or '').strip().lower()
-        if not rule_value:
+        raw_rule_value = (item.get('value') or '').strip()
+        rule_values = [part.strip().lower() for part in raw_rule_value.split(';') if part.strip()]
+        if not rule_values:
             continue
         matched = False
-        if rule_type == 'username' and username and username == rule_value:
+        if rule_type == 'username' and username and username in rule_values:
             matched = True
-        if rule_type == 'email' and email and email == rule_value:
+        if rule_type == 'email' and email and email in rule_values:
             matched = True
         if matched:
             role = normalize_permission_role(item.get('role'))

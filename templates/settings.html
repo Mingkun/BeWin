@@ -131,7 +131,7 @@
         <div class="system-card-body" hidden>
           <div class="settings-group">
             <div class="settings-section-title">权限规则</div>
-            <div class="settings-section-desc">支持 username（本地账号）和 email（SSO 邮箱）两种规则。可直接套用预设，也可以手动调整每个功能权限。</div>
+            <div class="settings-section-desc">支持 username（本地账号）和 email（SSO 邮箱）两种规则。匹配值支持填写多个账号或邮箱，使用分号 ; 分隔。可直接套用预设，也可以手动调整每个功能权限。</div>
 
             <div style="border:1px solid var(--ios-light-gray); border-radius:12px; overflow:hidden; background:#fff; margin-bottom:12px;">
               <div style="display:grid; grid-template-columns: 110px 1.3fr 110px 1fr 88px; background:#f7f8fa; border-bottom:1px solid var(--ios-light-gray); font-size:12px; color:var(--ios-text-secondary); font-weight:600;">
@@ -199,7 +199,7 @@
                     </label>
                     <label class="ios-field" style="grid-column: span 2;">
                       <span class="ios-field-label">匹配值</span>
-                      <input type="text" id="permission-editor-value" value="" placeholder="例如：admin 或 someone@company.com">
+                      <input type="text" id="permission-editor-value" value="" placeholder="例如：admin;zhangsan 或 someone@company.com;other@company.com">
                     </label>
                     <label class="ios-field ios-select-field">
                       <span class="ios-field-label">角色</span>
