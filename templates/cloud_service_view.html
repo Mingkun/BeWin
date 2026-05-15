@@ -18,9 +18,6 @@
           <span class="user-chip">已登录（{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}）</span>
         {% endif %}
         <a class="button home-button" href="{{ url_for('index') }}">首页</a>
-        {% if user_features.manage_service_resources %}
-        <a class="button" href="{{ url_for('admin_service_resources') }}">维护服务资源数据</a>
-        {% endif %}
         {% if user_features.import_export_data %}
         <a class="button secondary" href="{{ url_for('admin_service_resources_template_csv') }}">导出模板</a>
         <a class="button secondary" href="{{ url_for('admin_service_resources_export_csv') }}">导出数据</a>
@@ -120,7 +117,19 @@
                 <td>{{ record.hcs_tm or '' }}</td>
                 <td>
                   {% if user_features.manage_service_resources %}
-                  <a class="button small" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}?return_to={{ url_for('view_placeholder', view_key='cloud-service-view') | urlencode }}">编辑</a>
+                  <div class="inline-actions compact-actions">
+                    <a class="icon-action" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}?return_to={{ url_for('view_placeholder', view_key='cloud-service-view') | urlencode }}" title="修改" aria-label="修改">✏️</a>
+                    <form method="post" action="{{ url_for('admin_service_resource_delete', record_id=record.id) }}" class="inline-delete-form">
+                      <button class="icon-action danger delete-trigger" type="button" title="删除" aria-label="删除">🗑</button>
+                      <div class="delete-popover" hidden>
+                        <span class="delete-popover-text">确认删除？</span>
+                        <div class="delete-popover-actions">
+                          <button class="button tiny danger" type="submit">删</button>
+                          <button class="button tiny secondary delete-cancel" type="button">取消</button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
                   {% else %}
                   -
                   {% endif %}
@@ -134,5 +143,34 @@
       <div class="empty">当前还没有服务粒度资源投入数据。</div>
     {% endif %}
   </div>
+  <script>
+    (function () {
+      document.querySelectorAll('.inline-delete-form').forEach((form) => {
+        const trigger = form.querySelector('.delete-trigger');
+        const popover = form.querySelector('.delete-popover');
+        const cancel = form.querySelector('.delete-cancel');
+        if (!trigger || !popover || !cancel) return;
+
+        trigger.addEventListener('click', (event) => {
+          event.preventDefault();
+          document.querySelectorAll('.delete-popover').forEach((item) => {
+            if (item !== popover) item.hidden = true;
+          });
+          popover.hidden = !popover.hidden;
+        });
+
+        cancel.addEventListener('click', () => {
+          popover.hidden = true;
+        });
+      });
+
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('.inline-delete-form')) return;
+        document.querySelectorAll('.delete-popover').forEach((item) => {
+          item.hidden = true;
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
