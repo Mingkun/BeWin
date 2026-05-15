@@ -1826,9 +1826,7 @@ def view_placeholder(view_key):
                 'service': service_keyword,
             },
             filter_options=filter_options,
-            auth_mode=auth_mode(),
-            current_user=get_current_user(),
-            user_features=get_current_user_features(),
+            **build_auth_context(),
         )
 
     if view_key == 'department-pipeline-load':
@@ -1848,9 +1846,7 @@ def view_placeholder(view_key):
             quarters=QUARTERS,
             display_year=display_year,
             today_marker_percent=today_marker_percent,
-            auth_mode=auth_mode(),
-            current_user=get_current_user(),
-            user_features=get_current_user_features(),
+            **build_auth_context(),
         )
 
     view_map = {
