@@ -353,7 +353,17 @@
         });
       });
 
-      const featureKeys = {{ FEATURE_KEYS | tojson }};
+      const featureKeys = {{ [
+        'view_system',
+        'manage_permissions',
+        'manage_backup',
+        'submit_requirement',
+        'manage_requirement_status',
+        'manage_projects',
+        'manage_features',
+        'manage_service_resources',
+        'import_export_data'
+      ] | tojson }};
       const permissionRuleList = document.getElementById('permission-rule-list');
       const permissionHiddenFields = document.getElementById('permission-hidden-fields');
       const permissionHiddenTemplate = document.getElementById('permission-rule-hidden-template');
