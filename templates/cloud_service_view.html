@@ -76,6 +76,7 @@
       <div class="card stat-card"><div class="stat-label">汇总（自有）</div><div class="stat-value">{{ summary.summary_self_owned }}</div></div>
       <div class="card stat-card"><div class="stat-label">汇总（OD）</div><div class="stat-value">{{ summary.summary_od }}</div></div>
       <div class="card stat-card"><div class="stat-label">汇总（TM）</div><div class="stat-value">{{ summary.summary_tm }}</div></div>
+      <div class="card stat-card"><div class="stat-label">汇总（合计）</div><div class="stat-value">{{ summary.summary_total }}</div></div>
       <div class="card stat-card"><div class="stat-label">HC 总计</div><div class="stat-value">{{ summary.hc_total }}</div></div>
       <div class="card stat-card"><div class="stat-label">HCS 总计</div><div class="stat-value">{{ summary.hcs_total }}</div></div>
     </div>
@@ -88,7 +89,7 @@
               <th rowspan="2">五层部门</th>
               <th rowspan="2">L4云服务</th>
               <th rowspan="2">功能和用途简介</th>
-              <th colspan="3" style="text-align:center;">汇总</th>
+              <th colspan="4" style="text-align:center;">汇总</th>
               <th colspan="3" style="text-align:center;">HC</th>
               <th colspan="3" style="text-align:center;">HCS</th>
               <th rowspan="2">操作</th>
@@ -97,6 +98,7 @@
               <th>自有</th>
               <th>OD</th>
               <th>TM</th>
+              <th>合计</th>
               <th>自有</th>
               <th>OD</th>
               <th>TM</th>
@@ -114,6 +116,7 @@
                 <td>{{ record.summary_self_owned or '' }}</td>
                 <td>{{ record.summary_od or '' }}</td>
                 <td>{{ record.summary_tm or '' }}</td>
+                <td>{{ '%.2f'|format((record.summary_self_owned|float) + (record.summary_od|float) + 0.8 * (record.summary_tm|float)) }}</td>
                 <td>{{ record.hc_self_owned or '' }}</td>
                 <td>{{ record.hc_od or '' }}</td>
                 <td>{{ record.hc_tm or '' }}</td>

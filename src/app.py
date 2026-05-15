@@ -1283,6 +1283,7 @@ def build_service_resource_summary(rows):
         "summary_self_owned": round(sum(to_number(row.get("summary_self_owned")) for row in rows), 2),
         "summary_od": round(sum(to_number(row.get("summary_od")) for row in rows), 2),
         "summary_tm": round(sum(to_number(row.get("summary_tm")) for row in rows), 2),
+        "summary_total": round(sum(to_number(row.get("summary_self_owned")) + to_number(row.get("summary_od")) + 0.8 * to_number(row.get("summary_tm")) for row in rows), 2),
         "hc_total": round(sum(to_number(row.get("hc_self_owned")) + to_number(row.get("hc_od")) + to_number(row.get("hc_tm")) for row in rows), 2),
         "hcs_total": round(sum(to_number(row.get("hcs_self_owned")) + to_number(row.get("hcs_od")) + to_number(row.get("hcs_tm")) for row in rows), 2),
     }
