@@ -81,11 +81,16 @@
 
               <div class="feature-lane-list" data-project-id="{{ project.project_id }}">
                 {% for feature in project.features %}
-                  <div class="feature-lane-row" draggable="true" data-feature-id="{{ feature.id }}">
+                  <div class="feature-lane-row" data-feature-id="{{ feature.id }}">
                     <div class="feature-info-panel">
                       <div class="feature-info-head">
                         <div class="feature-name">{{ feature.feature_name }}</div>
-                        {% if user_features.manage_features %}<a class="feature-edit-link" href="{{ url_for('admin_feature_edit', feature_id=feature.id) }}">编辑</a>{% endif %}
+                        {% if user_features.manage_features %}
+                        <div style="display:flex; align-items:center; gap:8px;">
+                          <button type="button" class="feature-pin-toggle {% if feature.is_pinned %}active{% endif %}" data-project-id="{{ project.project_id }}" data-feature-id="{{ feature.id }}" data-pinned="{{ '1' if feature.is_pinned else '0' }}">置顶</button>
+                          <a class="feature-edit-link" href="{{ url_for('admin_feature_edit', feature_id=feature.id) }}">编辑</a>
+                        </div>
+                        {% endif %}
                       </div>
                       <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
                       <div class="feature-tags">
@@ -160,43 +165,20 @@
       });
     });
 
-    document.querySelectorAll('.feature-lane-list').forEach((list) => {
-      let dragging = null;
-
-      list.querySelectorAll('.feature-lane-row').forEach((row) => {
-        row.addEventListener('dragstart', () => {
-          dragging = row;
-          row.classList.add('dragging');
-        });
-
-        row.addEventListener('dragend', async () => {
-          row.classList.remove('dragging');
-          const projectId = Number(list.dataset.projectId || 0);
-          const featureIds = Array.from(list.querySelectorAll('.feature-lane-row')).map((item) => Number(item.dataset.featureId || 0)).filter(Boolean);
-          dragging = null;
-          try {
-            await fetch('{{ url_for("save_roadmap_feature_order") }}', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ project_id: projectId, feature_ids: featureIds })
-            });
-          } catch (error) {
-            console.warn('save feature order failed', error);
-          }
-        });
-      });
-
-      list.addEventListener('dragover', (event) => {
-        event.preventDefault();
-        const afterElement = Array.from(list.querySelectorAll('.feature-lane-row:not(.dragging)')).find((element) => {
-          const box = element.getBoundingClientRect();
-          return event.clientY < box.top + box.height / 2;
-        });
-        if (!dragging) return;
-        if (!afterElement) {
-          list.appendChild(dragging);
-        } else {
-          list.insertBefore(dragging, afterElement);
+    document.querySelectorAll('.feature-pin-toggle').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const projectId = Number(button.dataset.projectId || 0);
+        const featureId = Number(button.dataset.featureId || 0);
+        const willPin = button.dataset.pinned !== '1';
+        try {
+          await fetch('{{ url_for("save_roadmap_feature_pin") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_id: projectId, feature_id: featureId, pin: willPin })
+          });
+          window.location.reload();
+        } catch (error) {
+          console.warn('save feature pin failed', error);
         }
       });
     });

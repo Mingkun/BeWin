@@ -1118,10 +1118,12 @@ def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
             start_percent = 0
             width_percent = 0
 
+        feature_order = user_feature_orders.get((row.get("project_id"), row.get("id")))
         feature = {
             "id": row.get("id"),
             "project_id": row.get("project_id"),
-            "sort_index": user_feature_orders.get((row.get("project_id"), row.get("id")), 10**9),
+            "sort_index": feature_order if feature_order is not None else 10**9,
+            "is_pinned": feature_order is not None and feature_order < 0,
             "five_level_department": (row.get("five_level_department") or "").strip(),
             "feature_name": feature_name,
             "focus_work": (row.get("focus_work") or "").strip(),
@@ -1671,28 +1673,50 @@ def roadmap():
     )
 
 
-@app.route('/roadmap/feature-order', methods=['POST'])
+@app.route('/roadmap/feature-pin', methods=['POST'])
 @login_required
-def save_roadmap_feature_order():
-    feature_order = request.get_json(silent=True) or {}
-    project_id = feature_order.get('project_id')
-    ordered_feature_ids = feature_order.get('feature_ids') or []
+def save_roadmap_feature_pin():
+    payload = request.get_json(silent=True) or {}
+    project_id = payload.get('project_id')
+    feature_id = payload.get('feature_id')
+    pin = bool(payload.get('pin'))
     current_user = get_current_user() or {}
     user_id = (current_user.get('user_id') or '').strip()
-    if not user_id or not project_id or not isinstance(ordered_feature_ids, list):
+    if not user_id or not project_id or not feature_id:
         return {'ok': False}, 400
 
     init_db()
     with get_conn() as conn:
-        for idx, feature_id in enumerate(ordered_feature_ids):
+        existing = conn.execute(
+            """
+            SELECT feature_id, sort_index
+            FROM user_feature_orders
+            WHERE user_id = ? AND project_id = ?
+            ORDER BY sort_index ASC, id ASC
+            """,
+            (user_id, project_id),
+        ).fetchall()
+
+        if pin:
+            for row in existing:
+                if row['sort_index'] < 0:
+                    conn.execute(
+                        "UPDATE user_feature_orders SET sort_index = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND project_id = ? AND feature_id = ?",
+                        (row['sort_index'] + 1, user_id, project_id, row['feature_id'])
+                    )
             conn.execute(
                 """
                 INSERT INTO user_feature_orders (user_id, project_id, feature_id, sort_index, updated_at)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                VALUES (?, ?, ?, -1, CURRENT_TIMESTAMP)
                 ON CONFLICT(user_id, project_id, feature_id)
-                DO UPDATE SET sort_index = excluded.sort_index, updated_at = CURRENT_TIMESTAMP
+                DO UPDATE SET sort_index = -1, updated_at = CURRENT_TIMESTAMP
                 """,
-                (user_id, project_id, feature_id, idx),
+                (user_id, project_id, feature_id),
+            )
+        else:
+            conn.execute(
+                "DELETE FROM user_feature_orders WHERE user_id = ? AND project_id = ? AND feature_id = ?",
+                (user_id, project_id, feature_id),
             )
         conn.commit()
     return {'ok': True}
