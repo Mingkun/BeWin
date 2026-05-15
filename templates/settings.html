@@ -211,7 +211,6 @@
                         <span class="ios-chevron">›</span>
                       </div>
                     </label>
-                    <button type="button" class="button secondary" id="permission-editor-delete">删除</button>
                   </div>
 
                   <div class="permission-feature-grid">
@@ -374,7 +373,6 @@
       const permissionEditorType = document.getElementById('permission-editor-type');
       const permissionEditorValue = document.getElementById('permission-editor-value');
       const permissionEditorRole = document.getElementById('permission-editor-role');
-      const permissionEditorDelete = document.getElementById('permission-editor-delete');
       const permissionModalSave = document.getElementById('permission-rule-modal-save');
       const permissionModalCancel = document.getElementById('permission-rule-modal-cancel');
       const permissionModalClose = document.getElementById('permission-rule-modal-close');
@@ -422,11 +420,9 @@
         if (index >= 0) {
           fillEditor(permissionRulesState[index]);
           permissionModalSubtitle.textContent = '编辑权限规则';
-          permissionEditorDelete.style.display = 'inline-flex';
         } else {
           fillEditor({ type: 'username', value: '', role: 'guest', features: {} });
           permissionModalSubtitle.textContent = '新增权限规则';
-          permissionEditorDelete.style.display = 'none';
         }
         permissionModal.style.display = 'block';
       }
@@ -509,17 +505,6 @@
           } else {
             permissionRulesState.push(rule);
           }
-          closePermissionModal();
-          renderPermissionRuleList();
-        });
-      }
-
-      if (permissionEditorDelete) {
-        permissionEditorDelete.addEventListener('click', () => {
-          if (currentPermissionIndex < 0) return;
-          const current = permissionRulesState[currentPermissionIndex] || {};
-          if (!confirm(`确定删除规则“${current.value || '未命名'}”吗？`)) return;
-          permissionRulesState.splice(currentPermissionIndex, 1);
           closePermissionModal();
           renderPermissionRuleList();
         });
