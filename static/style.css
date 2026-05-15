@@ -1094,7 +1094,7 @@ body.theme-ios-dark .backup-popover-text {
   max-width: 96px;
 }
 
-.timeline-milestone span {
+.timeline-milestone-text {
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
@@ -1111,6 +1111,30 @@ body.theme-ios-dark .backup-popover-text {
   box-shadow: 0 4px 10px rgba(37, 99, 235, 0.08);
   text-align: left;
   word-break: break-word;
+}
+
+.timeline-milestone-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  min-width: 140px;
+  max-width: 240px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.94);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.28);
+}
+
+.timeline-milestone:hover .timeline-milestone-tooltip {
+  display: block;
 }
 
 .timeline-empty {
