@@ -1714,10 +1714,24 @@ def save_roadmap_feature_pin():
                 (user_id, project_id, feature_id),
             )
         else:
-            conn.execute(
-                "DELETE FROM user_feature_orders WHERE user_id = ? AND project_id = ? AND feature_id = ?",
-                (user_id, project_id, feature_id),
-            )
+            current_row = next((row for row in existing if row['feature_id'] == feature_id), None)
+            if current_row and current_row['sort_index'] < 0:
+                removed_index = current_row['sort_index']
+                conn.execute(
+                    "DELETE FROM user_feature_orders WHERE user_id = ? AND project_id = ? AND feature_id = ?",
+                    (user_id, project_id, feature_id),
+                )
+                for row in existing:
+                    if row['feature_id'] != feature_id and row['sort_index'] > removed_index and row['sort_index'] < 0:
+                        conn.execute(
+                            "UPDATE user_feature_orders SET sort_index = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND project_id = ? AND feature_id = ?",
+                            (row['sort_index'] - 1, user_id, project_id, row['feature_id'])
+                        )
+            else:
+                conn.execute(
+                    "DELETE FROM user_feature_orders WHERE user_id = ? AND project_id = ? AND feature_id = ?",
+                    (user_id, project_id, feature_id),
+                )
         conn.commit()
     return {'ok': True}
 
