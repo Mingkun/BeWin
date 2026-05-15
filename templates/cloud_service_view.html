@@ -98,7 +98,7 @@
               <th>自有</th>
               <th>OD</th>
               <th>TM</th>
-              <th>合计</th>
+              <th title="公式：自有 + OD + 0.8*TM">合计</th>
               <th>自有</th>
               <th>OD</th>
               <th>TM</th>
@@ -116,7 +116,7 @@
                 <td>{{ record.summary_self_owned or '' }}</td>
                 <td>{{ record.summary_od or '' }}</td>
                 <td>{{ record.summary_tm or '' }}</td>
-                <td>{{ '%.2f'|format((record.summary_self_owned|float) + (record.summary_od|float) + 0.8 * (record.summary_tm|float)) }}</td>
+                <td title="公式：自有 + OD + 0.8*TM">{{ '%.2f'|format((record.summary_self_owned|float) + (record.summary_od|float) + 0.8 * (record.summary_tm|float)) }}</td>
                 <td>{{ record.hc_self_owned or '' }}</td>
                 <td>{{ record.hc_od or '' }}</td>
                 <td>{{ record.hc_tm or '' }}</td>
