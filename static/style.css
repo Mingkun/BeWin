@@ -1120,17 +1120,18 @@ body.theme-ios-dark .backup-popover-text {
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
-  min-width: 140px;
-  max-width: 240px;
-  padding: 8px 10px;
+  min-width: 220px;
+  max-width: 360px;
+  padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(15, 23, 42, 0.94);
-  color: #fff;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  color: #1e3a8a;
   font-size: 12px;
-  line-height: 1.5;
-  white-space: pre-wrap;
+  line-height: 1.6;
+  white-space: normal;
   word-break: break-word;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.28);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.16);
 }
 
 .timeline-milestone:hover .timeline-milestone-tooltip {
