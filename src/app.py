@@ -1119,7 +1119,7 @@ def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
             width_percent = 0
 
         feature_order = user_feature_orders.get((row.get("project_id"), row.get("id")))
-        is_pinned = feature_order is not None and feature_order < 0
+        is_pinned = feature_order is not None and feature_order <= 0
         feature = {
             "id": row.get("id"),
             "project_id": row.get("project_id"),
@@ -1724,19 +1724,19 @@ def save_roadmap_feature_pin():
             current_row = next((row for row in existing if row['feature_id'] == feature_id), None)
             if current_row and current_row['sort_index'] <= 0:
                 removed_index = current_row['sort_index']
-                conn.execute(
-                    "DELETE FROM user_feature_orders WHERE user_id = ? AND project_id = ? AND feature_id = ?",
-                    (user_id, project_id, feature_id),
-                )
                 for row in existing:
                     if row['feature_id'] != feature_id and row['sort_index'] < removed_index:
                         conn.execute(
                             "UPDATE user_feature_orders SET sort_index = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND project_id = ? AND feature_id = ?",
                             (row['sort_index'] + 1, user_id, project_id, row['feature_id'])
                         )
+                conn.execute(
+                    "UPDATE user_feature_orders SET sort_index = 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND project_id = ? AND feature_id = ?",
+                    (user_id, project_id, feature_id),
+                )
             else:
                 conn.execute(
-                    "DELETE FROM user_feature_orders WHERE user_id = ? AND project_id = ? AND feature_id = ?",
+                    "UPDATE user_feature_orders SET sort_index = 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND project_id = ? AND feature_id = ?",
                     (user_id, project_id, feature_id),
                 )
         conn.commit()
