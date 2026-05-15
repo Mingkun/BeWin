@@ -76,7 +76,7 @@
       <div style="font-size:16px; font-weight:700; margin-bottom:12px;">云服务总投入饼图</div>
       <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center;">
         <canvas id="service-summary-pie" width="280" height="280" style="max-width:100%; height:auto;"></canvas>
-        <div id="service-summary-pie-legend" style="display:flex; flex-direction:column; gap:10px; min-width:220px;"></div>
+        <div id="service-summary-pie-legend" style="display:grid; grid-auto-flow:column; grid-template-rows:repeat(10, auto); gap:10px 20px; align-items:start; min-width:220px;"></div>
       </div>
     </div>
     {% endif %}
