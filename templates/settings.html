@@ -192,7 +192,7 @@
                       <div class="ios-select-wrap">
                         <select id="permission-editor-type">
                           <option value="username">用户名</option>
-                          <option value="email">邮箱</option>
+                          <option value="email" selected>邮箱</option>
                         </select>
                         <span class="ios-chevron">›</span>
                       </div>
@@ -396,7 +396,7 @@
           features[key] = !!(checkbox && checkbox.checked);
         });
         return {
-          type: (permissionEditorType.value || 'username').trim(),
+          type: (permissionEditorType.value || 'email').trim(),
           value: (permissionEditorValue.value || '').trim(),
           role: (permissionEditorRole.value || 'guest').trim(),
           features,
@@ -405,7 +405,7 @@
 
       function fillEditor(rule) {
         permissionEditorPreset.value = '';
-        permissionEditorType.value = (rule && rule.type) || 'username';
+        permissionEditorType.value = (rule && rule.type) || 'email';
         permissionEditorValue.value = (rule && rule.value) || '';
         permissionEditorRole.value = (rule && rule.role) || 'guest';
         const features = (rule && rule.features) || {};
@@ -421,7 +421,7 @@
           fillEditor(permissionRulesState[index]);
           permissionModalSubtitle.textContent = '编辑权限规则';
         } else {
-          fillEditor({ type: 'username', value: '', role: 'guest', features: {} });
+          fillEditor({ type: 'email', value: '', role: 'guest', features: {} });
           permissionModalSubtitle.textContent = '新增权限规则';
         }
         permissionModal.style.display = 'block';
