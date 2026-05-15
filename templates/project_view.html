@@ -29,6 +29,14 @@
     </header>
 
     {% if projects %}
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:16px; font-weight:700; margin-bottom:12px;">项目投入工作量占比饼图</div>
+        <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center;">
+          <canvas id="project-workload-pie" width="280" height="280" style="max-width:100%; height:auto;"></canvas>
+          <div id="project-workload-pie-legend" style="display:grid; grid-auto-flow:column; grid-template-rows:repeat(10, auto); gap:10px 20px; align-items:start; min-width:220px;"></div>
+        </div>
+      </div>
+
       <div class="project-lane-card" style="margin-bottom: 20px;">
         <div class="project-lane-title">
           <h2>项目甘特图</h2>
@@ -164,6 +172,67 @@
   </div>
   <script>
     (function () {
+      const pieCanvas = document.getElementById('project-workload-pie');
+      const pieLegend = document.getElementById('project-workload-pie-legend');
+      if (pieCanvas && pieLegend) {
+        const pieData = [
+          {% for project in projects %}
+          {
+            label: {{ (project.project_name or '未命名项目') | tojson }},
+            value: {{ (project.workload_person_month|float) | round(2) }}
+          },
+          {% endfor %}
+        ]
+          .filter(item => item.value > 0)
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 50);
+
+        const colors = ['#5B8FF9', '#61DDAA', '#65789B', '#F6BD16', '#7262FD', '#78D3F8', '#9661BC', '#F6903D', '#008685', '#F08BB4', '#8B5CF6', '#10B981'];
+        const ctx = pieCanvas.getContext('2d');
+        const total = pieData.reduce((sum, item) => sum + item.value, 0);
+
+        if (ctx && total > 0) {
+          let startAngle = -Math.PI / 2;
+          const cx = pieCanvas.width / 2;
+          const cy = pieCanvas.height / 2;
+          const radius = 110;
+
+          pieData.forEach((item, index) => {
+            const angle = (item.value / total) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, radius, startAngle, startAngle + angle);
+            ctx.closePath();
+            ctx.fillStyle = colors[index % colors.length];
+            ctx.fill();
+            startAngle += angle;
+          });
+
+          ctx.beginPath();
+          ctx.fillStyle = '#fff';
+          ctx.arc(cx, cy, 46, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#111827';
+          ctx.font = 'bold 18px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('工作量', cx, cy - 6);
+          ctx.font = '14px sans-serif';
+          ctx.fillStyle = '#6b7280';
+          ctx.fillText(total.toFixed(2), cx, cy + 18);
+
+          pieLegend.innerHTML = pieData
+            .map((item, index) => {
+              const color = colors[index % colors.length];
+              const percent = ((item.value / total) * 100).toFixed(1);
+              return `<div style="display:flex; align-items:center; gap:10px; font-size:13px;"><span style="width:12px; height:12px; border-radius:999px; background:${color}; display:inline-block;"></span><span style="flex:1; color:#111827;">${item.label}</span><span style="color:#6b7280;">${item.value.toFixed(2)} / ${percent}%</span></div>`;
+            })
+            .join('');
+        } else {
+          pieLegend.innerHTML = '<div style="color:#6b7280; font-size:13px;">暂无可展示的工作量数据</div>';
+        }
+      }
+
       document.querySelectorAll('.inline-delete-form').forEach((form) => {
         const trigger = form.querySelector('.delete-trigger');
         const popover = form.querySelector('.delete-popover');
