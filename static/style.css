@@ -838,7 +838,7 @@ body.theme-ios-dark .backup-popover-text {
 
 .timeline-panel {
   position: relative;
-  min-height: 60px;
+  min-height: 120px;
   background: #fff;
 }
 
@@ -862,10 +862,9 @@ body.theme-ios-dark .backup-popover-text {
   position: absolute;
   left: 0;
   right: 0;
-  top: 50%;
+  top: 72px;
   height: 2px;
   background: #dbeafe;
-  transform: translateY(-50%);
 }
 
 .timeline-today-marker {
@@ -882,7 +881,7 @@ body.theme-ios-dark .backup-popover-text {
 
 .timeline-bar {
   position: absolute;
-  top: 50%;
+  top: 72px;
   transform: translateY(-50%);
   height: 14px;
   border-radius: 999px;
@@ -1089,24 +1088,29 @@ body.theme-ios-dark .backup-popover-text {
 
 .timeline-milestone {
   position: absolute;
-  top: calc(50% - 26px);
+  top: 10px;
   transform: translateX(-50%);
+  width: calc(100% / 12 - 8px);
+  max-width: 96px;
 }
 
 .timeline-milestone span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: #fff;
-  border: 2px solid #2563eb;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 52px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #60a5fa;
   color: #1d4ed8;
   font-size: 12px;
   font-weight: 700;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.12);
+  line-height: 1.35;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.08);
+  text-align: left;
+  word-break: break-word;
 }
 
 .timeline-empty {

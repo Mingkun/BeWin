@@ -110,7 +110,7 @@
                         <div class="timeline-milestones">
                           {% for idx in feature.active_indexes %}
                             <div class="timeline-milestone" style="left: {{ (idx + 0.5) / 12 * 100 }}%;">
-                              <span>{{ feature.month_values[idx] }}</span>
+                              <span title="{{ feature.month_values[idx] }}">{{ feature.month_values[idx] }}</span>
                             </div>
                           {% endfor %}
                         </div>
