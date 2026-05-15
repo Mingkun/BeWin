@@ -59,37 +59,36 @@ app.secret_key = os.getenv("RELEASEPLAN_SECRET_KEY", "releaseplan-dev-secret-cha
 
 
 def get_home_cards():
-    default_cards = [
-        {
-            "key": "department-pipeline-load",
-            "title": os.getenv("RELEASEPLAN_CARD_1_TITLE", "项目视图"),
+    card_meta = {
+        "department-pipeline-load": {
+            "title": "项目视图",
             "desc": "查看项目视图页面的内容，项目甘特图、项目主要信息。",
             "href": url_for('view_placeholder', view_key='department-pipeline-load'),
         },
-        {
-            "key": "roadmap",
-            "title": os.getenv("RELEASEPLAN_CARD_2_TITLE", "关键特性视图"),
+        "roadmap": {
+            "title": "关键特性视图",
             "desc": "查看所规划关键特性的路标信息。",
             "href": url_for('roadmap'),
         },
-        {
-            "key": "cloud-service-view",
-            "title": os.getenv("RELEASEPLAN_CARD_3_TITLE", "云服务视图"),
+        "cloud-service-view": {
+            "title": "云服务视图",
             "desc": "按云服务粒度查看资源投入情况。",
             "href": url_for('view_placeholder', view_key='cloud-service-view'),
         },
-        {
-            "key": "department-budget-resource",
-            "title": os.getenv("RELEASEPLAN_CARD_4_TITLE", "投资视图"),
+        "department-budget-resource": {
+            "title": "投资视图",
             "desc": "从投资维度看管道。",
             "href": url_for('view_placeholder', view_key='department-budget-resource'),
         },
-        {
-            "key": "project-budget-resource",
-            "title": os.getenv("RELEASEPLAN_CARD_5_TITLE", "资源视图"),
+        "project-budget-resource": {
+            "title": "资源视图",
             "desc": "了解部门人力资源情况。",
             "href": url_for('view_placeholder', view_key='project-budget-resource'),
         },
+    }
+    default_cards = [
+        {"key": key, **value}
+        for key, value in card_meta.items()
     ]
     preferred_order = [
         os.getenv("RELEASEPLAN_CARD_1_KEY", "department-pipeline-load"),
