@@ -91,7 +91,7 @@
       <div class="table-wrap card">
         <table class="data-table clean-project-table" id="project-data-table">
           <colgroup>
-            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
+            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
           </colgroup>
           <thead>
             <tr>
@@ -106,13 +106,14 @@
               <th data-sort="date" rowspan="2">结束日期<div class="col-resizer"></div></th>
               <th data-sort="number" rowspan="2">工作量（人月）<div class="col-resizer"></div></th>
               <th data-sort="number" rowspan="2">费用预算（w）<div class="col-resizer"></div></th>
-              <th data-sort="none" colspan="3" style="text-align:center;">人力预算<div class="col-resizer"></div></th>
+              <th data-sort="none" colspan="4" style="text-align:center;">人力预算<div class="col-resizer"></div></th>
               <th class="actions-col" data-sort="none" rowspan="2">操作<div class="col-resizer"></div></th>
             </tr>
             <tr>
               <th data-sort="number">自有<div class="col-resizer"></div></th>
               <th data-sort="number">OD<div class="col-resizer"></div></th>
               <th data-sort="number">TM<div class="col-resizer"></div></th>
+              <th data-sort="number" title="公式：自有 + OD + 0.8*TM">合计<div class="col-resizer"></div></th>
             </tr>
           </thead>
           <tbody>
@@ -132,6 +133,7 @@
                 <td>{{ project.headcount_budget_self_owned or '未填写' }}</td>
                 <td>{{ project.headcount_budget_od or '未填写' }}</td>
                 <td>{{ project.headcount_budget_tm or '未填写' }}</td>
+                <td title="公式：自有 + OD + 0.8*TM">{{ '%.2f'|format((project.headcount_budget_self_owned|float) + (project.headcount_budget_od|float) + 0.8 * (project.headcount_budget_tm|float)) }}</td>
                 <td class="actions-col">
                   {% if user_features.manage_projects %}
                   <div class="inline-actions compact-actions">
