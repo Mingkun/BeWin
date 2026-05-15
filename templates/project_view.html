@@ -199,7 +199,7 @@
           .sort((a, b) => b.value - a.value)
           .slice(0, 50);
 
-        const colors = ['#5B8FF9', '#61DDAA', '#65789B', '#F6BD16', '#7262FD', '#78D3F8', '#9661BC', '#F6903D', '#008685', '#F08BB4', '#8B5CF6', '#10B981'];
+        const colors = ['rgba(96,165,250,0.9)', 'rgba(52,211,153,0.9)', 'rgba(167,139,250,0.9)', 'rgba(251,191,36,0.9)', 'rgba(244,114,182,0.9)', 'rgba(34,211,238,0.9)', 'rgba(129,140,248,0.9)', 'rgba(250,204,21,0.9)', 'rgba(45,212,191,0.9)', 'rgba(251,146,60,0.9)', 'rgba(192,132,252,0.9)', 'rgba(74,222,128,0.9)'];
         const ctx = pieCanvas.getContext('2d');
         const total = pieData.reduce((sum, item) => sum + item.value, 0);
 
