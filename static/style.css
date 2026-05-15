@@ -774,7 +774,7 @@ body.theme-ios-dark .backup-popover-text {
   gap: 0;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .feature-info-panel {
@@ -840,6 +840,7 @@ body.theme-ios-dark .backup-popover-text {
   position: relative;
   min-height: 120px;
   background: #fff;
+  overflow: visible;
 }
 
 .timeline-grid-lines {
