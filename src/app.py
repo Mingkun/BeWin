@@ -1119,11 +1119,13 @@ def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
             width_percent = 0
 
         feature_order = user_feature_orders.get((row.get("project_id"), row.get("id")))
+        is_pinned = feature_order is not None and feature_order < 0
         feature = {
             "id": row.get("id"),
             "project_id": row.get("project_id"),
             "sort_index": feature_order if feature_order is not None else 10**9,
-            "is_pinned": feature_order is not None and feature_order < 0,
+            "base_index": row.get("id") or 10**9,
+            "is_pinned": is_pinned,
             "five_level_department": (row.get("five_level_department") or "").strip(),
             "feature_name": feature_name,
             "focus_work": (row.get("focus_work") or "").strip(),
@@ -1149,7 +1151,12 @@ def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
         grouped[project_name]["features"].append(feature)
 
     for project in grouped.values():
-        project["features"].sort(key=lambda item: (item.get("sort_index", 10**9), item.get("id") or 0))
+        project["features"].sort(
+            key=lambda item: (
+                0 if item.get("is_pinned") else 1,
+                item.get("sort_index", 10**9) if item.get("is_pinned") else item.get("base_index", 10**9)
+            )
+        )
 
     return list(grouped.values())
 
@@ -1702,30 +1709,30 @@ def save_roadmap_feature_pin():
                 if row['sort_index'] < 0:
                     conn.execute(
                         "UPDATE user_feature_orders SET sort_index = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND project_id = ? AND feature_id = ?",
-                        (row['sort_index'] + 1, user_id, project_id, row['feature_id'])
+                        (row['sort_index'] - 1, user_id, project_id, row['feature_id'])
                     )
             conn.execute(
                 """
                 INSERT INTO user_feature_orders (user_id, project_id, feature_id, sort_index, updated_at)
-                VALUES (?, ?, ?, -1, CURRENT_TIMESTAMP)
+                VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)
                 ON CONFLICT(user_id, project_id, feature_id)
-                DO UPDATE SET sort_index = -1, updated_at = CURRENT_TIMESTAMP
+                DO UPDATE SET sort_index = 0, updated_at = CURRENT_TIMESTAMP
                 """,
                 (user_id, project_id, feature_id),
             )
         else:
             current_row = next((row for row in existing if row['feature_id'] == feature_id), None)
-            if current_row and current_row['sort_index'] < 0:
+            if current_row and current_row['sort_index'] <= 0:
                 removed_index = current_row['sort_index']
                 conn.execute(
                     "DELETE FROM user_feature_orders WHERE user_id = ? AND project_id = ? AND feature_id = ?",
                     (user_id, project_id, feature_id),
                 )
                 for row in existing:
-                    if row['feature_id'] != feature_id and row['sort_index'] > removed_index and row['sort_index'] < 0:
+                    if row['feature_id'] != feature_id and row['sort_index'] < removed_index:
                         conn.execute(
                             "UPDATE user_feature_orders SET sort_index = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND project_id = ? AND feature_id = ?",
-                            (row['sort_index'] - 1, user_id, project_id, row['feature_id'])
+                            (row['sort_index'] + 1, user_id, project_id, row['feature_id'])
                         )
             else:
                 conn.execute(
