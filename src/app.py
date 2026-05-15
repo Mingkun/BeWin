@@ -1828,6 +1828,7 @@ def view_placeholder(view_key):
             filter_options=filter_options,
             auth_mode=auth_mode(),
             current_user=get_current_user(),
+            user_features=get_current_user_features(),
         )
 
     if view_key == 'department-pipeline-load':
@@ -1849,6 +1850,7 @@ def view_placeholder(view_key):
             today_marker_percent=today_marker_percent,
             auth_mode=auth_mode(),
             current_user=get_current_user(),
+            user_features=get_current_user_features(),
         )
 
     view_map = {
