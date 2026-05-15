@@ -775,6 +775,12 @@ body.theme-ios-dark .backup-popover-text {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+
+.feature-lane-row:hover {
+  z-index: 10;
 }
 
 .feature-info-panel {
@@ -1133,6 +1139,10 @@ body.theme-ios-dark .backup-popover-text {
   white-space: normal;
   word-break: break-word;
   box-shadow: 0 10px 24px rgba(37, 99, 235, 0.16);
+}
+
+.timeline-milestone:hover {
+  z-index: 30;
 }
 
 .timeline-milestone:hover .timeline-milestone-tooltip {
