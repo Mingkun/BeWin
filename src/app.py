@@ -2071,7 +2071,29 @@ def admin_projects_export_csv():
             row.get('headcount_budget_tm', ''),
         ])
     response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
-    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('关键特性描述_导出数据.csv')}"
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('项目数据_导出数据.csv')}"
+    return response
+
+
+@app.route('/admin/features/export-csv')
+@login_required
+def admin_features_export_csv():
+    rows = load_project_features()
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(FEATURE_ALL_COLUMNS)
+    for row in rows:
+        writer.writerow([
+            row.get('project_name', ''),
+            row.get('five_level_department', ''),
+            row.get('focus_work', ''),
+            row.get('feature_name', ''),
+            row.get('service_group', ''),
+            row.get('delivery_pm', ''),
+            *[row.get(month, '') for month in MILESTONE_COLUMNS],
+        ])
+    response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('关键特性数据_导出数据.csv')}"
     return response
 
 
