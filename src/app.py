@@ -779,6 +779,20 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_feature_orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                project_id INTEGER NOT NULL,
+                feature_id INTEGER NOT NULL,
+                sort_index INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, project_id, feature_id)
+            )
+            """
+        )
         existing_requirement_columns = {row[1] for row in conn.execute("PRAGMA table_info(requirements)").fetchall()}
         if 'submitter' not in existing_requirement_columns:
             conn.execute("ALTER TABLE requirements ADD COLUMN submitter TEXT")
@@ -1053,7 +1067,26 @@ def build_project_gantt(project_rows, display_year):
     return gantt_projects
 
 
-def build_project_roadmap(project_rows, feature_rows):
+def load_user_feature_orders(user_id):
+    user_id = (user_id or '').strip()
+    if not user_id:
+        return {}
+    init_db()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT project_id, feature_id, sort_index
+            FROM user_feature_orders
+            WHERE user_id = ?
+            ORDER BY sort_index ASC, id ASC
+            """,
+            (user_id,),
+        ).fetchall()
+    return {(row['project_id'], row['feature_id']): row['sort_index'] for row in rows}
+
+
+def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
+    user_feature_orders = user_feature_orders or {}
     grouped = {}
     project_id_map = {}
     for row in project_rows:
@@ -1088,6 +1121,7 @@ def build_project_roadmap(project_rows, feature_rows):
         feature = {
             "id": row.get("id"),
             "project_id": row.get("project_id"),
+            "sort_index": user_feature_orders.get((row.get("project_id"), row.get("id")), 10**9),
             "five_level_department": (row.get("five_level_department") or "").strip(),
             "feature_name": feature_name,
             "focus_work": (row.get("focus_work") or "").strip(),
@@ -1111,6 +1145,9 @@ def build_project_roadmap(project_rows, feature_rows):
                 "features": [],
             }
         grouped[project_name]["features"].append(feature)
+
+    for project in grouped.values():
+        project["features"].sort(key=lambda item: (item.get("sort_index", 10**9), item.get("id") or 0))
 
     return list(grouped.values())
 
@@ -1621,7 +1658,9 @@ def index():
 def roadmap():
     project_rows = load_projects()
     feature_rows = load_project_features()
-    project_groups = build_project_roadmap(project_rows, feature_rows)
+    current_user = get_current_user() or {}
+    user_feature_orders = load_user_feature_orders(current_user.get('user_id'))
+    project_groups = build_project_roadmap(project_rows, feature_rows, user_feature_orders)
     return render_template(
         'index.html',
         project_groups=project_groups,
@@ -1630,6 +1669,33 @@ def roadmap():
         branding=get_branding(),
         **build_auth_context(),
     )
+
+
+@app.route('/roadmap/feature-order', methods=['POST'])
+@login_required
+def save_roadmap_feature_order():
+    feature_order = request.get_json(silent=True) or {}
+    project_id = feature_order.get('project_id')
+    ordered_feature_ids = feature_order.get('feature_ids') or []
+    current_user = get_current_user() or {}
+    user_id = (current_user.get('user_id') or '').strip()
+    if not user_id or not project_id or not isinstance(ordered_feature_ids, list):
+        return {'ok': False}, 400
+
+    init_db()
+    with get_conn() as conn:
+        for idx, feature_id in enumerate(ordered_feature_ids):
+            conn.execute(
+                """
+                INSERT INTO user_feature_orders (user_id, project_id, feature_id, sort_index, updated_at)
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(user_id, project_id, feature_id)
+                DO UPDATE SET sort_index = excluded.sort_index, updated_at = CURRENT_TIMESTAMP
+                """,
+                (user_id, project_id, feature_id, idx),
+            )
+        conn.commit()
+    return {'ok': True}
 
 
 @app.route('/settings', methods=['GET', 'POST'])

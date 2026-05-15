@@ -79,9 +79,9 @@
                 </div>
               </div>
 
-              <div class="feature-lane-list">
+              <div class="feature-lane-list" data-project-id="{{ project.project_id }}">
                 {% for feature in project.features %}
-                  <div class="feature-lane-row">
+                  <div class="feature-lane-row" draggable="true" data-feature-id="{{ feature.id }}">
                     <div class="feature-info-panel">
                       <div class="feature-info-head">
                         <div class="feature-name">{{ feature.feature_name }}</div>
@@ -157,6 +157,47 @@
         button.classList.add('active');
         const panel = document.getElementById(target);
         if (panel) panel.classList.add('active');
+      });
+    });
+
+    document.querySelectorAll('.feature-lane-list').forEach((list) => {
+      let dragging = null;
+
+      list.querySelectorAll('.feature-lane-row').forEach((row) => {
+        row.addEventListener('dragstart', () => {
+          dragging = row;
+          row.classList.add('dragging');
+        });
+
+        row.addEventListener('dragend', async () => {
+          row.classList.remove('dragging');
+          const projectId = Number(list.dataset.projectId || 0);
+          const featureIds = Array.from(list.querySelectorAll('.feature-lane-row')).map((item) => Number(item.dataset.featureId || 0)).filter(Boolean);
+          dragging = null;
+          try {
+            await fetch('{{ url_for("save_roadmap_feature_order") }}', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ project_id: projectId, feature_ids: featureIds })
+            });
+          } catch (error) {
+            console.warn('save feature order failed', error);
+          }
+        });
+      });
+
+      list.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        const afterElement = Array.from(list.querySelectorAll('.feature-lane-row:not(.dragging)')).find((element) => {
+          const box = element.getBoundingClientRect();
+          return event.clientY < box.top + box.height / 2;
+        });
+        if (!dragging) return;
+        if (!afterElement) {
+          list.appendChild(dragging);
+        } else {
+          list.insertBefore(dragging, afterElement);
+        }
       });
     });
   </script>
