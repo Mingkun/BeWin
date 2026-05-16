@@ -14,12 +14,12 @@
         <p>维护项目基础信息，不再在这里维护关键特性排期。</p>
       </div>
       <div class="toolbar-actions">
-        {% if current_user %}
-          <span class="user-chip">已登录（{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}）</span>
-        {% endif %}
         <a class="button secondary" href="{{ url_for('view_placeholder', view_key='department-pipeline-load') }}">返回项目视图</a>
         {% if current_user %}
-          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+          <span class="logout-wrap">
+            <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+            <span class="user-chip">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+          </span>
         {% else %}
           <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}

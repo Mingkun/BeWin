@@ -14,12 +14,12 @@
         <p>维护服务粒度的人力投入和服务说明。</p>
       </div>
       <div class="toolbar-actions">
-        {% if current_user %}
-          <span class="user-chip">已登录（{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}）</span>
-        {% endif %}
         <a class="button secondary" href="{{ return_to or url_for('admin_service_resources') }}">返回列表</a>
         {% if current_user %}
-          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+          <span class="logout-wrap">
+            <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+            <span class="user-chip">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+          </span>
         {% else %}
           <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}

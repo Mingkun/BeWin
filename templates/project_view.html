@@ -13,15 +13,15 @@
         <h1>项目视图</h1>
       </div>
       <div class="toolbar-actions">
-        {% if current_user %}
-          <span class="user-chip">已登录（{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}）</span>
-        {% endif %}
         <a class="button home-button" href="{{ url_for('index') }}">首页</a>
         {% if user_features.manage_projects %}
         <a class="button" href="{{ url_for('admin_project_new') }}">新增项目</a>
         {% endif %}
         {% if current_user %}
-          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+          <span class="logout-wrap">
+            <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+            <span class="user-chip">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+          </span>
         {% else %}
           <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
@@ -29,25 +29,25 @@
     </header>
 
     {% if projects %}
-      <div class="card collapsible-card expanded" data-collapsible style="margin-bottom:16px;">
+      <div class="card collapsible-card expanded glass-chart-card" data-collapsible style="margin-bottom:16px;">
         <button type="button" data-toggle style="width:100%; display:flex; align-items:center; justify-content:space-between; border:none; background:transparent; padding:0; cursor:pointer; margin-bottom:12px;">
           <div style="font-size:16px; font-weight:700; text-align:left;">项目投入分析饼图</div>
           <span class="system-card-chevron">›</span>
         </button>
         <div class="system-card-body" data-collapsible-body>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap:20px; align-items:start;">
-            <div>
+            <div class="glass-pie-panel">
               <div style="font-size:14px; font-weight:700; margin-bottom:10px;">工作量占比</div>
               <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center;">
-                <canvas id="project-workload-pie" width="280" height="280" style="max-width:100%; height:auto;"></canvas>
-                <div id="project-workload-pie-legend" style="display:grid; grid-auto-flow:column; grid-template-rows:repeat(10, auto); gap:10px 20px; align-items:start; min-width:220px;"></div>
+                <canvas id="project-workload-pie" width="280" height="280" class="glass-pie-canvas" style="max-width:100%; height:auto;"></canvas>
+                <div id="project-workload-pie-legend" class="glass-pie-legend" style="display:grid; grid-auto-flow:column; grid-template-rows:repeat(10, auto); gap:10px 20px; align-items:start; min-width:220px;"></div>
               </div>
             </div>
-            <div>
+            <div class="glass-pie-panel">
               <div style="font-size:14px; font-weight:700; margin-bottom:10px;">人力预算（合计）占比</div>
               <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center;">
-                <canvas id="project-budget-pie" width="280" height="280" style="max-width:100%; height:auto;"></canvas>
-                <div id="project-budget-pie-legend" style="display:grid; grid-auto-flow:column; grid-template-rows:repeat(10, auto); gap:10px 20px; align-items:start; min-width:220px;"></div>
+                <canvas id="project-budget-pie" width="280" height="280" class="glass-pie-canvas" style="max-width:100%; height:auto;"></canvas>
+                <div id="project-budget-pie-legend" class="glass-pie-legend" style="display:grid; grid-auto-flow:column; grid-template-rows:repeat(10, auto); gap:10px 20px; align-items:start; min-width:220px;"></div>
               </div>
             </div>
           </div>
@@ -194,56 +194,87 @@
         const pieLegend = document.getElementById(legendId);
         if (!pieCanvas || !pieLegend) return;
 
-        const pieData = data
+        const sourceData = data
           .filter(item => item.value > 0)
           .sort((a, b) => b.value - a.value)
-          .slice(0, 50);
+          .slice(0, 50)
+          .map((item, index) => ({ ...item, sourceIndex: index }));
 
-        const colors = ['rgba(96,165,250,0.9)', 'rgba(52,211,153,0.9)', 'rgba(167,139,250,0.9)', 'rgba(251,191,36,0.9)', 'rgba(244,114,182,0.9)', 'rgba(34,211,238,0.9)', 'rgba(129,140,248,0.9)', 'rgba(250,204,21,0.9)', 'rgba(45,212,191,0.9)', 'rgba(251,146,60,0.9)', 'rgba(192,132,252,0.9)', 'rgba(74,222,128,0.9)'];
+        const colors = ['rgba(56,189,248,0.82)', 'rgba(16,185,129,0.82)', 'rgba(139,92,246,0.82)', 'rgba(250,204,21,0.82)', 'rgba(244,114,182,0.82)', 'rgba(6,182,212,0.82)', 'rgba(99,102,241,0.82)', 'rgba(249,115,22,0.82)', 'rgba(20,184,166,0.82)', 'rgba(168,85,247,0.82)', 'rgba(244,63,94,0.82)', 'rgba(59,130,246,0.82)'];
+        const hiddenItems = new Set();
         const ctx = pieCanvas.getContext('2d');
-        const total = pieData.reduce((sum, item) => sum + item.value, 0);
 
-        if (ctx && total > 0) {
-          let startAngle = -Math.PI / 2;
-          const cx = pieCanvas.width / 2;
-          const cy = pieCanvas.height / 2;
-          const radius = 110;
+        function draw() {
+          const pieData = sourceData.filter(item => !hiddenItems.has(item.sourceIndex));
+          const total = pieData.reduce((sum, item) => sum + item.value, 0);
+          if (!ctx) return;
+
           ctx.clearRect(0, 0, pieCanvas.width, pieCanvas.height);
 
-          pieData.forEach((item, index) => {
-            const angle = (item.value / total) * Math.PI * 2;
+          if (total > 0) {
+            let startAngle = -Math.PI / 2;
+            const cx = pieCanvas.width / 2;
+            const cy = pieCanvas.height / 2;
+            const radius = 110;
+
+            pieData.forEach((item) => {
+              const angle = (item.value / total) * Math.PI * 2;
+              ctx.beginPath();
+              ctx.moveTo(cx, cy);
+              ctx.arc(cx, cy, radius, startAngle, startAngle + angle);
+              ctx.closePath();
+              ctx.fillStyle = colors[item.sourceIndex % colors.length];
+              ctx.shadowColor = 'rgba(255,255,255,0.5)';
+              ctx.shadowBlur = 10;
+              ctx.fill();
+              ctx.shadowBlur = 0;
+              startAngle += angle;
+            });
+
             ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.arc(cx, cy, radius, startAngle, startAngle + angle);
-            ctx.closePath();
-            ctx.fillStyle = colors[index % colors.length];
+            ctx.fillStyle = 'rgba(255,255,255,0.88)';
+            ctx.arc(cx, cy, 46, 0, Math.PI * 2);
             ctx.fill();
-            startAngle += angle;
-          });
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+            ctx.stroke();
 
-          ctx.beginPath();
-          ctx.fillStyle = '#fff';
-          ctx.arc(cx, cy, 46, 0, Math.PI * 2);
-          ctx.fill();
+            ctx.fillStyle = '#111827';
+            ctx.font = 'bold 18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(centerTitle, cx, cy - 6);
+            ctx.font = '14px sans-serif';
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText(total.toFixed(2), cx, cy + 18);
+          }
 
-          ctx.fillStyle = '#111827';
-          ctx.font = 'bold 18px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(centerTitle, cx, cy - 6);
-          ctx.font = '14px sans-serif';
-          ctx.fillStyle = '#6b7280';
-          ctx.fillText(total.toFixed(2), cx, cy + 18);
+          if (total > 0) {
+            pieLegend.innerHTML = sourceData
+              .map((item) => {
+                const color = colors[item.sourceIndex % colors.length];
+                const hidden = hiddenItems.has(item.sourceIndex);
+                const percent = total > 0 && !hidden ? ((item.value / total) * 100).toFixed(1) : '0.0';
+                return `<button type="button" class="pie-legend-item${hidden ? ' is-hidden' : ''}" data-pie-index="${item.sourceIndex}" style="display:flex; width:100%; align-items:center; gap:10px; font-size:13px; border:none; cursor:pointer; text-align:left;"><span style="width:12px; height:12px; border-radius:999px; background:${color}; display:inline-block; flex-shrink:0;"></span><span style="flex:1; color:#111827; text-decoration:${hidden ? 'line-through' : 'none'}; opacity:${hidden ? '0.55' : '1'};">${item.label}</span><span style="color:#6b7280; text-decoration:${hidden ? 'line-through' : 'none'}; opacity:${hidden ? '0.55' : '1'};">${hidden ? '--' : item.value.toFixed(2) + ' / ' + percent + '%'}</span></button>`;
+              })
+              .join('');
 
-          pieLegend.innerHTML = pieData
-            .map((item, index) => {
-              const color = colors[index % colors.length];
-              const percent = ((item.value / total) * 100).toFixed(1);
-              return `<div style="display:flex; align-items:center; gap:10px; font-size:13px;"><span style="width:12px; height:12px; border-radius:999px; background:${color}; display:inline-block;"></span><span style="flex:1; color:#111827;">${item.label}</span><span style="color:#6b7280;">${item.value.toFixed(2)} / ${percent}%</span></div>`;
-            })
-            .join('');
-        } else {
-          pieLegend.innerHTML = `<div style="color:#6b7280; font-size:13px;">${emptyText}</div>`;
+            pieLegend.querySelectorAll('[data-pie-index]').forEach((button) => {
+              button.addEventListener('click', () => {
+                const index = Number(button.dataset.pieIndex);
+                if (hiddenItems.has(index)) {
+                  hiddenItems.delete(index);
+                } else {
+                  hiddenItems.add(index);
+                }
+                draw();
+              });
+            });
+          } else {
+            pieLegend.innerHTML = `<div style="color:#6b7280; font-size:13px;">${emptyText}</div>`;
+          }
         }
+
+        draw();
       }
 
       renderPieChart(

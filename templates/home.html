@@ -13,9 +13,6 @@
         <h1>{{ branding.home_title }}</h1>
       </div>
       <div class="toolbar-actions">
-        {% if current_user %}
-          <span class="user-chip">已登录（{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}）</span>
-        {% endif %}
         {% if user_features.submit_requirement or user_features.manage_requirement_status %}
         <a class="button secondary" href="{{ url_for('requirements_page') }}" title="点击这里给这个网站提交需求" aria-label="点击这里给这个网站提交需求">💡</a>
         {% endif %}
@@ -23,7 +20,10 @@
         <a class="button secondary settings-button" href="{{ url_for('settings_page') }}"><span class="settings-icon">⚙</span><span>系统</span></a>
         {% endif %}
         {% if current_user %}
-          <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+          <span class="logout-wrap">
+            <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+            <span class="user-chip">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+          </span>
         {% else %}
           <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
         {% endif %}
