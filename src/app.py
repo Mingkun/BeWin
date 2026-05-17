@@ -1743,116 +1743,149 @@ def save_roadmap_feature_pin():
     return {'ok': True}
 
 
-@app.route('/settings', methods=['GET', 'POST'])
+
+@app.route('/settings/general', methods=['GET', 'POST'])
 @login_required
-def settings_page():
+def settings_general_page():
     denied = require_feature('view_system', '当前账号不能访问系统页')
     if denied:
         return denied
+
+    if request.method == 'POST':
+        updates = {
+            'RELEASEPLAN_HOME_TITLE': (request.form.get('home_title') or '').strip() or 'ReleasePlan',
+            'RELEASEPLAN_BROWSER_TITLE': (request.form.get('browser_title') or '').strip() or 'ReleasePlan 入口',
+            'RELEASEPLAN_THEME': (request.form.get('theme') or 'ios-light').strip() or 'ios-light',
+            'RELEASEPLAN_CARD_1_TITLE': (request.form.get('card_1_title') or '').strip() or '项目视图',
+            'RELEASEPLAN_CARD_2_TITLE': (request.form.get('card_2_title') or '').strip() or '关键特性视图',
+            'RELEASEPLAN_CARD_3_TITLE': (request.form.get('card_3_title') or '').strip() or '投资视图',
+            'RELEASEPLAN_CARD_4_TITLE': (request.form.get('card_4_title') or '').strip() or '资源视图',
+            'RELEASEPLAN_CARD_5_TITLE': (request.form.get('card_5_title') or '').strip() or '云服务视图',
+            'RELEASEPLAN_CARD_1_KEY': (request.form.get('card_1_key') or 'department-pipeline-load').strip() or 'department-pipeline-load',
+            'RELEASEPLAN_CARD_2_KEY': (request.form.get('card_2_key') or 'roadmap').strip() or 'roadmap',
+            'RELEASEPLAN_CARD_3_KEY': (request.form.get('card_3_key') or 'department-budget-resource').strip() or 'department-budget-resource',
+            'RELEASEPLAN_CARD_4_KEY': (request.form.get('card_4_key') or 'project-budget-resource').strip() or 'project-budget-resource',
+            'RELEASEPLAN_CARD_5_KEY': (request.form.get('card_5_key') or 'cloud-service-view').strip() or 'cloud-service-view',
+        }
+        save_env_settings(updates)
+        os.environ.update(updates)
+        flash('设置已保存并立即生效')
+        return redirect(url_for('settings_general_page'))
+
+    return render_template(
+        'settings_general.html',
+        page_title='设置',
+        page_desc='调整首页标题、主题和首页卡片展示。',
+        branding=get_branding(),
+        home_cards=get_home_cards(),
+        **build_auth_context(),
+    )
+
+
+@app.route('/settings/permissions', methods=['GET', 'POST'])
+@login_required
+def settings_permissions_page():
+    denied = require_feature('view_system', '当前账号不能访问系统页')
+    if denied:
+        return denied
+    denied = require_feature('manage_permissions', '当前账号不能修改权限配置')
+    if denied:
+        return denied
+
+    if request.method == 'POST':
+        rule_types = request.form.getlist('permission_type[]')
+        rule_values = request.form.getlist('permission_value[]')
+        rule_roles = request.form.getlist('permission_role[]')
+        feature_matrix = {key: request.form.getlist(f'permission_feature_{key}[]') for key in FEATURE_KEYS}
+        rules = []
+        total = max(len(rule_types), len(rule_values), len(rule_roles))
+        for idx in range(total):
+            rule_type = (rule_types[idx] if idx < len(rule_types) else '').strip().lower()
+            rule_value = (rule_values[idx] if idx < len(rule_values) else '').strip()
+            rule_role = normalize_permission_role(rule_roles[idx] if idx < len(rule_roles) else 'guest')
+            if rule_type not in {'username', 'email'} or not rule_value:
+                continue
+            features = default_feature_flags(rule_role)
+            for key in FEATURE_KEYS:
+                values = feature_matrix.get(key) or []
+                features[key] = idx < len(values) and values[idx] == 'on'
+            rules.append({
+                'type': rule_type,
+                'value': rule_value,
+                'role': rule_role,
+                'features': normalize_feature_flags(features, rule_role),
+            })
+        save_permission_rules(rules)
+        flash('权限配置已保存并立即生效')
+        return redirect(url_for('settings_permissions_page'))
+
+    return render_template(
+        'settings_permissions.html',
+        page_title='权限配置',
+        page_desc='管理本地用户名和 SSO 邮箱对应的角色与功能权限。',
+        branding=get_branding(),
+        permission_rules=load_permission_rules(),
+        permission_presets=get_permission_presets(),
+        feature_keys=FEATURE_KEYS,
+        **build_auth_context(),
+    )
+
+
+@app.route('/settings/backups', methods=['GET', 'POST'])
+@login_required
+def settings_backups_page():
+    denied = require_feature('view_system', '当前账号不能访问系统页')
+    if denied:
+        return denied
+    denied = require_feature('manage_backup', '当前账号不能执行备份操作')
+    if denied:
+        return denied
+
     if request.method == 'POST':
         action = (request.form.get('action') or 'save_settings').strip()
         if action == 'run_backup_now':
-            denied = require_feature('manage_backup', '当前账号不能执行备份操作')
-            if denied:
-                return denied
             archive_path = build_backup_archive(backup_type='manual')
-            flash(f'手动备份已完成：{archive_path}')
-            return redirect(url_for('settings_page'))
-
+            flash(f'手动备份已完成：{archive_path.name}')
+            return redirect(url_for('settings_backups_page'))
         if action == 'restore_backup':
-            denied = require_feature('manage_backup', '当前账号不能执行恢复操作')
-            if denied:
-                return denied
             backup_filename = (request.form.get('backup_filename') or '').strip()
             if not backup_filename:
                 flash('请选择要恢复的备份')
-                return redirect(url_for('settings_page'))
+                return redirect(url_for('settings_backups_page'))
             restore_backup_archive(backup_filename)
             flash(f'备份已恢复：{backup_filename}')
-            return redirect(url_for('settings_page'))
-
+            return redirect(url_for('settings_backups_page'))
         if action == 'delete_backup':
-            denied = require_feature('manage_backup', '当前账号不能删除备份')
-            if denied:
-                return denied
             backup_filename = (request.form.get('backup_filename') or '').strip()
             if not backup_filename:
                 flash('请选择要删除的备份')
-                return redirect(url_for('settings_page'))
+                return redirect(url_for('settings_backups_page'))
             delete_backup_archive(backup_filename)
             flash(f'备份已删除：{backup_filename}')
-            return redirect(url_for('settings_page'))
-
-        if action == 'save_permissions':
-            denied = require_feature('manage_permissions', '当前账号不能修改权限配置')
-            if denied:
-                return denied
-            rule_types = request.form.getlist('permission_type[]')
-            rule_values = request.form.getlist('permission_value[]')
-            rule_roles = request.form.getlist('permission_role[]')
-            feature_keys = FEATURE_KEYS
-            feature_matrix = {
-                key: request.form.getlist(f'permission_feature_{key}[]')
-                for key in feature_keys
-            }
-            rules = []
-            total = max(len(rule_types), len(rule_values), len(rule_roles))
-            for idx in range(total):
-                rule_type = (rule_types[idx] if idx < len(rule_types) else '').strip().lower()
-                rule_value = (rule_values[idx] if idx < len(rule_values) else '').strip()
-                rule_role = normalize_permission_role(rule_roles[idx] if idx < len(rule_roles) else 'guest')
-                if rule_type not in {'username', 'email'} or not rule_value:
-                    continue
-                features = default_feature_flags(rule_role)
-                for key in feature_keys:
-                    values = feature_matrix.get(key) or []
-                    features[key] = idx < len(values) and values[idx] == 'on'
-                rules.append({
-                    'type': rule_type,
-                    'value': rule_value,
-                    'role': rule_role,
-                    'features': normalize_feature_flags(features, rule_role),
-                })
-            save_permission_rules(rules)
-            flash('权限配置已保存并立即生效')
-            return redirect(url_for('settings_page'))
+            return redirect(url_for('settings_backups_page'))
 
         auto_backup_enabled = (request.form.get('auto_backup_enabled') or '').strip() == 'on'
         auto_backup_time = (request.form.get('auto_backup_time') or '03:00').strip() or '03:00'
         backup_dir = (request.form.get('backup_dir') or '').strip() or str(BASE_DIR / 'backups')
-
         updates = {
-            "RELEASEPLAN_HOME_TITLE": (request.form.get('home_title') or '').strip() or 'ReleasePlan',
-            "RELEASEPLAN_BROWSER_TITLE": (request.form.get('browser_title') or '').strip() or 'ReleasePlan 入口',
-            "RELEASEPLAN_THEME": (request.form.get('theme') or 'ios-light').strip() or 'ios-light',
-            "RELEASEPLAN_CARD_1_TITLE": (request.form.get('card_1_title') or '').strip() or '项目视图',
-            "RELEASEPLAN_CARD_2_TITLE": (request.form.get('card_2_title') or '').strip() or '关键特性视图',
-            "RELEASEPLAN_CARD_3_TITLE": (request.form.get('card_3_title') or '').strip() or '投资视图',
-            "RELEASEPLAN_CARD_4_TITLE": (request.form.get('card_4_title') or '').strip() or '资源视图',
-            "RELEASEPLAN_CARD_5_TITLE": (request.form.get('card_5_title') or '').strip() or '云服务视图',
-            "RELEASEPLAN_CARD_1_KEY": (request.form.get('card_1_key') or 'department-pipeline-load').strip() or 'department-pipeline-load',
-            "RELEASEPLAN_CARD_2_KEY": (request.form.get('card_2_key') or 'roadmap').strip() or 'roadmap',
-            "RELEASEPLAN_CARD_3_KEY": (request.form.get('card_3_key') or 'department-budget-resource').strip() or 'department-budget-resource',
-            "RELEASEPLAN_CARD_4_KEY": (request.form.get('card_4_key') or 'project-budget-resource').strip() or 'project-budget-resource',
-            "RELEASEPLAN_CARD_5_KEY": (request.form.get('card_5_key') or 'cloud-service-view').strip() or 'cloud-service-view',
-            "RELEASEPLAN_BACKUP_DIR": backup_dir,
-            "RELEASEPLAN_AUTO_BACKUP_ENABLED": 'true' if auto_backup_enabled else 'false',
-            "RELEASEPLAN_AUTO_BACKUP_TIME": auto_backup_time,
-            "RELEASEPLAN_AUTO_BACKUP_SCHEDULE": f"{auto_backup_time.split(':')[1]} {auto_backup_time.split(':')[0]} * * *" if ':' in auto_backup_time else '0 3 * * *',
+            'RELEASEPLAN_BACKUP_DIR': backup_dir,
+            'RELEASEPLAN_AUTO_BACKUP_ENABLED': 'true' if auto_backup_enabled else 'false',
+            'RELEASEPLAN_AUTO_BACKUP_TIME': auto_backup_time,
+            'RELEASEPLAN_AUTO_BACKUP_SCHEDULE': f"{auto_backup_time.split(':')[1]} {auto_backup_time.split(':')[0]} * * *" if ':' in auto_backup_time else '0 3 * * *',
         }
         save_env_settings(updates)
         os.environ.update(updates)
         write_auto_backup_crontab(auto_backup_enabled, auto_backup_time)
-        flash('系统设置已保存并立即生效')
-        return redirect(url_for('settings_page'))
+        flash('备份设置已保存并立即生效')
+        return redirect(url_for('settings_backups_page'))
+
     return render_template(
-        'settings.html',
+        'settings_backups.html',
+        page_title='备份',
+        page_desc='管理自动备份、手动备份和备份恢复。',
         branding=get_branding(),
-        home_cards=get_home_cards(),
         backup_config=get_backup_config(),
         backup_history=list_backup_history(),
-        permission_rules=load_permission_rules(),
-        permission_presets=get_permission_presets(),
         **build_auth_context(),
     )
 

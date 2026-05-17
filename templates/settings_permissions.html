@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-{{ branding.theme }}">
+  <div class="page settings-page">
+    <header class="toolbar">
+      <div>
+        <h1>{{ page_title }}</h1>
+        <p>{{ page_desc }}</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" class="card system-page-card ios-settings-form system-settings-form">
+      <div class="settings-group">
+        <div class="settings-section-title">权限规则</div>
+        <div class="settings-section-desc">支持 username（本地账号）和 email（SSO 邮箱）两种规则。匹配值支持填写多个账号或邮箱，使用分号 ; 分隔。可直接套用预设，也可以手动调整每个功能权限。</div>
+
+        <div style="border:1px solid var(--ios-light-gray); border-radius:12px; overflow:hidden; background:#fff; margin-bottom:12px;">
+          <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+            <thead>
+              <tr style="background:#f7f8fa; border-bottom:1px solid var(--ios-light-gray); font-size:12px; color:var(--ios-text-secondary); font-weight:600;">
+                <th style="padding:10px 12px; text-align:left; width:14%;">匹配类型</th>
+                <th style="padding:10px 12px; text-align:left; width:34%;">匹配值</th>
+                <th style="padding:10px 12px; text-align:left; width:14%;">角色</th>
+                <th style="padding:10px 12px; text-align:left; width:24%;">权限摘要</th>
+                <th style="padding:10px 12px; text-align:center; width:14%;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="permission-rule-list">
+              {% for item in permission_rules %}
+              {% set features = item.features or {} %}
+              <tr class="permission-rule-row-button" data-index="{{ loop.index0 }}" style="border-bottom:1px solid var(--ios-light-gray); cursor:pointer;">
+                <td style="padding:12px; font-size:13px; word-break:break-word;">{{ '用户名' if item.type == 'username' else '邮箱' }}</td>
+                <td style="padding:12px; font-size:13px; color:var(--ios-text-primary); word-break:break-word;">{{ item.value }}</td>
+                <td style="padding:12px; font-size:13px; word-break:break-word;">{{ '管理员' if item.role == 'admin' else '只读' }}</td>
+                <td style="padding:12px; font-size:12px; color:var(--ios-gray); word-break:break-word;">已启用 {{ (features.values() | select | list | length) if features else 0 }} 项</td>
+                <td style="padding:12px; text-align:center;">
+                  <span class="inline-delete-form" style="display:inline-flex; position:relative;">
+                    <button class="icon-action danger permission-delete-trigger" type="button" title="删除" aria-label="删除" data-index="{{ loop.index0 }}">🗑</button>
+                    <div class="delete-popover" hidden>
+                      <span class="delete-popover-text">确认删除？</span>
+                      <div class="delete-popover-actions">
+                        <button class="button tiny danger permission-delete-confirm" type="button" data-index="{{ loop.index0 }}">删</button>
+                        <button class="button tiny secondary permission-delete-cancel" type="button">取消</button>
+                      </div>
+                    </div>
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+              {% if not permission_rules %}
+              <tr>
+                <td colspan="5" style="padding:12px; color:var(--ios-text-secondary); font-size:13px; text-align:center;">暂无权限规则，点击“新增规则”开始配置。</td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+        <div id="permission-rule-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:9999; padding:20px; box-sizing:border-box;">
+          <div style="max-width:760px; margin:-18px auto 12px; background:#fff; border-radius:16px; padding:18px; box-sizing:border-box; max-height:calc(100vh - 2px); overflow:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+              <div>
+                <div style="font-size:16px; font-weight:700;">权限规则配置</div>
+                <div id="permission-rule-modal-subtitle" style="font-size:12px; color:var(--ios-text-secondary); margin-top:2px;">新增或编辑权限规则</div>
+              </div>
+              <button type="button" id="permission-rule-modal-close" style="border:none; background:none; font-size:22px; line-height:1; cursor:pointer; color:var(--ios-gray);">×</button>
+            </div>
+
+            <div class="permission-rule-card" id="permission-rule-editor">
+              <div class="permission-rule-row permission-rule-row-wide">
+                <label class="ios-field ios-select-field">
+                  <span class="ios-field-label">权限预设</span>
+                  <div class="ios-select-wrap">
+                    <select id="permission-editor-preset">
+                      <option value="">手动配置</option>
+                      {% for preset in permission_presets %}
+                      <option value="{{ preset.key }}">{{ preset.label }}</option>
+                      {% endfor %}
+                    </select>
+                    <span class="ios-chevron">›</span>
+                  </div>
+                </label>
+                <label class="ios-field ios-select-field">
+                  <span class="ios-field-label">匹配类型</span>
+                  <div class="ios-select-wrap">
+                    <select id="permission-editor-type">
+                      <option value="username">用户名</option>
+                      <option value="email">邮箱</option>
+                    </select>
+                    <span class="ios-chevron">›</span>
+                  </div>
+                </label>
+                <label class="ios-field" style="grid-column: span 2;">
+                  <span class="ios-field-label">匹配值</span>
+                  <input type="text" id="permission-editor-value" value="" placeholder="例如：admin;zhangsan 或 someone@company.com;other@company.com">
+                </label>
+                <label class="ios-field ios-select-field">
+                  <span class="ios-field-label">角色</span>
+                  <div class="ios-select-wrap">
+                    <select id="permission-editor-role">
+                      <option value="admin">管理员</option>
+                      <option value="guest">只读</option>
+                    </select>
+                    <span class="ios-chevron">›</span>
+                  </div>
+                </label>
+              </div>
+
+              <div class="permission-feature-grid">
+                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">系统页</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="view_system" id="permission-editor-feature-view_system"><span class="ios-toggle-text">允许访问系统页</span></div></label>
+                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">权限配置</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_permissions" id="permission-editor-feature-manage_permissions"><span class="ios-toggle-text">允许修改权限</span></div></label>
+                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">备份管理</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_backup" id="permission-editor-feature-manage_backup"><span class="ios-toggle-text">允许备份/恢复/删除</span></div></label>
+                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">提交需求</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="submit_requirement" id="permission-editor-feature-submit_requirement"><span class="ios-toggle-text">允许提交需求</span></div></label>
+                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">需求状态</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_requirement_status" id="permission-editor-feature-manage_requirement_status"><span class="ios-toggle-text">允许改需求状态</span></div></label>
+                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">项目管理</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_projects" id="permission-editor-feature-manage_projects"><span class="ios-toggle-text">允许改项目</span></div></label>
+                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">关键特性</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_features" id="permission-editor-feature-manage_features"><span class="ios-toggle-text">允许改关键特性</span></div></label>
+                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">云服务数据</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_service_resources" id="permission-editor-feature-manage_service_resources"><span class="ios-toggle-text">允许改云服务数据</span></div></label>
+                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">导入导出</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="import_export_data" id="permission-editor-feature-import_export_data"><span class="ios-toggle-text">允许导入导出</span></div></label>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+              <button type="button" class="button secondary" id="permission-rule-modal-cancel">取消</button>
+              <button type="button" class="button" id="permission-rule-modal-save">保存这条规则</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="permission-hidden-fields" style="display:none;"></div>
+
+        <template id="permission-rule-hidden-template">
+          <div class="permission-hidden-row">
+            <input type="hidden" name="permission_type[]">
+            <input type="hidden" name="permission_value[]">
+            <input type="hidden" name="permission_role[]">
+            {% for key in feature_keys %}
+            <input type="hidden" data-hidden-feature="{{ key }}" name="permission_feature_{{ key }}[]" value="off">
+            {% endfor %}
+          </div>
+        </template>
+      </div>
+
+      <div class="toolbar-actions settings-actions">
+        <button type="button" class="button secondary" id="add-permission-rule">新增规则</button>
+      </div>
+    </form>
+  </div>
+  <script>
+    (function () {
+      const featureKeys = {{ feature_keys | tojson }};
+      const permissionPresets = {{ permission_presets | tojson }};
+      const presetMap = Object.fromEntries(permissionPresets.map((item) => [item.key, item]));
+      const permissionRuleList = document.getElementById('permission-rule-list');
+      const permissionHiddenFields = document.getElementById('permission-hidden-fields');
+      const permissionHiddenTemplate = document.getElementById('permission-rule-hidden-template');
+      const permissionModal = document.getElementById('permission-rule-modal');
+      const permissionModalSubtitle = document.getElementById('permission-rule-modal-subtitle');
+      const addPermissionRuleButton = document.getElementById('add-permission-rule');
+      const permissionEditorPreset = document.getElementById('permission-editor-preset');
+      const permissionEditorType = document.getElementById('permission-editor-type');
+      const permissionEditorValue = document.getElementById('permission-editor-value');
+      const permissionEditorRole = document.getElementById('permission-editor-role');
+      const permissionModalSave = document.getElementById('permission-rule-modal-save');
+      const permissionModalCancel = document.getElementById('permission-rule-modal-cancel');
+      const permissionModalClose = document.getElementById('permission-rule-modal-close');
+      let permissionRulesState = {{ permission_rules | tojson }};
+      let currentPermissionIndex = -1;
+
+      function applyPresetToEditor(presetKey) {
+        const preset = presetMap[presetKey];
+        if (!preset) return;
+        if (permissionEditorRole) permissionEditorRole.value = preset.role;
+        Object.entries(preset.features || {}).forEach(([key, enabled]) => {
+          const checkbox = document.getElementById(`permission-editor-feature-${key}`);
+          if (checkbox) checkbox.checked = !!enabled;
+        });
+      }
+
+      function getEditorRule() {
+        const features = {};
+        featureKeys.forEach((key) => {
+          const checkbox = document.getElementById(`permission-editor-feature-${key}`);
+          features[key] = !!(checkbox && checkbox.checked);
+        });
+        return {
+          type: (permissionEditorType.value || 'email').trim(),
+          value: (permissionEditorValue.value || '').trim(),
+          role: (permissionEditorRole.value || 'guest').trim(),
+          features,
+        };
+      }
+
+      function fillEditor(rule) {
+        if (permissionEditorPreset) permissionEditorPreset.value = '';
+        permissionEditorType.value = (rule && rule.type) || 'email';
+        permissionEditorValue.value = (rule && rule.value) || '';
+        permissionEditorRole.value = (rule && rule.role) || 'guest';
+        const features = (rule && rule.features) || {};
+        featureKeys.forEach((key) => {
+          const checkbox = document.getElementById(`permission-editor-feature-${key}`);
+          if (checkbox) checkbox.checked = !!features[key];
+        });
+      }
+
+      function openPermissionModal(index) {
+        currentPermissionIndex = index;
+        if (index >= 0) {
+          fillEditor(permissionRulesState[index]);
+          permissionModalSubtitle.textContent = '编辑权限规则';
+        } else {
+          fillEditor({ type: 'email', value: '', role: 'guest', features: {} });
+          permissionModalSubtitle.textContent = '新增权限规则';
+        }
+        permissionModal.style.display = 'block';
+      }
+
+      function closePermissionModal() {
+        permissionModal.style.display = 'none';
+      }
+
+      function renderPermissionHiddenFields() {
+        if (!permissionHiddenFields || !permissionHiddenTemplate) return;
+        permissionHiddenFields.innerHTML = '';
+        permissionRulesState.forEach((rule) => {
+          const fragment = permissionHiddenTemplate.content.cloneNode(true);
+          const row = fragment.querySelector('.permission-hidden-row');
+          const hiddenInputs = row.querySelectorAll('input[type="hidden"]');
+          hiddenInputs[0].value = rule.type || 'username';
+          hiddenInputs[1].value = rule.value || '';
+          hiddenInputs[2].value = rule.role || 'guest';
+          featureKeys.forEach((key) => {
+            const input = row.querySelector(`[data-hidden-feature="${key}"]`);
+            if (input) input.value = rule.features && rule.features[key] ? 'on' : 'off';
+          });
+          permissionHiddenFields.appendChild(fragment);
+        });
+      }
+
+      function renderPermissionRuleList() {
+        if (!permissionRuleList) return;
+        if (!permissionRulesState.length) {
+          permissionRuleList.innerHTML = '<tr><td colspan="5" style="padding:12px; color:var(--ios-text-secondary); font-size:13px; text-align:center;">暂无权限规则，点击“新增规则”开始配置。</td></tr>';
+          renderPermissionHiddenFields();
+          return;
+        }
+
+        permissionRuleList.innerHTML = permissionRulesState.map((item, index) => {
+          const enabledCount = featureKeys.filter((key) => item.features && item.features[key]).length;
+          const typeLabel = item.type === 'email' ? '邮箱' : '用户名';
+          const roleLabel = item.role === 'admin' ? '管理员' : '只读';
+          const safeValue = String(item.value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          return `
+            <tr class="permission-rule-row-button" data-index="${index}" style="border-bottom:1px solid var(--ios-light-gray); cursor:pointer;">
+              <td style="padding:12px; font-size:13px; word-break:break-word;">${typeLabel}</td>
+              <td style="padding:12px; font-size:13px; color:var(--ios-text-primary); word-break:break-word;">${safeValue}</td>
+              <td style="padding:12px; font-size:13px; word-break:break-word;">${roleLabel}</td>
+              <td style="padding:12px; font-size:12px; color:var(--ios-gray); word-break:break-word;">已启用 ${enabledCount} 项</td>
+              <td style="padding:12px; text-align:center;">
+                <span class="inline-delete-form" style="display:inline-flex; position:relative;">
+                  <button class="icon-action danger permission-delete-trigger" type="button" title="删除" aria-label="删除" data-index="${index}">🗑</button>
+                  <div class="delete-popover" hidden>
+                    <span class="delete-popover-text">确认删除？</span>
+                    <div class="delete-popover-actions">
+                      <button class="button tiny danger permission-delete-confirm" type="button" data-index="${index}">删</button>
+                      <button class="button tiny secondary permission-delete-cancel" type="button">取消</button>
+                    </div>
+                  </div>
+                </span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        permissionRuleList.querySelectorAll('.permission-rule-row-button').forEach((button) => {
+          button.addEventListener('click', () => {
+            openPermissionModal(Number(button.dataset.index));
+          });
+        });
+
+        permissionRuleList.querySelectorAll('.permission-delete-trigger').forEach((button) => {
+          button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const wrap = button.closest('.inline-delete-form');
+            const popover = wrap ? wrap.querySelector('.delete-popover') : null;
+            if (!popover) return;
+            permissionRuleList.querySelectorAll('.delete-popover').forEach((item) => {
+              if (item !== popover) item.hidden = true;
+            });
+            popover.hidden = !popover.hidden;
+          });
+        });
+
+        permissionRuleList.querySelectorAll('.permission-delete-confirm').forEach((button) => {
+          button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const index = Number(button.dataset.index);
+            if (Number.isNaN(index)) return;
+            permissionRulesState.splice(index, 1);
+            renderPermissionRuleList();
+          });
+        });
+
+        permissionRuleList.querySelectorAll('.permission-delete-cancel').forEach((button) => {
+          button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const popover = button.closest('.delete-popover');
+            if (popover) popover.hidden = true;
+          });
+        });
+
+        renderPermissionHiddenFields();
+      }
+
+      if (permissionEditorPreset) {
+        permissionEditorPreset.addEventListener('change', () => {
+          if (!permissionEditorPreset.value) return;
+          applyPresetToEditor(permissionEditorPreset.value);
+        });
+      }
+
+      if (addPermissionRuleButton) {
+        addPermissionRuleButton.addEventListener('click', () => openPermissionModal(-1));
+      }
+
+      if (permissionModalSave) {
+        permissionModalSave.addEventListener('click', () => {
+          const rule = getEditorRule();
+          if (!rule.value) {
+            alert('请先填写匹配值');
+            return;
+          }
+          if (currentPermissionIndex >= 0) {
+            permissionRulesState[currentPermissionIndex] = rule;
+          } else {
+            permissionRulesState.push(rule);
+          }
+          closePermissionModal();
+          renderPermissionRuleList();
+        });
+      }
+
+      if (permissionModalCancel) permissionModalCancel.addEventListener('click', closePermissionModal);
+      if (permissionModalClose) permissionModalClose.addEventListener('click', closePermissionModal);
+      if (permissionModal) {
+        permissionModal.addEventListener('click', (event) => {
+          if (event.target === permissionModal) closePermissionModal();
+        });
+      }
+
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('.inline-delete-form')) return;
+        document.querySelectorAll('#permission-rule-list .delete-popover').forEach((item) => {
+          item.hidden = true;
+        });
+      });
+
+      renderPermissionRuleList();
+    })();
+  </script>
+</body>
+</html>

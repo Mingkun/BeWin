@@ -12,17 +12,20 @@
       <div>
         <h1>{{ branding.home_title }}</h1>
       </div>
-      <div class="toolbar-actions">
+      <div class="toolbar-actions home-toolbar-actions">
         {% if user_features.submit_requirement or user_features.manage_requirement_status %}
-        <a class="button secondary" href="{{ url_for('requirements_page') }}" title="点击这里给这个网站提交需求" aria-label="点击这里给这个网站提交需求">💡</a>
+        <a class="button secondary home-round-button" href="{{ url_for('requirements_page') }}" title="点击这里给这个网站提交需求" aria-label="点击这里给这个网站提交需求"><span>💡</span></a>
         {% endif %}
         {% if user_features.view_system %}
-        <a class="button secondary settings-button" href="{{ url_for('settings_page') }}"><span class="settings-icon">⚙</span><span>系统</span></a>
+        <span class="settings-menu-wrap"><span class="button secondary settings-button home-round-button"><span class="settings-icon">⚙</span><span class="home-round-button-text">系统</span></span><span class="settings-menu-popover"><a class="button secondary" href="{{ url_for('settings_general_page') }}">设置</a><a class="button secondary" href="{{ url_for('settings_permissions_page') }}">权限配置</a><a class="button secondary" href="{{ url_for('settings_backups_page') }}">备份</a></span></span>
         {% endif %}
         {% if current_user %}
           <span class="logout-wrap">
-            <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
-            <span class="user-chip">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+            <span class="user-chip home-round-button" aria-label="当前登录用户" title="当前登录用户"></span>
+            <span class="logout-popover">
+              <span class="logout-user-name">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+              <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+            </span>
           </span>
         {% else %}
           <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>

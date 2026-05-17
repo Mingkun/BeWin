@@ -17,8 +17,11 @@
         <a class="button secondary" href="{{ url_for('view_placeholder', view_key='department-pipeline-load') }}">返回项目视图</a>
         {% if current_user %}
           <span class="logout-wrap">
-            <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
-            <span class="user-chip">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+            <span class="user-chip" aria-label="当前登录用户" title="当前登录用户"></span>
+            <span class="logout-popover">
+              <span class="logout-user-name">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+              <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+            </span>
           </span>
         {% else %}
           <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>

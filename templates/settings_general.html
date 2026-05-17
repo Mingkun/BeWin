@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-{{ branding.theme }}">
+  <div class="page settings-page">
+    <header class="toolbar">
+      <div>
+        <h1>{{ page_title }}</h1>
+        <p>{{ page_desc }}</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" class="card system-page-card ios-settings-form system-settings-form">
+      <div class="settings-group">
+        <div class="settings-section-title">品牌文案</div>
+        <div class="settings-section-desc">控制首页主标题，以及浏览器标签页显示的名称。</div>
+        <label class="ios-field">
+          <span class="ios-field-label">首页主标题</span>
+          <input type="text" name="home_title" value="{{ branding.home_title }}">
+        </label>
+        <label class="ios-field">
+          <span class="ios-field-label">首页浏览器标题</span>
+          <input type="text" name="browser_title" value="{{ branding.browser_title }}">
+        </label>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-section-title">主题风格</div>
+        <div class="settings-section-desc">当前可在默认、iOS 浅色、iOS 深色之间切换。</div>
+        <label class="ios-field ios-select-field">
+          <span class="ios-field-label">主题</span>
+          <div class="ios-select-wrap">
+            <select name="theme">
+              <option value="ios-light" {% if branding.theme == 'ios-light' %}selected{% endif %}>iOS 浅色</option>
+              <option value="ios-dark" {% if branding.theme == 'ios-dark' %}selected{% endif %}>iOS 深色</option>
+              <option value="default" {% if branding.theme == 'default' %}selected{% endif %}>默认</option>
+            </select>
+            <span class="ios-chevron">›</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-section-title">首页卡片</div>
+        <div class="settings-section-desc">可以调整首页卡片名称，也可以调整 1 到 5 的展示顺序。</div>
+        {% for card in home_cards %}
+        <label class="ios-field">
+          <span class="ios-field-label">卡片 {{ loop.index }} 名称</span>
+          <input type="text" name="card_{{ loop.index }}_title" value="{{ card.title }}">
+        </label>
+        {% endfor %}
+
+        <div class="ios-order-grid">
+          {% for pos in range(1, 6) %}
+          <label class="ios-field ios-select-field">
+            <span class="ios-field-label">第 {{ pos }} 个卡片</span>
+            <div class="ios-select-wrap">
+              <select name="card_{{ pos }}_key">
+                {% for option in [
+                  ('roadmap', '关键特性视图'),
+                  ('department-budget-resource', '投资视图'),
+                  ('project-budget-resource', '资源视图'),
+                  ('department-pipeline-load', '项目视图'),
+                  ('cloud-service-view', '云服务视图')
+                ] %}
+                  <option value="{{ option[0] }}" {% if home_cards[pos - 1].key == option[0] %}selected{% endif %}>{{ option[1] }}</option>
+                {% endfor %}
+              </select>
+              <span class="ios-chevron">›</span>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="settings-group settings-preview-group">
+        <div class="settings-section-title">预览提示</div>
+        <div class="ios-preview-card">
+          <div class="ios-preview-title">{{ branding.home_title }}</div>
+          <div class="ios-preview-subtitle">浏览器标签页会显示为：{{ branding.browser_title }}</div>
+        </div>
+      </div>
+
+      <div class="toolbar-actions settings-actions">
+        <button type="submit" class="button">保存设置</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
