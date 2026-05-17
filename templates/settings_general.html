@@ -60,7 +60,7 @@
 
       <div class="settings-group">
         <div class="settings-section-title">首页卡片</div>
-        <div class="settings-section-desc">可以调整首页卡片名称，也可以调整 1 到 5 的展示顺序。</div>
+        <div class="settings-section-desc">可以调整首页卡片名称，也可以调整 1 到 6 的展示顺序。</div>
         {% for card in home_cards %}
         <label class="ios-field">
           <span class="ios-field-label">卡片 {{ loop.index }} 名称</span>
@@ -69,12 +69,13 @@
         {% endfor %}
 
         <div class="ios-order-grid">
-          {% for pos in range(1, 6) %}
+          {% for pos in range(1, 7) %}
           <label class="ios-field ios-select-field">
             <span class="ios-field-label">第 {{ pos }} 个卡片</span>
             <div class="ios-select-wrap">
               <select name="card_{{ pos }}_key">
                 {% for option in [
+                  ('milestone-condolence', '关键突破&战地慰问'),
                   ('roadmap', '关键特性视图'),
                   ('department-budget-resource', '投资视图'),
                   ('project-budget-resource', '资源视图'),

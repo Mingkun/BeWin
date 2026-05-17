@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if mode == 'edit' %}编辑活动{% else %}新增活动{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-{{ branding.theme }}">
+  <div class="page form-page">
+    <header class="toolbar">
+      <div>
+        <h1>{% if mode == 'edit' %}编辑活动{% else %}新增活动{% endif %}</h1>
+        <p>维护关键突破&战地慰问的月度活动内容。</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('milestone_condolence_page') }}">返回页面</a>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" enctype="multipart/form-data" class="card project-form">
+      <div class="card inner-card">
+        <div class="form-grid">
+          <label>五层部门
+            <textarea name="five_level_department" rows="2">{{ form_data.five_level_department or '' }}</textarea>
+          </label>
+          <label>具体日期
+            <input type="date" name="activity_date" value="{{ form_data.activity_date or '' }}">
+          </label>
+          <label>活动参与人
+            <textarea name="participant_names" rows="2">{{ form_data.participant_names or '' }}</textarea>
+          </label>
+          <label class="block-field">关键突破
+            <textarea name="breakthrough_text" rows="4">{{ form_data.breakthrough_text or '' }}</textarea>
+          </label>
+          <label>慰问地域
+            <textarea name="condolence_region" rows="2">{{ form_data.condolence_region or '' }}</textarea>
+          </label>
+          <label>图片
+            <input type="file" name="image_file" accept="image/png,image/jpeg,image/gif,image/webp">
+          </label>
+        </div>
+      </div>
+
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('milestone_condolence_page') }}">取消</a>
+        <button class="button" type="submit">保存</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

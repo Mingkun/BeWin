@@ -10,10 +10,12 @@ import os
 import sqlite3
 from functools import wraps
 from pathlib import Path
+from werkzeug.utils import secure_filename
 from datetime import datetime
 import hashlib
 import shutil
 import zipfile
+import uuid
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = BASE_DIR / '.env'
@@ -31,6 +33,7 @@ FEATURE_CSV_PATH = BASE_DIR / "docs" / "feature_table.csv"
 DB_PATH = BASE_DIR / "data" / "releaseplan.db"
 SERVICE_RESOURCE_CSV_PATH = BASE_DIR / "docs" / "service_resource_investment.csv"
 REQUIREMENTS_LOG_PATH = BASE_DIR / "data" / "requirements_requests.md"
+MILESTONE_MEDIA_DIR = BASE_DIR / "static" / "uploads" / "milestone_condolence"
 MILESTONE_COLUMNS = [
     "1/31", "2/28", "3/31", "4/30", "5/31", "6/30",
     "7/31", "8/31", "9/30", "10/31", "11/30", "12/31"
@@ -60,6 +63,11 @@ app.secret_key = os.getenv("RELEASEPLAN_SECRET_KEY", "releaseplan-dev-secret-cha
 
 def get_home_cards():
     card_meta = {
+        "milestone-condolence": {
+            "title": "关键突破&战地慰问",
+            "desc": "查看关键突破与战地慰问相关内容。",
+            "href": url_for('milestone_condolence_page'),
+        },
         "department-pipeline-load": {
             "title": "项目视图",
             "desc": "查看项目视图页面的内容，项目甘特图、项目主要信息。",
@@ -91,17 +99,99 @@ def get_home_cards():
         for key, value in card_meta.items()
     ]
     preferred_order = [
-        os.getenv("RELEASEPLAN_CARD_1_KEY", "department-pipeline-load"),
-        os.getenv("RELEASEPLAN_CARD_2_KEY", "roadmap"),
-        os.getenv("RELEASEPLAN_CARD_3_KEY", "cloud-service-view"),
-        os.getenv("RELEASEPLAN_CARD_4_KEY", "department-budget-resource"),
-        os.getenv("RELEASEPLAN_CARD_5_KEY", "project-budget-resource"),
+        os.getenv("RELEASEPLAN_CARD_1_KEY", "milestone-condolence"),
+        os.getenv("RELEASEPLAN_CARD_2_KEY", "department-pipeline-load"),
+        os.getenv("RELEASEPLAN_CARD_3_KEY", "roadmap"),
+        os.getenv("RELEASEPLAN_CARD_4_KEY", "cloud-service-view"),
+        os.getenv("RELEASEPLAN_CARD_5_KEY", "department-budget-resource"),
+        os.getenv("RELEASEPLAN_CARD_6_KEY", "project-budget-resource"),
     ]
     card_map = {card["key"]: card for card in default_cards}
     ordered = [card_map[key] for key in preferred_order if key in card_map]
     used = {card["key"] for card in ordered}
     ordered.extend(card for card in default_cards if card["key"] not in used)
     return ordered
+
+
+def milestone_month_options():
+    return list(enumerate(MONTH_LABELS, start=1))
+
+
+def load_milestone_condolence_items():
+    with get_conn() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS milestone_condolence_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                five_level_department TEXT NOT NULL,
+                month_index INTEGER NOT NULL,
+                activity_date TEXT,
+                participant_names TEXT,
+                breakthrough_text TEXT,
+                condolence_region TEXT,
+                image_path TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        existing_columns = {row[1] for row in conn.execute("PRAGMA table_info(milestone_condolence_items)").fetchall()}
+        if 'activity_date' not in existing_columns:
+            conn.execute("ALTER TABLE milestone_condolence_items ADD COLUMN activity_date TEXT")
+        if 'participant_names' not in existing_columns:
+            conn.execute("ALTER TABLE milestone_condolence_items ADD COLUMN participant_names TEXT")
+        conn.commit()
+        rows = conn.execute(
+            """
+            SELECT id, five_level_department, month_index, activity_date, participant_names, breakthrough_text, condolence_region, image_path, created_at, updated_at
+            FROM milestone_condolence_items
+            ORDER BY month_index ASC, five_level_department ASC, id ASC
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_milestone_departments(items):
+    return sorted({(item.get('five_level_department') or '').strip() for item in items if (item.get('five_level_department') or '').strip()})
+
+
+def build_milestone_board(items):
+    departments = get_milestone_departments(items)
+    month_cells = {department: {index: [] for index in range(1, 13)} for department in departments}
+    for item in items:
+        department = (item.get('five_level_department') or '').strip()
+        month_index = int(item.get('month_index') or 0)
+        activity_date = (item.get('activity_date') or '').strip()
+        if activity_date:
+            try:
+                month_index = datetime.strptime(activity_date, '%Y-%m-%d').month
+            except Exception:
+                pass
+        if not department or month_index not in range(1, 13):
+            continue
+        month_cells.setdefault(department, {index: [] for index in range(1, 13)})
+        month_cells[department][month_index].append(item)
+    return {
+        'departments': departments,
+        'months': milestone_month_options(),
+        'cells': month_cells,
+    }
+
+
+def save_milestone_condolence_image(file_storage):
+    if not file_storage or not getattr(file_storage, 'filename', ''):
+        return ''
+    filename = secure_filename(file_storage.filename or '')
+    if not filename:
+        return ''
+    ext = Path(filename).suffix.lower()
+    if ext not in {'.png', '.jpg', '.jpeg', '.gif', '.webp'}:
+        return ''
+    MILESTONE_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+    target_name = f"{uuid.uuid4().hex}{ext}"
+    target_path = MILESTONE_MEDIA_DIR / target_name
+    file_storage.save(target_path)
+    return f"uploads/milestone_condolence/{target_name}"
 
 
 def get_branding():
@@ -793,6 +883,27 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS milestone_condolence_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                five_level_department TEXT NOT NULL,
+                month_index INTEGER NOT NULL,
+                activity_date TEXT,
+                participant_names TEXT,
+                breakthrough_text TEXT,
+                condolence_region TEXT,
+                image_path TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        existing_milestone_columns = {row[1] for row in conn.execute("PRAGMA table_info(milestone_condolence_items)").fetchall()}
+        if 'activity_date' not in existing_milestone_columns:
+            conn.execute("ALTER TABLE milestone_condolence_items ADD COLUMN activity_date TEXT")
+        if 'participant_names' not in existing_milestone_columns:
+            conn.execute("ALTER TABLE milestone_condolence_items ADD COLUMN participant_names TEXT")
         existing_requirement_columns = {row[1] for row in conn.execute("PRAGMA table_info(requirements)").fetchall()}
         if 'submitter' not in existing_requirement_columns:
             conn.execute("ALTER TABLE requirements ADD COLUMN submitter TEXT")
@@ -1662,6 +1773,168 @@ def index():
     return render_template('home.html', branding=get_branding(), home_cards=get_home_cards(), **build_auth_context())
 
 
+@app.route('/milestone-condolence')
+@login_required
+def milestone_condolence_page():
+    items = load_milestone_condolence_items()
+    board = build_milestone_board(items)
+    return render_template(
+        'milestone_condolence.html',
+        board=board,
+        month_options=milestone_month_options(),
+        branding=get_branding(),
+        **build_auth_context(),
+    )
+
+
+@app.route('/admin/milestone-condolence/new', methods=['GET', 'POST'])
+@login_required
+def admin_milestone_condolence_new():
+    denied = require_feature('manage_features', '当前账号不能维护关键突破&战地慰问')
+    if denied:
+        return denied
+
+    form_data = {
+        'five_level_department': (request.form.get('five_level_department') or '').strip(),
+        'activity_date': (request.form.get('activity_date') or '').strip(),
+        'participant_names': (request.form.get('participant_names') or '').strip(),
+        'breakthrough_text': (request.form.get('breakthrough_text') or '').strip(),
+        'condolence_region': (request.form.get('condolence_region') or '').strip(),
+    }
+
+    if request.method == 'POST':
+        image_path = save_milestone_condolence_image(request.files.get('image_file'))
+        month_index = 0
+        if form_data['activity_date']:
+            try:
+                month_index = datetime.strptime(form_data['activity_date'], '%Y-%m-%d').month
+            except Exception:
+                month_index = 0
+        if not form_data['five_level_department'] or month_index not in range(1, 13):
+            flash('请先填写五层部门并选择具体日期')
+            return render_template(
+                'milestone_condolence_form.html',
+                form_data=form_data,
+                month_options=milestone_month_options(),
+                branding=get_branding(),
+                mode='new',
+                **build_auth_context(),
+            )
+        with get_conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO milestone_condolence_items (
+                    five_level_department, month_index, activity_date, participant_names, breakthrough_text, condolence_region, image_path, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                [form_data['five_level_department'], month_index, form_data['activity_date'], form_data['participant_names'], form_data['breakthrough_text'], form_data['condolence_region'], image_path],
+            )
+            conn.commit()
+        flash('已新增活动')
+        return redirect(url_for('milestone_condolence_page'))
+
+    return render_template(
+        'milestone_condolence_form.html',
+        form_data=form_data,
+        month_options=milestone_month_options(),
+        branding=get_branding(),
+        mode='new',
+        **build_auth_context(),
+    )
+
+
+@app.route('/admin/milestone-condolence/<int:item_id>/edit', methods=['GET', 'POST'])
+@login_required
+def admin_milestone_condolence_edit(item_id):
+    denied = require_feature('manage_features', '当前账号不能维护关键突破&战地慰问')
+    if denied:
+        return denied
+
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT id, five_level_department, month_index, activity_date, participant_names, breakthrough_text, condolence_region, image_path
+            FROM milestone_condolence_items
+            WHERE id = ?
+            """,
+            (item_id,),
+        ).fetchone()
+        if not row:
+            flash('未找到活动记录')
+            return redirect(url_for('milestone_condolence_page'))
+
+        current = dict(row)
+        form_data = {
+            'five_level_department': (request.form.get('five_level_department') or current.get('five_level_department') or '').strip(),
+            'activity_date': (request.form.get('activity_date') or current.get('activity_date') or '').strip(),
+            'participant_names': (request.form.get('participant_names') or current.get('participant_names') or '').strip(),
+            'breakthrough_text': (request.form.get('breakthrough_text') or current.get('breakthrough_text') or '').strip(),
+            'condolence_region': (request.form.get('condolence_region') or current.get('condolence_region') or '').strip(),
+        }
+
+        if request.method == 'POST':
+            image_path = current.get('image_path') or ''
+            new_image_path = save_milestone_condolence_image(request.files.get('image_file'))
+            if new_image_path:
+                image_path = new_image_path
+            month_index = 0
+            if form_data['activity_date']:
+                try:
+                    month_index = datetime.strptime(form_data['activity_date'], '%Y-%m-%d').month
+                except Exception:
+                    month_index = 0
+            if not form_data['five_level_department'] or month_index not in range(1, 13):
+                flash('请先填写五层部门并选择具体日期')
+                return render_template(
+                    'milestone_condolence_form.html',
+                    form_data=form_data,
+                    month_options=milestone_month_options(),
+                    branding=get_branding(),
+                    mode='edit',
+                    **build_auth_context(),
+                )
+            conn.execute(
+                """
+                UPDATE milestone_condolence_items
+                SET five_level_department = ?,
+                    month_index = ?,
+                    activity_date = ?,
+                    participant_names = ?,
+                    breakthrough_text = ?,
+                    condolence_region = ?,
+                    image_path = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                [form_data['five_level_department'], month_index, form_data['activity_date'], form_data['participant_names'], form_data['breakthrough_text'], form_data['condolence_region'], image_path, item_id],
+            )
+            conn.commit()
+            flash('已更新活动')
+            return redirect(url_for('milestone_condolence_page'))
+
+    return render_template(
+        'milestone_condolence_form.html',
+        form_data=form_data,
+        month_options=milestone_month_options(),
+        branding=get_branding(),
+        mode='edit',
+        **build_auth_context(),
+    )
+
+
+@app.route('/admin/milestone-condolence/<int:item_id>/delete', methods=['POST'])
+@login_required
+def admin_milestone_condolence_delete(item_id):
+    denied = require_feature('manage_features', '当前账号不能维护关键突破&战地慰问')
+    if denied:
+        return denied
+    with get_conn() as conn:
+        conn.execute('DELETE FROM milestone_condolence_items WHERE id = ?', (item_id,))
+        conn.commit()
+    flash('已删除活动')
+    return redirect(url_for('milestone_condolence_page'))
+
+
 @app.route('/roadmap')
 @login_required
 def roadmap():
@@ -1756,16 +2029,18 @@ def settings_general_page():
             'RELEASEPLAN_HOME_TITLE': (request.form.get('home_title') or '').strip() or 'ReleasePlan',
             'RELEASEPLAN_BROWSER_TITLE': (request.form.get('browser_title') or '').strip() or 'ReleasePlan 入口',
             'RELEASEPLAN_THEME': (request.form.get('theme') or 'ios-light').strip() or 'ios-light',
-            'RELEASEPLAN_CARD_1_TITLE': (request.form.get('card_1_title') or '').strip() or '项目视图',
-            'RELEASEPLAN_CARD_2_TITLE': (request.form.get('card_2_title') or '').strip() or '关键特性视图',
-            'RELEASEPLAN_CARD_3_TITLE': (request.form.get('card_3_title') or '').strip() or '投资视图',
-            'RELEASEPLAN_CARD_4_TITLE': (request.form.get('card_4_title') or '').strip() or '资源视图',
-            'RELEASEPLAN_CARD_5_TITLE': (request.form.get('card_5_title') or '').strip() or '云服务视图',
-            'RELEASEPLAN_CARD_1_KEY': (request.form.get('card_1_key') or 'department-pipeline-load').strip() or 'department-pipeline-load',
-            'RELEASEPLAN_CARD_2_KEY': (request.form.get('card_2_key') or 'roadmap').strip() or 'roadmap',
-            'RELEASEPLAN_CARD_3_KEY': (request.form.get('card_3_key') or 'department-budget-resource').strip() or 'department-budget-resource',
-            'RELEASEPLAN_CARD_4_KEY': (request.form.get('card_4_key') or 'project-budget-resource').strip() or 'project-budget-resource',
-            'RELEASEPLAN_CARD_5_KEY': (request.form.get('card_5_key') or 'cloud-service-view').strip() or 'cloud-service-view',
+            'RELEASEPLAN_CARD_1_TITLE': (request.form.get('card_1_title') or '').strip() or '关键突破&战地慰问',
+            'RELEASEPLAN_CARD_2_TITLE': (request.form.get('card_2_title') or '').strip() or '项目视图',
+            'RELEASEPLAN_CARD_3_TITLE': (request.form.get('card_3_title') or '').strip() or '关键特性视图',
+            'RELEASEPLAN_CARD_4_TITLE': (request.form.get('card_4_title') or '').strip() or '云服务视图',
+            'RELEASEPLAN_CARD_5_TITLE': (request.form.get('card_5_title') or '').strip() or '投资视图',
+            'RELEASEPLAN_CARD_6_TITLE': (request.form.get('card_6_title') or '').strip() or '资源视图',
+            'RELEASEPLAN_CARD_1_KEY': (request.form.get('card_1_key') or 'milestone-condolence').strip() or 'milestone-condolence',
+            'RELEASEPLAN_CARD_2_KEY': (request.form.get('card_2_key') or 'department-pipeline-load').strip() or 'department-pipeline-load',
+            'RELEASEPLAN_CARD_3_KEY': (request.form.get('card_3_key') or 'roadmap').strip() or 'roadmap',
+            'RELEASEPLAN_CARD_4_KEY': (request.form.get('card_4_key') or 'cloud-service-view').strip() or 'cloud-service-view',
+            'RELEASEPLAN_CARD_5_KEY': (request.form.get('card_5_key') or 'department-budget-resource').strip() or 'department-budget-resource',
+            'RELEASEPLAN_CARD_6_KEY': (request.form.get('card_6_key') or 'project-budget-resource').strip() or 'project-budget-resource',
         }
         save_env_settings(updates)
         os.environ.update(updates)
@@ -1994,6 +2269,10 @@ def view_placeholder(view_key):
         )
 
     view_map = {
+        'milestone-condolence': {
+            'title': '关键突破&战地慰问',
+            'description': '查看关键突破与战地慰问相关内容。',
+        },
         'department-budget-resource': {
             'title': '投资视图',
             'description': '查看投资维度的整体情况、投入分布与汇总信息。',

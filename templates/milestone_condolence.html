@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>关键突破&战地慰问</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-{{ branding.theme }}">
+  <div class="page page-roadmap milestone-page">
+    <header class="toolbar">
+      <div>
+        <h1>关键突破&战地慰问</h1>
+        <p>横轴按月份，纵轴按五层部门，支持月度卡片展示文字与图片。</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('index') }}">返回首页</a>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if user_features.manage_features %}
+    <div class="toolbar-actions settings-actions milestone-toolbar-actions">
+      <a class="button" href="{{ url_for('admin_milestone_condolence_new') }}">新增活动</a>
+    </div>
+    {% endif %}
+
+    <div class="card milestone-board-card">
+      <div class="milestone-board-scroll">
+        <table class="milestone-board-table">
+          <thead>
+            <tr>
+              <th class="milestone-department-col">五层部门</th>
+              {% for month_index, month_label in board.months %}
+              <th>{{ month_label }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for department in board.departments %}
+            <tr>
+              <th class="milestone-department-cell">{{ department }}</th>
+              {% for month_index, month_label in board.months %}
+              <td>
+                <div class="milestone-cell-stack">
+                  {% for item in board.cells[department][month_index] %}
+                  <div class="milestone-month-card">
+                    {% if user_features.manage_features %}
+                    <div class="milestone-card-actions menu-wrap">
+                      <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
+                      <div class="milestone-card-menu">
+                        <a class="milestone-card-menu-item" href="{{ url_for('admin_milestone_condolence_edit', item_id=item.id) }}">编辑</a>
+                        <form method="post" action="{{ url_for('admin_milestone_condolence_delete', item_id=item.id) }}" class="inline-delete-form milestone-menu-delete-form">
+                          <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
+                          <div class="delete-popover" hidden>
+                            <span class="delete-popover-text">确认删除？</span>
+                            <div class="delete-popover-actions">
+                              <button class="button tiny danger" type="submit">删</button>
+                              <button class="button tiny secondary delete-cancel" type="button">取消</button>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                    {% endif %}
+                    {% if item.activity_date %}
+                    <div class="milestone-card-line"><strong>具体日期：</strong>{{ item.activity_date }}</div>
+                    {% endif %}
+                    {% if item.participant_names %}
+                    <div class="milestone-card-line"><strong>活动参与人：</strong>{{ item.participant_names }}</div>
+                    {% endif %}
+                    {% if item.breakthrough_text %}
+                    <div class="milestone-card-line"><strong>关键突破：</strong>{{ item.breakthrough_text }}</div>
+                    {% endif %}
+                    {% if item.condolence_region %}
+                    <div class="milestone-card-line"><strong>慰问地域：</strong>{{ item.condolence_region }}</div>
+                    {% endif %}
+                    {% if item.image_path %}
+                    <img class="milestone-card-image" src="{{ url_for('static', filename=item.image_path) }}" alt="关键突破&战地慰问图片">
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+            {% if not board.departments %}
+            <tr>
+              <td colspan="13" class="empty">暂无数据</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% if user_features.manage_features %}
+  <script>
+    (function () {
+      document.querySelectorAll('.inline-delete-form').forEach((wrap) => {
+        const trigger = wrap.querySelector('.delete-trigger');
+        const popover = wrap.querySelector('.delete-popover');
+        const cancel = wrap.querySelector('.delete-cancel');
+        if (!trigger || !popover || !cancel) return;
+        trigger.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          document.querySelectorAll('.delete-popover').forEach((item) => {
+            if (item !== popover) item.hidden = true;
+          });
+          popover.hidden = !popover.hidden;
+        });
+        cancel.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          popover.hidden = true;
+        });
+      });
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('.inline-delete-form')) return;
+        document.querySelectorAll('.delete-popover').forEach((item) => {
+          item.hidden = true;
+        });
+      });
+    })();
+  </script>
+  {% endif %}
+</body>
+</html>
