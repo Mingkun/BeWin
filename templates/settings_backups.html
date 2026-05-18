@@ -54,6 +54,15 @@
       </div>
 
       <div class="settings-group">
+        <div class="settings-section-title">安装包与升级包</div>
+        <div class="settings-section-desc">可下载当前版本的安装包和升级包。</div>
+        <div class="backup-action-row">
+          <a class="button secondary" href="{{ url_for('static', filename='downloads/releaseplan-portable-v15.6.tar.gz') }}">下载安装包 v15.6</a>
+          <a class="button secondary" href="{{ url_for('static', filename='downloads/releaseplan-update-v15.6.tar.gz') }}">下载升级包 v15.6</a>
+        </div>
+      </div>
+
+      <div class="settings-group">
         <div class="settings-section-title">备份历史</div>
         <div class="settings-section-desc">可查看备份记录，并选择一个备份恢复或删除。</div>
         {% if backup_history %}
