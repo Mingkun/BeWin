@@ -47,7 +47,7 @@ QUARTERS = [
 ]
 PROJECT_COLUMNS = [
     "立项状态", "管控灶", "投资主体", "项目编码", "项目名称", "项目描述", "项目大类", "项目子类",
-    "项目复杂度", "项目经理", "计划启动日期", "计划结束日期", "工作量（人月）",
+    "项目复杂度", "项目角色", "项目经理", "计划启动日期", "计划结束日期", "工作量（人月）",
     "研发费用预算（w）", "人力预算（自有）", "人力预算（OD）", "人力预算（TM）"
 ]
 FEATURE_COLUMNS = [
@@ -765,6 +765,7 @@ def init_db():
                 project_category TEXT,
                 project_subcategory TEXT,
                 project_complexity TEXT,
+                project_role TEXT,
                 project_manager TEXT,
                 planned_start_date TEXT,
                 planned_end_date TEXT,
@@ -786,7 +787,7 @@ def init_db():
         existing_columns = {row[1] for row in conn.execute("PRAGMA table_info(projects)").fetchall()}
         required_project_columns = [
             'project_status', 'control_gate', 'investment_subject', 'project_code', 'project_description',
-            'project_category', 'project_subcategory', 'project_complexity', 'planned_start_date',
+            'project_category', 'project_subcategory', 'project_complexity', 'project_role', 'planned_start_date',
             'planned_end_date', 'rd_budget_w', 'headcount_budget_self_owned', 'headcount_budget_od',
             'headcount_budget_tm'
         ]
@@ -921,6 +922,7 @@ def normalize_project_row(row):
         "项目大类": (row.get("项目大类") or "").strip(),
         "项目子类": (row.get("项目子类") or "").strip(),
         "项目复杂度": (row.get("项目复杂度") or "").strip(),
+        "项目角色": (row.get("项目角色") or row.get("project_role") or "").strip(),
         "项目经理": (row.get("项目经理") or "").strip(),
         "计划启动日期": (row.get("计划启动日期") or "").strip(),
         "计划结束日期": (row.get("计划结束日期") or "").strip(),
@@ -949,7 +951,7 @@ def normalize_feature_row(row):
 def project_row_to_db_tuple(row):
     return (
         row["立项状态"], row["管控灶"], row["投资主体"], row["项目编码"], row["项目名称"], row["项目描述"],
-        row["项目大类"], row["项目子类"], row["项目复杂度"], row["项目经理"], row["计划启动日期"], row["计划结束日期"],
+        row["项目大类"], row["项目子类"], row["项目复杂度"], row["项目角色"], row["项目经理"], row["计划启动日期"], row["计划结束日期"],
         row["工作量（人月）"], row["研发费用预算（w）"], row["人力预算（自有）"], row["人力预算（OD）"], row["人力预算（TM）"],
     )
 
@@ -969,7 +971,7 @@ def save_project_csv_content(content, replace=False):
         return 0
     sql_columns = [
         "project_status", "control_gate", "investment_subject", "project_code", "project_name", "project_description",
-        "project_category", "project_subcategory", "project_complexity", "project_manager", "planned_start_date", "planned_end_date",
+        "project_category", "project_subcategory", "project_complexity", "project_role", "project_manager", "planned_start_date", "planned_end_date",
         "workload_person_month", "rd_budget_w", "headcount_budget_self_owned", "headcount_budget_od", "headcount_budget_tm"
     ]
     placeholders = ", ".join(["?"] * len(sql_columns))
@@ -1047,6 +1049,7 @@ def load_projects():
                 project_category,
                 project_subcategory,
                 project_complexity,
+                project_role,
                 project_manager,
                 planned_start_date,
                 planned_end_date,
@@ -1100,6 +1103,7 @@ def load_project(project_id):
                 project_category,
                 project_subcategory,
                 project_complexity,
+                project_role,
                 project_manager,
                 planned_start_date,
                 planned_end_date,
@@ -1283,6 +1287,7 @@ def form_to_project_data(form):
         "project_category": (form.get("project_category") or "").strip(),
         "project_subcategory": (form.get("project_subcategory") or "").strip(),
         "project_complexity": (form.get("project_complexity") or "").strip(),
+        "project_role": (form.get("project_role") or "").strip(),
         "project_manager": (form.get("project_manager") or "").strip(),
         "planned_start_date": (form.get("planned_start_date") or "").strip(),
         "planned_end_date": (form.get("planned_end_date") or "").strip(),
@@ -2302,7 +2307,7 @@ def admin_project_new():
         data = form_to_project_data(request.form)
         sql_columns = [
             "project_status", "control_gate", "investment_subject", "project_code", "project_name", "project_description",
-            "project_category", "project_subcategory", "project_complexity", "project_manager", "planned_start_date", "planned_end_date",
+            "project_category", "project_subcategory", "project_complexity", "project_role", "project_manager", "planned_start_date", "planned_end_date",
             "workload_person_month", "rd_budget_w", "headcount_budget_self_owned", "headcount_budget_od", "headcount_budget_tm"
         ]
         values = [data[key] for key in sql_columns]
@@ -2338,6 +2343,7 @@ def admin_project_edit(project_id):
             "project_category = ?",
             "project_subcategory = ?",
             "project_complexity = ?",
+            "project_role = ?",
             "project_manager = ?",
             "planned_start_date = ?",
             "planned_end_date = ?",
@@ -2350,7 +2356,7 @@ def admin_project_edit(project_id):
         ]
         values = [data[key] for key in [
             "project_status", "control_gate", "investment_subject", "project_code", "project_name", "project_description",
-            "project_category", "project_subcategory", "project_complexity", "project_manager", "planned_start_date", "planned_end_date",
+            "project_category", "project_subcategory", "project_complexity", "project_role", "project_manager", "planned_start_date", "planned_end_date",
             "workload_person_month", "rd_budget_w", "headcount_budget_self_owned", "headcount_budget_od", "headcount_budget_tm"
         ]] + [project_id]
         with get_conn() as conn:

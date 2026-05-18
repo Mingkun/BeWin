@@ -50,6 +50,13 @@
         <label>项目大类<textarea name="project_category" rows="2">{{ project.project_category or '' }}</textarea></label>
         <label>项目子类<textarea name="project_subcategory" rows="2">{{ project.project_subcategory or '' }}</textarea></label>
         <label>项目复杂度<textarea name="project_complexity" rows="2">{{ project.project_complexity or '' }}</textarea></label>
+        <label>项目角色
+          <select name="project_role">
+            <option value="" {% if not project.project_role %}selected{% endif %}>请选择</option>
+            <option value="lead" {% if project.project_role == 'lead' %}selected{% endif %}>主导</option>
+            <option value="participant" {% if project.project_role == 'participant' %}selected{% endif %}>参与</option>
+          </select>
+        </label>
         <label>项目经理<textarea name="project_manager" rows="2">{{ project.project_manager or '' }}</textarea></label>
         <label>计划启动日期<textarea name="planned_start_date" rows="2">{{ project.planned_start_date or '' }}</textarea></label>
         <label>计划结束日期<textarea name="planned_end_date" rows="2">{{ project.planned_end_date or '' }}</textarea></label>

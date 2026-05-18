@@ -119,13 +119,14 @@
       <div class="table-wrap card">
         <table class="data-table clean-project-table" id="project-data-table">
           <colgroup>
-            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
+            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
           </colgroup>
           <thead>
             <tr>
               <th data-sort="text" rowspan="2">项目名称<div class="col-resizer"></div></th>
               <th data-sort="text" rowspan="2">项目编码<div class="col-resizer"></div></th>
               <th data-sort="text" rowspan="2">项目经理<div class="col-resizer"></div></th>
+              <th data-sort="text" rowspan="2">项目角色<div class="col-resizer"></div></th>
               <th data-sort="text" rowspan="2">立项状态<div class="col-resizer"></div></th>
               <th data-sort="text" rowspan="2">管控灶<div class="col-resizer"></div></th>
               <th data-sort="text" rowspan="2">投资主体<div class="col-resizer"></div></th>
@@ -150,6 +151,7 @@
                 <td>{{ project.project_name or '未命名项目' }}</td>
                 <td>{{ project.project_code or '未填写' }}</td>
                 <td>{{ project.project_manager or '未填写' }}</td>
+                <td>{% if project.project_role == 'lead' %}主导{% elif project.project_role == 'participant' %}参与{% else %}未填写{% endif %}</td>
                 <td>{{ project.project_status or '未填写' }}</td>
                 <td>{{ project.control_gate or '未填写' }}</td>
                 <td>{{ project.investment_subject or '未填写' }}</td>
