@@ -64,8 +64,8 @@ app.secret_key = os.getenv("RELEASEPLAN_SECRET_KEY", "releaseplan-dev-secret-cha
 def get_home_cards():
     card_meta = {
         "milestone-condolence": {
-            "title": "关键突破&战地慰问",
-            "desc": "查看关键突破与战地慰问相关内容。",
+            "title": "关键突破&战地激励",
+            "desc": "查看关键突破与战地激励相关内容。",
             "href": url_for('milestone_condolence_page'),
         },
         "department-pipeline-load": {
@@ -1795,7 +1795,7 @@ def milestone_condolence_page():
 @app.route('/admin/milestone-condolence/new', methods=['GET', 'POST'])
 @login_required
 def admin_milestone_condolence_new():
-    denied = require_feature('manage_features', '当前账号不能维护关键突破&战地慰问')
+    denied = require_feature('manage_features', '当前账号不能维护关键突破&战地激励')
     if denied:
         return denied
 
@@ -1851,7 +1851,7 @@ def admin_milestone_condolence_new():
 @app.route('/admin/milestone-condolence/<int:item_id>/edit', methods=['GET', 'POST'])
 @login_required
 def admin_milestone_condolence_edit(item_id):
-    denied = require_feature('manage_features', '当前账号不能维护关键突破&战地慰问')
+    denied = require_feature('manage_features', '当前账号不能维护关键突破&战地激励')
     if denied:
         return denied
 
@@ -1930,7 +1930,7 @@ def admin_milestone_condolence_edit(item_id):
 @app.route('/admin/milestone-condolence/<int:item_id>/delete', methods=['POST'])
 @login_required
 def admin_milestone_condolence_delete(item_id):
-    denied = require_feature('manage_features', '当前账号不能维护关键突破&战地慰问')
+    denied = require_feature('manage_features', '当前账号不能维护关键突破&战地激励')
     if denied:
         return denied
     with get_conn() as conn:
@@ -2034,7 +2034,7 @@ def settings_general_page():
             'RELEASEPLAN_HOME_TITLE': (request.form.get('home_title') or '').strip() or 'ReleasePlan',
             'RELEASEPLAN_BROWSER_TITLE': (request.form.get('browser_title') or '').strip() or 'ReleasePlan 入口',
             'RELEASEPLAN_THEME': (request.form.get('theme') or 'ios-light').strip() or 'ios-light',
-            'RELEASEPLAN_CARD_1_TITLE': (request.form.get('card_1_title') or '').strip() or '关键突破&战地慰问',
+            'RELEASEPLAN_CARD_1_TITLE': (request.form.get('card_1_title') or '').strip() or '关键突破&战地激励',
             'RELEASEPLAN_CARD_2_TITLE': (request.form.get('card_2_title') or '').strip() or '项目视图',
             'RELEASEPLAN_CARD_3_TITLE': (request.form.get('card_3_title') or '').strip() or '关键特性视图',
             'RELEASEPLAN_CARD_4_TITLE': (request.form.get('card_4_title') or '').strip() or '云服务视图',
@@ -2275,8 +2275,8 @@ def view_placeholder(view_key):
 
     view_map = {
         'milestone-condolence': {
-            'title': '关键突破&战地慰问',
-            'description': '查看关键突破与战地慰问相关内容。',
+            'title': '关键突破&战地激励',
+            'description': '查看关键突破与战地激励相关内容。',
         },
         'department-budget-resource': {
             'title': '投资视图',
