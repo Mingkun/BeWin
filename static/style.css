@@ -1390,7 +1390,7 @@ body.theme-ios-dark .backup-popover-text {
 .delete-popover-actions {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 4px;
   margin-left: auto;
 }
@@ -1551,8 +1551,8 @@ body.theme-ios-dark .backup-popover-text {
   display: flex;
   width: 100%;
   align-items: center;
-  justify-content: flex-end;
-  text-align: right;
+  justify-content: center;
+  text-align: center;
   border: none;
   background: transparent;
   color: #334155;
