@@ -60,29 +60,22 @@
 
       <div class="settings-group">
         <div class="settings-section-title">首页卡片</div>
-        <div class="settings-section-desc">可以调整首页卡片名称，也可以调整 1 到 6 的展示顺序。</div>
-        {% for card in home_cards %}
+        <div class="settings-section-desc">只调整卡片名称和排序序号。卡片类型固定，避免改位置时误改成别的卡片。</div>
+        {% for card in home_cards|sort(attribute='default_index') %}
         <label class="ios-field">
-          <span class="ios-field-label">卡片 {{ loop.index }} 名称</span>
-          <input type="text" name="card_{{ loop.index }}_title" value="{{ card.title }}">
+          <span class="ios-field-label">卡片 {{ card.default_index }} 名称</span>
+          <input type="text" name="card_{{ card.default_index }}_title" value="{{ card.title }}">
         </label>
         {% endfor %}
 
         <div class="ios-order-grid">
-          {% for pos in range(1, 7) %}
+          {% for card in home_cards|sort(attribute='default_index') %}
           <label class="ios-field ios-select-field">
-            <span class="ios-field-label">第 {{ pos }} 个卡片</span>
+            <span class="ios-field-label">{{ card.title }} 排序序号</span>
             <div class="ios-select-wrap">
-              <select name="card_{{ pos }}_key">
-                {% for option in [
-                  ('milestone-condolence', '关键突破&战地激励'),
-                  ('roadmap', '关键特性视图'),
-                  ('department-budget-resource', '投资视图'),
-                  ('project-budget-resource', '资源视图'),
-                  ('department-pipeline-load', '项目视图'),
-                  ('cloud-service-view', '云服务视图')
-                ] %}
-                  <option value="{{ option[0] }}" {% if home_cards[pos - 1].key == option[0] %}selected{% endif %}>{{ option[1] }}</option>
+              <select name="card_{{ card.default_index }}_order">
+                {% for pos in range(1, 7) %}
+                  <option value="{{ pos }}" {% if card.position == pos %}selected{% endif %}>{{ pos }}</option>
                 {% endfor %}
               </select>
               <span class="ios-chevron">›</span>

@@ -61,55 +61,88 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_
 app.secret_key = os.getenv("RELEASEPLAN_SECRET_KEY", "releaseplan-dev-secret-change-me")
 
 
+HOME_CARD_SPECS = [
+    {
+        "key": "milestone-condolence",
+        "default_title": "关键突破&战地激励",
+        "desc": "查看关键突破与战地激励相关内容。",
+        "href_builder": lambda: url_for('milestone_condolence_page'),
+    },
+    {
+        "key": "department-pipeline-load",
+        "default_title": "项目视图",
+        "desc": "查看项目视图页面的内容，项目甘特图、项目主要信息。",
+        "href_builder": lambda: url_for('view_placeholder', view_key='department-pipeline-load'),
+    },
+    {
+        "key": "roadmap",
+        "default_title": "关键特性视图",
+        "desc": "查看所规划关键特性的路标信息。",
+        "href_builder": lambda: url_for('roadmap'),
+    },
+    {
+        "key": "cloud-service-view",
+        "default_title": "云服务视图",
+        "desc": "按云服务粒度查看资源投入情况。",
+        "href_builder": lambda: url_for('view_placeholder', view_key='cloud-service-view'),
+    },
+    {
+        "key": "department-budget-resource",
+        "default_title": "投资视图",
+        "desc": "从投资维度看管道。",
+        "href_builder": lambda: url_for('view_placeholder', view_key='department-budget-resource'),
+    },
+    {
+        "key": "project-budget-resource",
+        "default_title": "资源视图",
+        "desc": "了解部门人力资源情况。",
+        "href_builder": lambda: url_for('view_placeholder', view_key='project-budget-resource'),
+    },
+]
+
+
+def _build_default_home_cards():
+    cards = []
+    for index, spec in enumerate(HOME_CARD_SPECS, start=1):
+        title = os.getenv(f"RELEASEPLAN_CARD_{index}_TITLE", spec["default_title"])
+        cards.append({
+            "key": spec["key"],
+            "title": title,
+            "desc": spec["desc"],
+            "href": spec["href_builder"](),
+            "default_index": index,
+            "position": index,
+        })
+    return cards
+
+
 def get_home_cards():
-    card_meta = {
-        "milestone-condolence": {
-            "title": "关键突破&战地激励",
-            "desc": "查看关键突破与战地激励相关内容。",
-            "href": url_for('milestone_condolence_page'),
-        },
-        "department-pipeline-load": {
-            "title": "项目视图",
-            "desc": "查看项目视图页面的内容，项目甘特图、项目主要信息。",
-            "href": url_for('view_placeholder', view_key='department-pipeline-load'),
-        },
-        "roadmap": {
-            "title": "关键特性视图",
-            "desc": "查看所规划关键特性的路标信息。",
-            "href": url_for('roadmap'),
-        },
-        "cloud-service-view": {
-            "title": "云服务视图",
-            "desc": "按云服务粒度查看资源投入情况。",
-            "href": url_for('view_placeholder', view_key='cloud-service-view'),
-        },
-        "department-budget-resource": {
-            "title": "投资视图",
-            "desc": "从投资维度看管道。",
-            "href": url_for('view_placeholder', view_key='department-budget-resource'),
-        },
-        "project-budget-resource": {
-            "title": "资源视图",
-            "desc": "了解部门人力资源情况。",
-            "href": url_for('view_placeholder', view_key='project-budget-resource'),
-        },
-    }
-    default_cards = [
-        {"key": key, **value}
-        for key, value in card_meta.items()
-    ]
-    preferred_order = [
-        os.getenv("RELEASEPLAN_CARD_1_KEY", "milestone-condolence"),
-        os.getenv("RELEASEPLAN_CARD_2_KEY", "department-pipeline-load"),
-        os.getenv("RELEASEPLAN_CARD_3_KEY", "roadmap"),
-        os.getenv("RELEASEPLAN_CARD_4_KEY", "cloud-service-view"),
-        os.getenv("RELEASEPLAN_CARD_5_KEY", "department-budget-resource"),
-        os.getenv("RELEASEPLAN_CARD_6_KEY", "project-budget-resource"),
-    ]
-    card_map = {card["key"]: card for card in default_cards}
-    ordered = [card_map[key] for key in preferred_order if key in card_map]
-    used = {card["key"] for card in ordered}
-    ordered.extend(card for card in default_cards if card["key"] not in used)
+    default_cards = _build_default_home_cards()
+    total = len(default_cards)
+    order_items = []
+    for index, card in enumerate(default_cards, start=1):
+        raw_order = (os.getenv(f"RELEASEPLAN_CARD_{index}_ORDER", str(index)) or str(index)).strip()
+        try:
+            order_value = int(raw_order)
+        except ValueError:
+            order_value = index
+        order_items.append((order_value, index, card))
+
+    ordered = []
+    used_positions = set()
+    for requested_position, _, card in sorted(order_items, key=lambda item: (item[0], item[1])):
+        position = requested_position
+        while position in used_positions:
+            position += 1
+        if position > total:
+            position = 1
+            while position in used_positions and position <= total:
+                position += 1
+        used_positions.add(position)
+        card["position"] = position
+        ordered.append(card)
+
+    ordered.sort(key=lambda card: (card["position"], card["default_index"]))
     return ordered
 
 
@@ -2034,19 +2067,18 @@ def settings_general_page():
             'RELEASEPLAN_HOME_TITLE': (request.form.get('home_title') or '').strip() or 'ReleasePlan',
             'RELEASEPLAN_BROWSER_TITLE': (request.form.get('browser_title') or '').strip() or 'ReleasePlan 入口',
             'RELEASEPLAN_THEME': (request.form.get('theme') or 'ios-light').strip() or 'ios-light',
-            'RELEASEPLAN_CARD_1_TITLE': (request.form.get('card_1_title') or '').strip() or '关键突破&战地激励',
-            'RELEASEPLAN_CARD_2_TITLE': (request.form.get('card_2_title') or '').strip() or '项目视图',
-            'RELEASEPLAN_CARD_3_TITLE': (request.form.get('card_3_title') or '').strip() or '关键特性视图',
-            'RELEASEPLAN_CARD_4_TITLE': (request.form.get('card_4_title') or '').strip() or '云服务视图',
-            'RELEASEPLAN_CARD_5_TITLE': (request.form.get('card_5_title') or '').strip() or '投资视图',
-            'RELEASEPLAN_CARD_6_TITLE': (request.form.get('card_6_title') or '').strip() or '资源视图',
-            'RELEASEPLAN_CARD_1_KEY': (request.form.get('card_1_key') or 'milestone-condolence').strip() or 'milestone-condolence',
-            'RELEASEPLAN_CARD_2_KEY': (request.form.get('card_2_key') or 'department-pipeline-load').strip() or 'department-pipeline-load',
-            'RELEASEPLAN_CARD_3_KEY': (request.form.get('card_3_key') or 'roadmap').strip() or 'roadmap',
-            'RELEASEPLAN_CARD_4_KEY': (request.form.get('card_4_key') or 'cloud-service-view').strip() or 'cloud-service-view',
-            'RELEASEPLAN_CARD_5_KEY': (request.form.get('card_5_key') or 'department-budget-resource').strip() or 'department-budget-resource',
-            'RELEASEPLAN_CARD_6_KEY': (request.form.get('card_6_key') or 'project-budget-resource').strip() or 'project-budget-resource',
         }
+        for index, spec in enumerate(HOME_CARD_SPECS, start=1):
+            updates[f'RELEASEPLAN_CARD_{index}_TITLE'] = (request.form.get(f'card_{index}_title') or '').strip() or spec['default_title']
+            raw_order = (request.form.get(f'card_{index}_order') or str(index)).strip() or str(index)
+            try:
+                order_value = int(raw_order)
+            except ValueError:
+                order_value = index
+            updates[f'RELEASEPLAN_CARD_{index}_ORDER'] = str(order_value)
+
+        for index in range(1, len(HOME_CARD_SPECS) + 1):
+            updates.pop(f'RELEASEPLAN_CARD_{index}_KEY', None)
         save_env_settings(updates)
         os.environ.update(updates)
         flash('设置已保存并立即生效')
