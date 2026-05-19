@@ -59,9 +59,14 @@
         <div class="backup-action-row" style="display:flex; flex-direction:column; align-items:flex-start; gap:10px;">
           {% if download_packages.portable and download_packages.portable.filename %}
           <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages.portable.filename) }}">下载安装包 {{ download_packages.portable.label }}</a>
+          {% else %}
+          <div style="font-size:13px; color:#64748b;">当前暂无可下载安装包</div>
           {% endif %}
+
           {% if download_packages.update and download_packages.update.filename %}
           <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages.update.filename) }}">下载升级包 {{ download_packages.update.label }}</a>
+          {% else %}
+          <div style="font-size:13px; color:#64748b;">当前暂无可下载升级包</div>
           {% endif %}
         </div>
       </div>
