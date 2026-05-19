@@ -819,11 +819,12 @@ def get_latest_download_package_info():
                 candidate = {
                     'filename': path.name,
                     'version': version,
+                    'label': f"v{version}" if version else path.name,
                     'sort_key': tuple(version_parts),
                 }
                 if latest is None or candidate['sort_key'] > latest['sort_key']:
                     latest = candidate
-        result[key] = latest
+        result[key] = latest or {'filename': '', 'version': '', 'label': ''}
     return result
 
 

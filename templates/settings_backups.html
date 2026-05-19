@@ -57,11 +57,11 @@
         <div class="settings-section-title">安装包与升级包</div>
         <div class="settings-section-desc">自动显示当前下载目录里的最新安装包和升级包。</div>
         <div class="backup-action-row">
-          {% if download_packages.portable %}
-          <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages.portable.filename) }}">下载安装包 v{{ download_packages.portable.version or download_packages.portable.filename }}</a>
+          {% if download_packages.portable and download_packages.portable.filename %}
+          <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages.portable.filename) }}">下载安装包 {{ download_packages.portable.label }}</a>
           {% endif %}
-          {% if download_packages.update %}
-          <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages.update.filename) }}">下载升级包 v{{ download_packages.update.version or download_packages.update.filename }}</a>
+          {% if download_packages.update and download_packages.update.filename %}
+          <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages.update.filename) }}">下载升级包 {{ download_packages.update.label }}</a>
           {% endif %}
         </div>
       </div>
