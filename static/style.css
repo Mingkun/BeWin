@@ -1090,9 +1090,14 @@ body.theme-ios-dark .backup-popover-text {
 }
 
 .project-gantt-menu-wrap {
-  position: absolute;
+  position: absolute !important;
   top: 8px;
   right: 10px;
+  left: auto !important;
+  margin: 0 !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  align-self: auto !important;
   z-index: 60;
 }
 
