@@ -798,6 +798,35 @@ def login_required(view_func):
     return wrapped
 
 
+def get_latest_download_package_info():
+    downloads_dir = BASE_DIR / 'static' / 'downloads'
+    package_types = {
+        'portable': 'releaseplan-portable-v',
+        'update': 'releaseplan-update-v',
+    }
+    result = {}
+    for key, prefix in package_types.items():
+        latest = None
+        if downloads_dir.exists():
+            for path in downloads_dir.glob(f'{prefix}*.tar.gz'):
+                version = path.name[len(prefix):-7]
+                version_parts = []
+                for part in version.lstrip('v').split('.'):
+                    try:
+                        version_parts.append(int(part))
+                    except ValueError:
+                        version_parts.append(part)
+                candidate = {
+                    'filename': path.name,
+                    'version': version,
+                    'sort_key': tuple(version_parts),
+                }
+                if latest is None or candidate['sort_key'] > latest['sort_key']:
+                    latest = candidate
+        result[key] = latest
+    return result
+
+
 def get_conn():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
@@ -2230,6 +2259,7 @@ def settings_backups_page():
         branding=get_branding(),
         backup_config=get_backup_config(),
         backup_history=list_backup_history(),
+        download_packages=get_latest_download_package_info(),
         **build_auth_context(),
     )
 

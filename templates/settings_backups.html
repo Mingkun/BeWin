@@ -55,10 +55,14 @@
 
       <div class="settings-group">
         <div class="settings-section-title">安装包与升级包</div>
-        <div class="settings-section-desc">可下载当前版本的安装包和升级包。</div>
+        <div class="settings-section-desc">自动显示当前下载目录里的最新安装包和升级包。</div>
         <div class="backup-action-row">
-          <a class="button secondary" href="{{ url_for('static', filename='downloads/releaseplan-portable-v16.1.tar.gz') }}">下载安装包 v16.1</a>
-          <a class="button secondary" href="{{ url_for('static', filename='downloads/releaseplan-update-v16.1.tar.gz') }}">下载升级包 v16.1</a>
+          {% if download_packages.portable %}
+          <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages.portable.filename) }}">下载安装包 {{ download_packages.portable.version }}</a>
+          {% endif %}
+          {% if download_packages.update %}
+          <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages.update.filename) }}">下载升级包 {{ download_packages.update.version }}</a>
+          {% endif %}
         </div>
       </div>
 
