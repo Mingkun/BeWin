@@ -94,9 +94,13 @@
                           <div class="milestone-card-actions menu-wrap">
                             <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
                             <div class="milestone-card-menu">
-                              <a class="milestone-card-menu-item" href="{{ url_for('admin_feature_edit', feature_id=feature.id) }}">编辑</a>
+                              <div class="milestone-card-menu-row">
+                                <a class="milestone-card-menu-item" href="{{ url_for('admin_feature_edit', feature_id=feature.id) }}">编辑</a>
+                              </div>
                               <form method="post" action="{{ url_for('admin_feature_delete', feature_id=feature.id) }}" class="inline-delete-form milestone-menu-delete-form">
-                                <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
+                                <div class="milestone-card-menu-row">
+                                  <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
+                                </div>
                                 <div class="delete-popover" hidden>
                                   <span class="delete-popover-text">确认删除？</span>
                                   <div class="delete-popover-actions">

@@ -1552,6 +1552,11 @@ body.theme-ios-dark .backup-popover-text {
   transform: translateY(0);
 }
 
+.milestone-card-menu-row {
+  display: block;
+  width: 100%;
+}
+
 .milestone-card-menu-item {
   display: flex;
   width: 100%;
@@ -1568,6 +1573,8 @@ body.theme-ios-dark .backup-popover-text {
   color: #334155;
   text-decoration: none;
   font-size: 13px;
+  line-height: 1.2;
+  min-height: 34px;
   border-radius: 8px;
   padding: 8px 10px;
   cursor: pointer;
@@ -1586,6 +1593,11 @@ body.theme-ios-dark .backup-popover-text {
   display: block;
   width: 100%;
   margin: 0;
+}
+
+.milestone-menu-delete-form .milestone-card-menu-item {
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .page-roadmap .milestone-card-menu,
