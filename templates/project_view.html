@@ -85,6 +85,28 @@
               <div class="project-gantt-info-panel">
                 <div class="project-gantt-info-head">
                   <div class="project-gantt-name">{{ project.project_name }}</div>
+                  {% if user_features.manage_projects %}
+                  <div class="milestone-card-actions menu-wrap">
+                    <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
+                    <div class="milestone-card-menu">
+                      <div class="milestone-card-menu-row">
+                        <a class="milestone-card-menu-item" href="{{ url_for('admin_project_edit', project_id=project.id) }}">编辑</a>
+                      </div>
+                      <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" class="inline-delete-form milestone-menu-delete-form">
+                        <div class="milestone-card-menu-row">
+                          <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
+                        </div>
+                        <div class="delete-popover" hidden>
+                          <span class="delete-popover-text">确认删除？</span>
+                          <div class="delete-popover-actions">
+                            <button class="button tiny danger" type="submit">删</button>
+                            <button class="button tiny secondary delete-cancel" type="button">取消</button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                  {% endif %}
                 </div>
                 <div class="project-gantt-tags">
                   <span>项目名称：{{ project.project_name }}</span>
@@ -119,7 +141,7 @@
       <div class="table-wrap card">
         <table class="data-table clean-project-table" id="project-data-table">
           <colgroup>
-            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
+            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
           </colgroup>
           <thead>
             <tr>
@@ -136,7 +158,6 @@
               <th data-sort="number" rowspan="2">工作量（人月）<div class="col-resizer"></div></th>
               <th data-sort="number" rowspan="2">费用预算（w）<div class="col-resizer"></div></th>
               <th data-sort="none" colspan="4" style="text-align:center;">人力预算<div class="col-resizer"></div></th>
-              <th class="actions-col" data-sort="none" rowspan="2">操作<div class="col-resizer"></div></th>
             </tr>
             <tr>
               <th data-sort="number">自有<div class="col-resizer"></div></th>
@@ -164,25 +185,6 @@
                 <td>{{ project.headcount_budget_od or '未填写' }}</td>
                 <td>{{ project.headcount_budget_tm or '未填写' }}</td>
                 <td title="公式：自有 + OD + 0.8*TM">{{ '%.2f'|format((project.headcount_budget_self_owned|float) + (project.headcount_budget_od|float) + 0.8 * (project.headcount_budget_tm|float)) }}</td>
-                <td class="actions-col">
-                  {% if user_features.manage_projects %}
-                  <div class="inline-actions compact-actions">
-                    <a class="icon-action" href="{{ url_for('admin_project_edit', project_id=project.id) }}" title="修改" aria-label="修改">✏️</a>
-                    <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" class="inline-delete-form">
-                      <button class="icon-action danger delete-trigger" type="button" title="删除" aria-label="删除">🗑</button>
-                      <div class="delete-popover" hidden>
-                        <span class="delete-popover-text">确认删除？</span>
-                        <div class="delete-popover-actions">
-                          <button class="button tiny danger" type="submit">删</button>
-                          <button class="button tiny secondary delete-cancel" type="button">取消</button>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                  {% else %}
-                  -
-                  {% endif %}
-                </td>
               </tr>
             {% endfor %}
           </tbody>
