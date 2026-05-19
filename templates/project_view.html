@@ -82,31 +82,31 @@
         <div class="project-gantt-lane-list">
           {% for project in gantt_projects %}
             <div class="project-gantt-lane-row">
-              <div class="project-gantt-info-panel">
+              <div class="project-gantt-info-panel project-gantt-info-panel-with-menu">
+                {% if user_features.manage_projects %}
+                <div class="milestone-card-actions menu-wrap project-gantt-menu-wrap">
+                  <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
+                  <div class="milestone-card-menu">
+                    <div class="milestone-card-menu-row">
+                      <a class="milestone-card-menu-item" href="{{ url_for('admin_project_edit', project_id=project.id) }}">编辑</a>
+                    </div>
+                    <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" class="inline-delete-form milestone-menu-delete-form">
+                      <div class="milestone-card-menu-row">
+                        <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
+                      </div>
+                      <div class="delete-popover" hidden>
+                        <span class="delete-popover-text">确认删除？</span>
+                        <div class="delete-popover-actions">
+                          <button class="button tiny danger" type="submit">删</button>
+                          <button class="button tiny secondary delete-cancel" type="button">取消</button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+                {% endif %}
                 <div class="project-gantt-info-head">
                   <div class="project-gantt-name">{{ project.project_name }}</div>
-                  {% if user_features.manage_projects %}
-                  <div class="milestone-card-actions menu-wrap">
-                    <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
-                    <div class="milestone-card-menu">
-                      <div class="milestone-card-menu-row">
-                        <a class="milestone-card-menu-item" href="{{ url_for('admin_project_edit', project_id=project.id) }}">编辑</a>
-                      </div>
-                      <form method="post" action="{{ url_for('admin_project_delete', project_id=project.id) }}" class="inline-delete-form milestone-menu-delete-form">
-                        <div class="milestone-card-menu-row">
-                          <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
-                        </div>
-                        <div class="delete-popover" hidden>
-                          <span class="delete-popover-text">确认删除？</span>
-                          <div class="delete-popover-actions">
-                            <button class="button tiny danger" type="submit">删</button>
-                            <button class="button tiny secondary delete-cancel" type="button">取消</button>
-                          </div>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                  {% endif %}
                 </div>
                 <div class="project-gantt-tags">
                   <span>项目名称：{{ project.project_name }}</span>

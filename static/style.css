@@ -830,6 +830,7 @@ body.theme-ios-dark .backup-popover-text {
   border-radius: 16px;
   padding: 18px 20px 20px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  overflow: visible !important;
 }
 
 .project-lane-title {
@@ -1073,13 +1074,26 @@ body.theme-ios-dark .backup-popover-text {
   gap: 0;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .project-gantt-info-panel {
   padding: 8px 12px;
   background: #f8fafc;
   border-right: 1px solid #e5e7eb;
+  overflow: visible;
+}
+
+.project-gantt-info-panel-with-menu {
+  position: relative;
+  padding-top: 26px;
+}
+
+.project-gantt-menu-wrap {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 60;
 }
 
 .project-gantt-info-head {
@@ -1268,6 +1282,7 @@ body.theme-ios-dark .backup-popover-text {
 
 .table-wrap {
   overflow-x: auto;
+  overflow-y: visible;
 }
 
 .data-table {
