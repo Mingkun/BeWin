@@ -1519,6 +1519,10 @@ body.theme-ios-dark .backup-popover-text {
   top: 26px;
   right: 0;
   min-width: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
   background: #ffffff !important;
   opacity: 1;
   border: 1px solid #dbe3ee;
@@ -1527,6 +1531,7 @@ body.theme-ios-dark .backup-popover-text {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   padding: 6px;
+  box-sizing: border-box;
   z-index: 30;
   visibility: hidden;
   pointer-events: none;
@@ -1573,6 +1578,9 @@ body.theme-ios-dark .backup-popover-text {
 
 .milestone-menu-delete-form {
   position: relative;
+  display: block;
+  width: 100%;
+  margin: 0;
 }
 
 .page-roadmap .milestone-card-menu,
