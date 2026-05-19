@@ -749,7 +749,13 @@ def verify_local_guest(username, password):
 
 
 def get_releaseplan_root_path():
-    return (request.headers.get('X-Forwarded-Prefix') or '/releaseplan').rstrip('/') or '/releaseplan'
+    prefix = (request.headers.get('X-Forwarded-Prefix') or '').strip()
+    if prefix:
+        return prefix.rstrip('/') or '/'
+    script_name = (request.environ.get('SCRIPT_NAME') or '').strip()
+    if script_name:
+        return script_name.rstrip('/') or '/'
+    return '/'
 
 
 def normalize_next_url(next_url):
