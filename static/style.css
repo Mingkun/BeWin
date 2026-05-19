@@ -1390,7 +1390,9 @@ body.theme-ios-dark .backup-popover-text {
 .delete-popover-actions {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
+  margin-left: auto;
 }
 
 .button.tiny {
@@ -1549,7 +1551,8 @@ body.theme-ios-dark .backup-popover-text {
   display: flex;
   width: 100%;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end;
+  text-align: right;
   border: none;
   background: transparent;
   color: #334155;
@@ -1570,6 +1573,15 @@ body.theme-ios-dark .backup-popover-text {
 
 .milestone-menu-delete-form {
   position: relative;
+}
+
+.page-roadmap .milestone-card-menu,
+.page-roadmap .delete-popover {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .milestone-card-line {
