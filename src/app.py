@@ -116,16 +116,23 @@ def _build_default_home_cards():
     return cards
 
 
-def get_home_cards():
-    default_cards = _build_default_home_cards()
-    total = len(default_cards)
+def normalize_home_cards(cards):
+    total = len(cards)
     order_items = []
-    for index, card in enumerate(default_cards, start=1):
-        raw_order = (os.getenv(f"RELEASEPLAN_CARD_{index}_ORDER", str(index)) or str(index)).strip()
+    notices = []
+    for index, card in enumerate(cards, start=1):
+        raw_order = str(card.get('position', index)).strip()
         try:
             order_value = int(raw_order)
-        except ValueError:
+        except (TypeError, ValueError):
             order_value = index
+            notices.append(f"{card['title']} 的排序序号无效，已自动改为 {order_value}")
+        if order_value < 1:
+            notices.append(f"{card['title']} 的排序序号过小，已自动改为 1")
+            order_value = 1
+        elif order_value > total:
+            notices.append(f"{card['title']} 的排序序号过大，已自动改为 {total}")
+            order_value = total
         order_items.append((order_value, index, card))
 
     ordered = []
@@ -138,11 +145,21 @@ def get_home_cards():
             position = 1
             while position in used_positions and position <= total:
                 position += 1
+        if position != requested_position:
+            notices.append(f"{card['title']} 的排序序号 {requested_position} 与其他卡片重复，已自动顺延到 {position}")
         used_positions.add(position)
-        card["position"] = position
+        card['position'] = position
         ordered.append(card)
 
-    ordered.sort(key=lambda card: (card["position"], card["default_index"]))
+    ordered.sort(key=lambda card: (card['position'], card['default_index']))
+    return ordered, notices
+
+
+def get_home_cards():
+    default_cards = _build_default_home_cards()
+    for index, card in enumerate(default_cards, start=1):
+        card['position'] = os.getenv(f"RELEASEPLAN_CARD_{index}_ORDER", str(index)) or str(index)
+    ordered, _ = normalize_home_cards(default_cards)
     return ordered
 
 
@@ -2068,19 +2085,28 @@ def settings_general_page():
             'RELEASEPLAN_BROWSER_TITLE': (request.form.get('browser_title') or '').strip() or 'ReleasePlan 入口',
             'RELEASEPLAN_THEME': (request.form.get('theme') or 'ios-light').strip() or 'ios-light',
         }
+        submitted_cards = []
         for index, spec in enumerate(HOME_CARD_SPECS, start=1):
-            updates[f'RELEASEPLAN_CARD_{index}_TITLE'] = (request.form.get(f'card_{index}_title') or '').strip() or spec['default_title']
+            title = (request.form.get(f'card_{index}_title') or '').strip() or spec['default_title']
             raw_order = (request.form.get(f'card_{index}_order') or str(index)).strip() or str(index)
-            try:
-                order_value = int(raw_order)
-            except ValueError:
-                order_value = index
-            updates[f'RELEASEPLAN_CARD_{index}_ORDER'] = str(order_value)
+            submitted_cards.append({
+                'key': spec['key'],
+                'title': title,
+                'desc': spec['desc'],
+                'href': spec['href_builder'](),
+                'default_index': index,
+                'position': raw_order,
+            })
 
-        for index in range(1, len(HOME_CARD_SPECS) + 1):
-            updates.pop(f'RELEASEPLAN_CARD_{index}_KEY', None)
+        normalized_cards, notices = normalize_home_cards(submitted_cards)
+        for card in normalized_cards:
+            updates[f"RELEASEPLAN_CARD_{card['default_index']}_TITLE"] = card['title']
+            updates[f"RELEASEPLAN_CARD_{card['default_index']}_ORDER"] = str(card['position'])
+
         save_env_settings(updates)
         os.environ.update(updates)
+        for notice in notices:
+            flash(notice)
         flash('设置已保存并立即生效')
         return redirect(url_for('settings_general_page'))
 
