@@ -1555,9 +1555,14 @@ body.theme-ios-dark .backup-popover-text {
 .milestone-card-menu-item {
   display: flex;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   align-items: center;
   justify-content: center;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border: none;
   background: transparent;
   color: #334155;
