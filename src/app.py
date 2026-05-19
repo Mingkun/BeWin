@@ -2538,6 +2538,20 @@ def admin_feature_edit(feature_id):
     return render_template('feature_form.html', feature=feature, months=MILESTONE_COLUMNS, mode='edit', project_options=project_options, **build_auth_context())
 
 
+@app.route('/admin/features/<int:feature_id>/delete', methods=['POST'])
+@login_required
+def admin_feature_delete(feature_id):
+    denied = require_feature('manage_features', '当前账号不能管理关键特性')
+    if denied:
+        return denied
+    with get_conn() as conn:
+        conn.execute('DELETE FROM project_features WHERE id = ?', (feature_id,))
+        conn.execute('DELETE FROM user_feature_orders WHERE feature_id = ?', (feature_id,))
+        conn.commit()
+    flash('已删除关键特性')
+    return redirect(url_for('roadmap'))
+
+
 @app.route('/admin/projects/import-csv', methods=['POST'])
 @login_required
 def admin_projects_import_csv():

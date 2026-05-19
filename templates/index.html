@@ -91,7 +91,22 @@
                         {% if user_features.manage_features %}
                         <div style="display:flex; align-items:center; gap:8px;">
                           <button type="button" class="feature-pin-toggle {% if feature.is_pinned %}active{% endif %}" data-project-id="{{ project.project_id }}" data-feature-id="{{ feature.id }}" data-pinned="{{ '1' if feature.is_pinned else '0' }}">置顶</button>
-                          <a class="feature-edit-link" href="{{ url_for('admin_feature_edit', feature_id=feature.id) }}">编辑</a>
+                          <div class="milestone-card-actions menu-wrap">
+                            <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
+                            <div class="milestone-card-menu">
+                              <a class="milestone-card-menu-item" href="{{ url_for('admin_feature_edit', feature_id=feature.id) }}">编辑</a>
+                              <form method="post" action="{{ url_for('admin_feature_delete', feature_id=feature.id) }}" class="inline-delete-form milestone-menu-delete-form">
+                                <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
+                                <div class="delete-popover" hidden>
+                                  <span class="delete-popover-text">确认删除？</span>
+                                  <div class="delete-popover-actions">
+                                    <button class="button tiny danger" type="submit">删</button>
+                                    <button class="button tiny secondary delete-cancel" type="button">取消</button>
+                                  </div>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
                         </div>
                         {% endif %}
                       </div>
@@ -183,6 +198,33 @@
         } catch (error) {
           console.warn('save feature pin failed', error);
         }
+      });
+    });
+
+    document.querySelectorAll('.inline-delete-form').forEach((wrap) => {
+      const trigger = wrap.querySelector('.delete-trigger');
+      const popover = wrap.querySelector('.delete-popover');
+      const cancel = wrap.querySelector('.delete-cancel');
+      if (!trigger || !popover || !cancel) return;
+      trigger.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        document.querySelectorAll('.delete-popover').forEach((item) => {
+          if (item !== popover) item.hidden = true;
+        });
+        popover.hidden = !popover.hidden;
+      });
+      cancel.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        popover.hidden = true;
+      });
+    });
+
+    document.addEventListener('click', (event) => {
+      if (event.target.closest('.inline-delete-form')) return;
+      document.querySelectorAll('.delete-popover').forEach((item) => {
+        item.hidden = true;
       });
     });
   </script>
