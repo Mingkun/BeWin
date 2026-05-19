@@ -16,7 +16,7 @@ import shutil
 import zipfile
 import uuid
 
-from oauth_auth import register_oauth_routes
+from src.oauth_auth import register_oauth_routes
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = BASE_DIR / '.env'
@@ -60,15 +60,6 @@ FEATURE_ALL_COLUMNS = FEATURE_COLUMNS + MILESTONE_COLUMNS
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"), static_folder=str(BASE_DIR / "static"), static_url_path="/static")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 app.secret_key = os.getenv("RELEASEPLAN_SECRET_KEY", "releaseplan-dev-secret-change-me")
-
-register_oauth_routes(
-    app,
-    oauth_enabled=oauth_enabled,
-    normalize_next_url=normalize_next_url,
-    match_permission_rule=match_permission_rule,
-    default_feature_flags=default_feature_flags,
-    normalize_feature_flags=normalize_feature_flags,
-)
 
 
 HOME_CARD_SPECS = [
@@ -836,6 +827,16 @@ def get_latest_download_package_info():
                     latest = candidate
         result[key] = latest or {'filename': '', 'version': '', 'label': ''}
     return result
+
+
+register_oauth_routes(
+    app,
+    oauth_enabled=oauth_enabled,
+    normalize_next_url=normalize_next_url,
+    match_permission_rule=match_permission_rule,
+    default_feature_flags=default_feature_flags,
+    normalize_feature_flags=normalize_feature_flags,
+)
 
 
 def get_conn():
