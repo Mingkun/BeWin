@@ -48,6 +48,14 @@
           </label>
           <label>图片
             <input type="file" name="image_file" accept="image/png,image/jpeg,image/gif,image/webp">
+            {% if current_image_path %}
+            <div style="margin-top:8px; font-size:13px; color:#475569;">当前图片已保留在服务器：{{ current_image_path }}</div>
+            {% endif %}
+            {% if image_url %}
+            <div style="margin-top:10px;">
+              <img src="{{ image_url }}" alt="当前图片" style="max-width:240px; max-height:160px; border-radius:10px; border:1px solid #e2e8f0; object-fit:cover; display:block;">
+            </div>
+            {% endif %}
           </label>
         </div>
       </div>

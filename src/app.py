@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template, request, session, url_for, Response, flash
+from flask import Flask, redirect, render_template, request, session, url_for, Response, flash, send_from_directory
 import secrets
 from io import StringIO
 from urllib.parse import quote
@@ -34,7 +34,8 @@ FEATURE_CSV_PATH = BASE_DIR / "docs" / "feature_table.csv"
 DB_PATH = BASE_DIR / "data" / "releaseplan.db"
 SERVICE_RESOURCE_CSV_PATH = BASE_DIR / "docs" / "service_resource_investment.csv"
 REQUIREMENTS_LOG_PATH = BASE_DIR / "data" / "requirements_requests.md"
-MILESTONE_MEDIA_DIR = BASE_DIR / "static" / "uploads" / "milestone_condolence"
+MILESTONE_MEDIA_DIR = BASE_DIR / "picture" / "milestone_condolence"
+LEGACY_MILESTONE_MEDIA_DIR = BASE_DIR / "static" / "uploads" / "milestone_condolence"
 MILESTONE_COLUMNS = [
     "1/31", "2/28", "3/31", "4/30", "5/31", "6/30",
     "7/31", "8/31", "9/30", "10/31", "11/30", "12/31"
@@ -242,7 +243,27 @@ def save_milestone_condolence_image(file_storage):
     target_name = f"{uuid.uuid4().hex}{ext}"
     target_path = MILESTONE_MEDIA_DIR / target_name
     file_storage.save(target_path)
-    return f"uploads/milestone_condolence/{target_name}"
+    return f"picture/milestone_condolence/{target_name}"
+
+
+def milestone_image_url(image_path):
+    path = (image_path or '').strip()
+    if not path:
+        return ''
+    if path.startswith('picture/milestone_condolence/'):
+        filename = path.split('/', 2)[-1]
+        return url_for('milestone_condolence_image', filename=filename)
+    if path.startswith('uploads/milestone_condolence/'):
+        filename = path.split('/', 2)[-1]
+        return url_for('milestone_condolence_image', filename=filename)
+    return url_for('static', filename=path)
+
+
+@app.context_processor
+def inject_template_helpers():
+    return {
+        'milestone_image_url': milestone_image_url,
+    }
 
 
 def get_branding():
@@ -1708,6 +1729,21 @@ def index():
     return render_template('home.html', branding=get_branding(), home_cards=get_home_cards(), **build_auth_context())
 
 
+@app.route('/picture/milestone_condolence/<path:filename>')
+@login_required
+def milestone_condolence_image(filename):
+    safe_name = secure_filename(filename)
+    if not safe_name:
+        return Response('图片不存在', status=404)
+    current_path = MILESTONE_MEDIA_DIR / safe_name
+    legacy_path = LEGACY_MILESTONE_MEDIA_DIR / safe_name
+    if current_path.exists():
+        return send_from_directory(MILESTONE_MEDIA_DIR, safe_name)
+    if legacy_path.exists():
+        return send_from_directory(LEGACY_MILESTONE_MEDIA_DIR, safe_name)
+    return Response('图片不存在', status=404)
+
+
 @app.route('/milestone-condolence')
 @login_required
 def milestone_condolence_page():
@@ -1753,6 +1789,8 @@ def admin_milestone_condolence_new():
                 month_options=milestone_month_options(),
                 branding=get_branding(),
                 mode='new',
+                image_url='',
+                current_image_path='',
                 **build_auth_context(),
             )
         with get_conn() as conn:
@@ -1774,6 +1812,8 @@ def admin_milestone_condolence_new():
         month_options=milestone_month_options(),
         branding=get_branding(),
         mode='new',
+        image_url='',
+        current_image_path='',
         **build_auth_context(),
     )
 
@@ -1826,6 +1866,8 @@ def admin_milestone_condolence_edit(item_id):
                     month_options=milestone_month_options(),
                     branding=get_branding(),
                     mode='edit',
+                    image_url=milestone_image_url(image_path),
+                    current_image_path=image_path,
                     **build_auth_context(),
                 )
             conn.execute(
@@ -1853,6 +1895,8 @@ def admin_milestone_condolence_edit(item_id):
         month_options=milestone_month_options(),
         branding=get_branding(),
         mode='edit',
+        image_url=milestone_image_url(current.get('image_path') or ''),
+        current_image_path=current.get('image_path') or '',
         **build_auth_context(),
     )
 

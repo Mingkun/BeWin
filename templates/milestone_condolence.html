@@ -85,7 +85,7 @@
                     <div class="milestone-card-line"><strong>慰问地域：</strong>{{ item.condolence_region }}</div>
                     {% endif %}
                     {% if item.image_path %}
-                    <img class="milestone-card-image" src="{{ url_for('static', filename=item.image_path) }}" alt="关键突破&战地激励图片">
+                    <img class="milestone-card-image" src="{{ milestone_image_url(item.image_path) }}" alt="关键突破&战地激励图片">
                     {% endif %}
                   </div>
                   {% endfor %}
