@@ -24,7 +24,7 @@
             </span>
           </span>
         {% else %}
-          <a class="button secondary" href="{{ url_for('local_login' if auth_mode == 'local' else 'oauth_login', next=request.path) }}">登录</a>
+          <a class="button secondary" href="{{ url_for('login_entry', next=request.path) }}">登录</a>
         {% endif %}
       </div>
     </header>

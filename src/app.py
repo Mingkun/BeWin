@@ -814,8 +814,10 @@ def login_required(view_func):
             return view_func(*args, **kwargs)
         if get_current_user():
             return view_func(*args, **kwargs)
-        if mode in {'local', 'hybrid'}:
-            return redirect(url_for('local_login', next=request.full_path if request.query_string else request.path))
+        if mode == 'hybrid':
+            return redirect(url_for('login_entry', next=request.full_path if request.query_string else request.path))
+        if mode == 'local':
+            return redirect(url_for('local_login_form', next=request.full_path if request.query_string else request.path))
         return redirect(url_for('oauth_login', next=request.full_path if request.query_string else request.path))
     return wrapped
 
@@ -1686,9 +1688,29 @@ def seed_service_resources_if_empty():
 
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def local_login():
-    if auth_mode() != 'local':
+@app.route('/login')
+def login_entry():
+    mode = auth_mode()
+    next_url = normalize_next_url(request.args.get('next') or '/')
+    if mode == 'none':
+        return redirect(url_for('index'))
+    if mode == 'local':
+        return redirect(url_for('local_login_form', next=next_url))
+    if mode == 'oauth2':
+        return redirect(url_for('oauth_login', next=next_url))
+    return render_template(
+        'login_choice.html',
+        next=next_url,
+        local_enabled=local_admin_enabled(),
+        oauth_enabled=oauth_enabled(),
+        branding=get_branding(),
+        **build_auth_context(),
+    )
+
+
+@app.route('/login/local', methods=['GET', 'POST'])
+def local_login_form():
+    if auth_mode() not in {'local', 'hybrid'}:
         return redirect(url_for('index'))
     if request.method == 'POST':
         username = (request.form.get('username') or '').strip()
@@ -1719,7 +1741,7 @@ def local_login():
             }
             return redirect(next_url)
         flash('账号或密码错误')
-        return redirect(url_for('local_login', next=next_url))
+        return redirect(url_for('local_login_form', next=next_url))
     return render_template('local_login.html', next=normalize_next_url(request.args.get('next') or '/'), branding=get_branding(), **build_auth_context())
 
 
