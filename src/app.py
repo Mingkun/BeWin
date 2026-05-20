@@ -802,11 +802,14 @@ def login_required(view_func):
 def get_latest_download_package_info():
     downloads_dir = BASE_DIR / 'static' / 'downloads'
     package_types = {
-        'portable': 'releaseplan-portable-v',
-        'update': 'releaseplan-update-v',
+        'portable_online': ('releaseplan-portable-online-v', '联网安装包'),
+        'portable_offline': ('releaseplan-portable-offline-v', '离线安装包'),
+        'portable_legacy': ('releaseplan-portable-v', '安装包'),
+        'update': ('releaseplan-update-v', '升级包'),
     }
     result = {}
-    for key, prefix in package_types.items():
+    for key, config in package_types.items():
+        prefix, default_name = config
         latest = None
         if downloads_dir.exists():
             for path in downloads_dir.glob(f'{prefix}*.tar.gz'):
@@ -820,7 +823,7 @@ def get_latest_download_package_info():
                 candidate = {
                     'filename': path.name,
                     'version': version,
-                    'label': f"v{version}" if version else path.name,
+                    'label': f"{default_name} v{version}" if version else path.name,
                     'sort_key': tuple(version_parts),
                 }
                 if latest is None or candidate['sort_key'] > latest['sort_key']:
