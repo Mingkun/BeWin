@@ -22,6 +22,10 @@ prepare_package_dir() {
     --exclude '*.pyc' \
     --exclude '.venv' \
     --exclude 'dist' \
+    --exclude 'backups' \
+    --exclude 'data' \
+    --exclude 'static/downloads' \
+    --exclude '.env' \
     "$BASE_DIR/" "$target_dir/"
 
   chmod +x "$target_dir/install.sh" "$target_dir/package_release.sh" "$target_dir/uninstall.sh" "$target_dir/run-docker.sh"
