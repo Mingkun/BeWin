@@ -1,6 +1,7 @@
+import json
 import os
 import secrets
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode
 
 import requests
 from flask import Response, redirect, request, session, url_for
@@ -107,6 +108,32 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
     }
 
 
+def extract_access_token(token_resp):
+    content_type = (token_resp.headers.get('Content-Type') or '').lower()
+    body_text = token_resp.text or ''
+
+    if 'application/json' in content_type:
+        try:
+            token_data = token_resp.json()
+        except ValueError:
+            token_data = {}
+    else:
+        token_data = {}
+        try:
+            token_data = token_resp.json()
+        except ValueError:
+            parsed = parse_qs(body_text, keep_blank_values=True)
+            token_data = {key: values[0] if values else '' for key, values in parsed.items()}
+
+    access_token = (
+        token_data.get('access_token')
+        or token_data.get('accessToken')
+        or token_data.get('token')
+        or token_data.get('id_token')
+    )
+    return access_token, token_data, body_text
+
+
 def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permission_rule, default_feature_flags, normalize_feature_flags):
     @app.route('/auth/login')
     def oauth_login():
@@ -145,14 +172,26 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
                 'client_id': oauth_client_id(),
                 'client_secret': oauth_client_secret(),
             },
+            headers={
+                'Accept': 'application/json, application/x-www-form-urlencoded;q=0.9, text/plain;q=0.8',
+            },
             timeout=15,
         )
         if token_resp.status_code >= 400:
-            return Response('OAuth2 登录失败: token 交换失败', status=400)
-        token_data = token_resp.json()
-        access_token = token_data.get('access_token')
+            detail = token_resp.text.strip()
+            if len(detail) > 300:
+                detail = detail[:300] + '...'
+            return Response(f'OAuth2 登录失败: token 交换失败，响应为 {detail or token_resp.status_code}', status=400)
+        access_token, token_data, body_text = extract_access_token(token_resp)
         if not access_token:
-            return Response('OAuth2 登录失败: 缺少 access_token', status=400)
+            detail = ''
+            try:
+                detail = json.dumps(token_data, ensure_ascii=False)
+            except Exception:
+                detail = body_text.strip()
+            if len(detail) > 300:
+                detail = detail[:300] + '...'
+            return Response(f'OAuth2 登录失败: 缺少 access_token，响应为 {detail or token_resp.text[:300]}', status=400)
 
         userinfo_resp = requests.get(
             oauth_userinfo_url(),
