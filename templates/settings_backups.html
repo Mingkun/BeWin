@@ -55,21 +55,24 @@
 
       <div class="settings-group">
         <div class="settings-section-title">安装包与升级包</div>
-        <div class="settings-section-desc">自动显示当前下载目录里的最新联网安装包、离线安装包和升级包。</div>
+        <div class="settings-section-desc">自动显示当前下载目录里的最新完整安装包、轻量安装包和升级包。</div>
         <div class="backup-action-row" style="display:flex; flex-direction:column; align-items:flex-start; gap:10px;">
-          {% if download_packages['portable_online'] and download_packages['portable_online']['filename'] %}
-          <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages['portable_online']['filename']) }}">下载{{ download_packages['portable_online']['label'] }}</a>
+          {% set lite_pkg = download_packages['portable_lite'] if download_packages['portable_lite']['filename'] else download_packages['portable_online'] %}
+          {% set full_pkg = download_packages['portable_full'] if download_packages['portable_full']['filename'] else download_packages['portable_offline'] %}
+
+          {% if full_pkg and full_pkg['filename'] %}
+          <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ full_pkg['filename']) }}">下载{{ full_pkg['label'] }}</a>
           {% endif %}
 
-          {% if download_packages['portable_offline'] and download_packages['portable_offline']['filename'] %}
-          <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages['portable_offline']['filename']) }}">下载{{ download_packages['portable_offline']['label'] }}</a>
+          {% if lite_pkg and lite_pkg['filename'] %}
+          <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ lite_pkg['filename']) }}">下载{{ lite_pkg['label'] }}</a>
           {% endif %}
 
-          {% if (not download_packages['portable_online']['filename']) and (not download_packages['portable_offline']['filename']) and download_packages['portable_legacy'] and download_packages['portable_legacy']['filename'] %}
+          {% if (not full_pkg['filename']) and (not lite_pkg['filename']) and download_packages['portable_legacy'] and download_packages['portable_legacy']['filename'] %}
           <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages['portable_legacy']['filename']) }}">下载{{ download_packages['portable_legacy']['label'] }}</a>
           {% endif %}
 
-          {% if (not download_packages['portable_online']['filename']) and (not download_packages['portable_offline']['filename']) and (not download_packages['portable_legacy']['filename']) %}
+          {% if (not full_pkg['filename']) and (not lite_pkg['filename']) and (not download_packages['portable_legacy']['filename']) %}
           <div style="font-size:13px; color:#64748b;">当前暂无可下载安装包</div>
           {% endif %}
 

@@ -3,12 +3,12 @@ set -euo pipefail
 
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 OUT_DIR="$BASE_DIR/dist"
-ONLINE_NAME="releaseplan-portable-online"
-OFFLINE_NAME="releaseplan-portable-offline"
-ONLINE_DIR="$OUT_DIR/$ONLINE_NAME"
-OFFLINE_DIR="$OUT_DIR/$OFFLINE_NAME"
-ONLINE_ARCHIVE="$OUT_DIR/${ONLINE_NAME}.tar.gz"
-OFFLINE_ARCHIVE="$OUT_DIR/${OFFLINE_NAME}.tar.gz"
+LITE_NAME="releaseplan-portable-lite"
+FULL_NAME="releaseplan-portable-full"
+LITE_DIR="$OUT_DIR/$LITE_NAME"
+FULL_DIR="$OUT_DIR/$FULL_NAME"
+LITE_ARCHIVE="$OUT_DIR/${LITE_NAME}.tar.gz"
+FULL_ARCHIVE="$OUT_DIR/${FULL_NAME}.tar.gz"
 
 prepare_package_dir() {
   local target_dir="$1"
@@ -31,17 +31,17 @@ prepare_package_dir() {
   chmod +x "$target_dir/install.sh" "$target_dir/package_release.sh" "$target_dir/uninstall.sh" "$target_dir/run-docker.sh"
 }
 
-prepare_package_dir "$ONLINE_DIR"
-prepare_package_dir "$OFFLINE_DIR"
+prepare_package_dir "$LITE_DIR"
+prepare_package_dir "$FULL_DIR"
 
 if command -v python3 >/dev/null 2>&1; then
-  mkdir -p "$OFFLINE_DIR/vendor"
-  python3 -m pip download -r "$BASE_DIR/requirements.txt" -d "$OFFLINE_DIR/vendor"
+  mkdir -p "$FULL_DIR/vendor"
+  python3 -m pip download -r "$BASE_DIR/requirements.txt" -d "$FULL_DIR/vendor"
 fi
 
 cd "$OUT_DIR"
-tar -czf "$ONLINE_ARCHIVE" "$ONLINE_NAME"
-tar -czf "$OFFLINE_ARCHIVE" "$OFFLINE_NAME"
+tar -czf "$LITE_ARCHIVE" "$LITE_NAME"
+tar -czf "$FULL_ARCHIVE" "$FULL_NAME"
 
-echo "$ONLINE_ARCHIVE"
-echo "$OFFLINE_ARCHIVE"
+echo "$LITE_ARCHIVE"
+echo "$FULL_ARCHIVE"

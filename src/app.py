@@ -802,8 +802,10 @@ def login_required(view_func):
 def get_latest_download_package_info():
     downloads_dir = BASE_DIR / 'static' / 'downloads'
     package_types = {
-        'portable_online': ('releaseplan-portable-online-v', '联网安装包'),
-        'portable_offline': ('releaseplan-portable-offline-v', '离线安装包'),
+        'portable_lite': ('releaseplan-portable-lite-v', '轻量安装包'),
+        'portable_full': ('releaseplan-portable-full-v', '完整安装包'),
+        'portable_online': ('releaseplan-portable-online-v', '轻量安装包'),
+        'portable_offline': ('releaseplan-portable-offline-v', '完整安装包'),
         'portable_legacy': ('releaseplan-portable-v', '安装包'),
         'update': ('releaseplan-update-v', '升级包'),
     }
