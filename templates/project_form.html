@@ -41,7 +41,16 @@
 
     <form method="post" class="card project-form">
       <div class="form-grid">
-        <label>立项状态<textarea name="project_status" rows="2">{{ project.project_status or '' }}</textarea></label>
+        <label>立项状态
+          <select name="project_status">
+            <option value="" {% if not project.project_status %}selected{% endif %}>请选择</option>
+            <option value="计划" {% if project.project_status == '计划' %}selected{% endif %}>计划</option>
+            <option value="已立项" {% if project.project_status == '已立项' %}selected{% endif %}>已立项</option>
+            {% if project.project_status and project.project_status not in ['计划', '已立项'] %}
+            <option value="{{ project.project_status }}" selected>当前值：{{ project.project_status }}</option>
+            {% endif %}
+          </select>
+        </label>
         <label>管控灶<textarea name="control_gate" rows="2">{{ project.control_gate or '' }}</textarea></label>
         <label>投资主体<textarea name="investment_subject" rows="2">{{ project.investment_subject or '' }}</textarea></label>
         <label>项目编码<textarea name="project_code" rows="2">{{ project.project_code or '' }}</textarea></label>
