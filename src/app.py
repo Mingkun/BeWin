@@ -267,8 +267,8 @@ def inject_template_helpers():
 
 
 def get_branding():
-    home_title = os.getenv("RELEASEPLAN_HOME_TITLE", "ReleasePlan")
-    browser_title = os.getenv("RELEASEPLAN_BROWSER_TITLE", f"{home_title} 入口")
+    home_title = os.getenv("RELEASEPLAN_HOME_TITLE", "作战平台")
+    browser_title = os.getenv("RELEASEPLAN_BROWSER_TITLE", "作战平台")
     roadmap_browser_title = os.getenv("RELEASEPLAN_ROADMAP_BROWSER_TITLE", f"{home_title} 月度进展路标图")
     theme = os.getenv("RELEASEPLAN_THEME", "ios-light")
     return {
@@ -2112,8 +2112,8 @@ def settings_general_page():
 
     if request.method == 'POST':
         updates = {
-            'RELEASEPLAN_HOME_TITLE': (request.form.get('home_title') or '').strip() or 'ReleasePlan',
-            'RELEASEPLAN_BROWSER_TITLE': (request.form.get('browser_title') or '').strip() or 'ReleasePlan 入口',
+            'RELEASEPLAN_HOME_TITLE': (request.form.get('home_title') or '').strip() or '作战平台',
+            'RELEASEPLAN_BROWSER_TITLE': (request.form.get('browser_title') or '').strip() or '作战平台',
             'RELEASEPLAN_THEME': (request.form.get('theme') or 'ios-light').strip() or 'ios-light',
         }
         submitted_cards = []
