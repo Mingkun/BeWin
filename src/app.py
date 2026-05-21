@@ -269,7 +269,7 @@ def inject_template_helpers():
 def get_branding():
     home_title = os.getenv("RELEASEPLAN_HOME_TITLE", "作战平台")
     browser_title = os.getenv("RELEASEPLAN_BROWSER_TITLE", "作战平台")
-    roadmap_browser_title = os.getenv("RELEASEPLAN_ROADMAP_BROWSER_TITLE", f"{home_title} 月度进展路标图")
+    roadmap_browser_title = os.getenv("RELEASEPLAN_ROADMAP_BROWSER_TITLE", "关键特性视图")
     theme = os.getenv("RELEASEPLAN_THEME", "ios-light")
     return {
         "home_title": home_title,
