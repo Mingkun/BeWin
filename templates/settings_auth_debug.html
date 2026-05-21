@@ -23,6 +23,40 @@
       <pre style="white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.6; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; overflow:auto;">{{ current_user_pretty }}</pre>
     </div>
 
+    <div class="card system-page-card" style="padding:16px; margin-bottom:16px;">
+      <div style="font-size:16px; font-weight:700; margin-bottom:10px;">最近活跃登录用户（24小时）</div>
+      {% if active_logins %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>用户</th>
+              <th>邮箱</th>
+              <th>登录方式</th>
+              <th>角色</th>
+              <th>登录时间</th>
+              <th>最近IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in active_logins %}
+            <tr>
+              <td>{{ item.user_name or item.user_id or '-' }}</td>
+              <td>{{ item.email or '-' }}</td>
+              <td>{{ item.auth_type or '-' }}</td>
+              <td>{{ item.role_text or '-' }}</td>
+              <td>{{ item.login_at or '-' }}</td>
+              <td>{{ item.login_ip or '-' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="font-size:13px; color:#64748b;">暂无活跃登录记录</div>
+      {% endif %}
+    </div>
+
     <div class="card system-page-card" style="padding:16px;">
       <div style="font-size:16px; font-weight:700; margin-bottom:10px;">SSO / OAuth 原始用户信息</div>
       <pre style="white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.6; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; overflow:auto;">{{ oauth_raw_pretty }}</pre>

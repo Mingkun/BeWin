@@ -770,6 +770,62 @@ def verify_local_guest(username, password):
     return username == expected_username and password == expected_password
 
 
+def get_request_client_ip():
+    forwarded_for = (request.headers.get('X-Forwarded-For') or '').strip()
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    real_ip = (request.headers.get('X-Real-IP') or '').strip()
+    if real_ip:
+        return real_ip
+    return (request.remote_addr or '').strip()
+
+
+def record_login_audit(user):
+    if not isinstance(user, dict):
+        return
+    init_db()
+    session_token = secrets.token_urlsafe(24)
+    session['login_audit_token'] = session_token
+    roles = user.get('roles') or []
+    if isinstance(roles, str):
+        roles = [roles]
+    role_text = ','.join([str(role).strip() for role in roles if str(role).strip()])
+    with get_conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO login_audit (user_id, user_name, email, auth_type, role_text, login_ip, user_agent, session_token, login_at, last_seen_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            (
+                (user.get('user_id') or '').strip(),
+                (user.get('name') or '').strip(),
+                (user.get('email') or '').strip(),
+                (user.get('auth_type') or '').strip(),
+                role_text,
+                get_request_client_ip(),
+                (request.headers.get('User-Agent') or '').strip()[:500],
+                session_token,
+            ),
+        )
+        conn.commit()
+
+
+def list_recent_active_logins(hours=24):
+    init_db()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT user_id, user_name, email, auth_type, role_text, login_ip, login_at, last_seen_at
+            FROM login_audit
+            WHERE datetime(last_seen_at) >= datetime('now', ?)
+            ORDER BY datetime(last_seen_at) DESC, id DESC
+            LIMIT 100
+            """,
+            (f'-{int(hours)} hours',),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
 def get_releaseplan_root_path():
     prefix = (request.headers.get('X-Forwarded-Prefix') or '').strip()
     if prefix:
@@ -992,6 +1048,23 @@ def init_db():
                 close_date TEXT,
                 status TEXT NOT NULL DEFAULT 'open',
                 submitter TEXT
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS login_audit (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                user_name TEXT,
+                email TEXT,
+                auth_type TEXT,
+                role_text TEXT,
+                login_ip TEXT,
+                user_agent TEXT,
+                session_token TEXT,
+                login_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
@@ -1737,6 +1810,7 @@ def local_login_form():
                 'features': normalize_feature_flags((matched_rule or {}).get('features'), role),
                 'auth_type': 'local',
             }
+            record_login_audit(session['local_user'])
             return redirect(next_url)
         if verify_local_guest(username, password):
             matched_rule = match_permission_rule(username=username, email='')
@@ -1749,6 +1823,7 @@ def local_login_form():
                 'features': normalize_feature_flags((matched_rule or {}).get('features'), role),
                 'auth_type': 'local',
             }
+            record_login_audit(session['local_user'])
             return redirect(next_url)
         flash('账号或密码错误')
         return redirect(url_for('local_login_form', next=next_url))
@@ -2144,6 +2219,7 @@ def settings_auth_debug_page():
         branding=get_branding(),
         current_user_pretty=json.dumps(current_user, ensure_ascii=False, indent=2),
         oauth_raw_pretty=json.dumps(oauth_raw, ensure_ascii=False, indent=2),
+        active_logins=list_recent_active_logins(24),
         **build_auth_context(),
     )
 

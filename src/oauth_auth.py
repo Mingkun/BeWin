@@ -208,6 +208,11 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
             default_feature_flags=default_feature_flags,
             normalize_feature_flags=normalize_feature_flags,
         )
+        try:
+            from src.app import record_login_audit
+            record_login_audit(session['oauth_user'])
+        except Exception:
+            pass
         next_url = normalize_next_url(session.pop('oauth_next', None) or '/')
         return redirect(next_url)
 
