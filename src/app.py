@@ -2280,7 +2280,7 @@ def view_placeholder(view_key):
         return render_template(
             'project_view.html',
             projects=sorted_projects,
-            gantt_projects=build_project_gantt(project_rows, display_year),
+            gantt_projects=build_project_gantt(sorted_projects, display_year),
             month_labels=MONTH_LABELS,
             quarters=QUARTERS,
             display_year=display_year,
