@@ -1571,9 +1571,9 @@ body.theme-ios-dark .backup-popover-text {
   content: "";
   position: absolute;
   left: -10px;
-  right: -140px;
+  right: 0;
   top: -14px;
-  bottom: -10px;
+  height: 18px;
 }
 
 .milestone-card-actions {
