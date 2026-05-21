@@ -1536,9 +1536,9 @@ body.theme-ios-dark .backup-popover-text {
 
 .milestone-card-menu {
   position: absolute;
-  top: 26px;
-  right: 0;
-  min-width: 104px;
+  top: 22px;
+  right: -4px;
+  min-width: 124px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -1559,9 +1559,21 @@ body.theme-ios-dark .backup-popover-text {
   transition: transform 0.16s ease, visibility 0.16s ease;
 }
 
+.milestone-card-menu::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -14px;
+  height: 18px;
+}
+
 .milestone-card-actions {
-  padding-bottom: 12px;
-  margin-bottom: -12px;
+  position: relative;
+  padding-right: 8px;
+  padding-bottom: 20px;
+  margin-right: -8px;
+  margin-bottom: -20px;
 }
 
 .milestone-card-actions:hover .milestone-card-menu,
@@ -1592,11 +1604,11 @@ body.theme-ios-dark .backup-popover-text {
   background: transparent;
   color: #334155;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.2;
-  min-height: 34px;
+  min-height: 40px;
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   cursor: pointer;
 }
 
