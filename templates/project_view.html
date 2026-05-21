@@ -39,19 +39,19 @@
           <span class="system-card-chevron">›</span>
         </button>
         <div class="system-card-body" data-collapsible-body>
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap:20px; align-items:start;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap:20px; align-items:start;">
             <div class="glass-pie-panel">
               <div style="font-size:14px; font-weight:700; margin-bottom:10px;">工作量占比</div>
-              <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center;">
-                <canvas id="project-workload-pie" width="280" height="280" class="glass-pie-canvas" style="max-width:100%; height:auto;"></canvas>
-                <div id="project-workload-pie-legend" class="glass-pie-legend" style="display:grid; grid-auto-flow:column; grid-template-rows:repeat(10, auto); gap:10px 20px; align-items:start; min-width:220px;"></div>
+              <div style="display:flex; flex-wrap:nowrap; gap:20px; align-items:flex-start;">
+                <canvas id="project-workload-pie" width="220" height="220" class="glass-pie-canvas" style="width:220px; min-width:220px; max-width:220px; height:220px;"></canvas>
+                <div id="project-workload-pie-legend" class="glass-pie-legend" style="display:grid; grid-template-columns:1fr; gap:10px; align-items:start; min-width:240px; flex:1;"></div>
               </div>
             </div>
             <div class="glass-pie-panel">
               <div style="font-size:14px; font-weight:700; margin-bottom:10px;">人力预算（合计）占比</div>
-              <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center;">
-                <canvas id="project-budget-pie" width="280" height="280" class="glass-pie-canvas" style="max-width:100%; height:auto;"></canvas>
-                <div id="project-budget-pie-legend" class="glass-pie-legend" style="display:grid; grid-auto-flow:column; grid-template-rows:repeat(10, auto); gap:10px 20px; align-items:start; min-width:220px;"></div>
+              <div style="display:flex; flex-wrap:nowrap; gap:20px; align-items:flex-start;">
+                <canvas id="project-budget-pie" width="220" height="220" class="glass-pie-canvas" style="width:220px; min-width:220px; max-width:220px; height:220px;"></canvas>
+                <div id="project-budget-pie-legend" class="glass-pie-legend" style="display:grid; grid-template-columns:1fr; gap:10px; align-items:start; min-width:240px; flex:1;"></div>
               </div>
             </div>
           </div>
@@ -225,7 +225,7 @@
             let startAngle = -Math.PI / 2;
             const cx = pieCanvas.width / 2;
             const cy = pieCanvas.height / 2;
-            const radius = 110;
+            const radius = 84;
             currentSlices = [];
 
             pieData.forEach((item) => {
@@ -254,17 +254,17 @@
 
             ctx.beginPath();
             ctx.fillStyle = 'rgba(255,255,255,0.88)';
-            ctx.arc(cx, cy, 46, 0, Math.PI * 2);
+            ctx.arc(cx, cy, 38, 0, Math.PI * 2);
             ctx.fill();
             ctx.lineWidth = 1.5;
             ctx.strokeStyle = 'rgba(255,255,255,0.75)';
             ctx.stroke();
 
             ctx.fillStyle = '#111827';
-            ctx.font = 'bold 18px sans-serif';
+            ctx.font = 'bold 16px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(centerTitle, cx, cy - 6);
-            ctx.font = '14px sans-serif';
+            ctx.font = '12px sans-serif';
             ctx.fillStyle = '#6b7280';
             ctx.fillText(total.toFixed(2), cx, cy + 18);
           } else {
@@ -312,7 +312,7 @@
             const dx = x - slice.cx;
             const dy = y - slice.cy;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance > slice.radius || distance < 46) return false;
+            if (distance > slice.radius || distance < 38) return false;
             let angle = Math.atan2(dy, dx);
             if (angle < -Math.PI / 2) angle += Math.PI * 2;
             return angle >= slice.startAngle && angle <= slice.endAngle;
