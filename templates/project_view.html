@@ -8,6 +8,7 @@
 </head>
 <body>
   <div class="page">
+    <div id="project-pie-tooltip" style="position:fixed; display:none; pointer-events:none; z-index:9999; background:rgba(17,24,39,0.92); color:#fff; padding:8px 10px; border-radius:10px; font-size:12px; line-height:1.5; box-shadow:0 8px 24px rgba(0,0,0,0.18); max-width:260px; white-space:normal;"></div>
     <header class="toolbar">
       <div>
         <h1>项目视图</h1>
@@ -210,6 +211,8 @@
         const colors = ['rgba(56,189,248,0.82)', 'rgba(16,185,129,0.82)', 'rgba(139,92,246,0.82)', 'rgba(250,204,21,0.82)', 'rgba(244,114,182,0.82)', 'rgba(6,182,212,0.82)', 'rgba(99,102,241,0.82)', 'rgba(249,115,22,0.82)', 'rgba(20,184,166,0.82)', 'rgba(168,85,247,0.82)', 'rgba(244,63,94,0.82)', 'rgba(59,130,246,0.82)'];
         const hiddenItems = new Set();
         const ctx = pieCanvas.getContext('2d');
+        const tooltip = document.getElementById('project-pie-tooltip');
+        let currentSlices = [];
 
         function draw() {
           const pieData = sourceData.filter(item => !hiddenItems.has(item.sourceIndex));
@@ -223,19 +226,30 @@
             const cx = pieCanvas.width / 2;
             const cy = pieCanvas.height / 2;
             const radius = 110;
+            currentSlices = [];
 
             pieData.forEach((item) => {
               const angle = (item.value / total) * Math.PI * 2;
+              const endAngle = startAngle + angle;
               ctx.beginPath();
               ctx.moveTo(cx, cy);
-              ctx.arc(cx, cy, radius, startAngle, startAngle + angle);
+              ctx.arc(cx, cy, radius, startAngle, endAngle);
               ctx.closePath();
               ctx.fillStyle = colors[item.sourceIndex % colors.length];
               ctx.shadowColor = 'rgba(255,255,255,0.5)';
               ctx.shadowBlur = 10;
               ctx.fill();
               ctx.shadowBlur = 0;
-              startAngle += angle;
+              currentSlices.push({
+                item,
+                startAngle,
+                endAngle,
+                cx,
+                cy,
+                radius,
+                total,
+              });
+              startAngle = endAngle;
             });
 
             ctx.beginPath();
@@ -253,6 +267,8 @@
             ctx.font = '14px sans-serif';
             ctx.fillStyle = '#6b7280';
             ctx.fillText(total.toFixed(2), cx, cy + 18);
+          } else {
+            currentSlices = [];
           }
 
           if (total > 0) {
@@ -280,6 +296,42 @@
             pieLegend.innerHTML = `<div style="color:#6b7280; font-size:13px;">${emptyText}</div>`;
           }
         }
+
+        function hideTooltip() {
+          if (tooltip) tooltip.style.display = 'none';
+        }
+
+        pieCanvas.addEventListener('mousemove', (event) => {
+          if (!tooltip || !currentSlices.length) return;
+          const rect = pieCanvas.getBoundingClientRect();
+          const scaleX = pieCanvas.width / rect.width;
+          const scaleY = pieCanvas.height / rect.height;
+          const x = (event.clientX - rect.left) * scaleX;
+          const y = (event.clientY - rect.top) * scaleY;
+          const hit = currentSlices.find((slice) => {
+            const dx = x - slice.cx;
+            const dy = y - slice.cy;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance > slice.radius || distance < 46) return false;
+            let angle = Math.atan2(dy, dx);
+            if (angle < -Math.PI / 2) angle += Math.PI * 2;
+            return angle >= slice.startAngle && angle <= slice.endAngle;
+          });
+
+          if (!hit) {
+            hideTooltip();
+            return;
+          }
+
+          const percent = hit.total > 0 ? ((hit.item.value / hit.total) * 100).toFixed(1) : '0.0';
+          tooltip.innerHTML = `<div style="font-weight:700; margin-bottom:2px;">${hit.item.label}</div><div>${centerTitle}：${Number(hit.item.value).toFixed(2)}</div><div>占比：${percent}%</div>`;
+          tooltip.style.display = 'block';
+          tooltip.style.left = (event.clientX + 14) + 'px';
+          tooltip.style.top = (event.clientY + 14) + 'px';
+        });
+
+        pieCanvas.addEventListener('mouseleave', hideTooltip);
+        pieCanvas.addEventListener('mouseout', hideTooltip);
 
         draw();
       }
