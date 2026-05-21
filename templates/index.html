@@ -60,16 +60,12 @@
       {% for project in project_groups %}
         <section class="project-tab-panel {% if loop.first %}active{% endif %}" id="tab-{{ loop.index0 }}">
           <div class="roadmap-shell">
-            <div class="project-lane-card collapsible-card expanded" data-collapsible>
-              <button type="button" data-toggle style="width:100%; display:flex; align-items:center; justify-content:space-between; border:none; background:transparent; padding:0; cursor:pointer; text-align:left;">
-                <div class="project-lane-title" style="margin-bottom:0;">
-                  <h2>{{ project.project_name }}</h2>
-                  <div class="meta">项目经理：{{ project.project_manager or '未填写' }}，关键特性数：{{ project.features|length }}</div>
-                </div>
-                <span class="system-card-chevron">›</span>
-              </button>
+            <div class="project-lane-card">
+              <div class="project-lane-title">
+                <h2>{{ project.project_name }}</h2>
+                <div class="meta">项目经理：{{ project.project_manager or '未填写' }}，关键特性数：{{ project.features|length }}</div>
+              </div>
 
-              <div data-collapsible-body>
               <div class="roadmap-header-grid">
                 <div class="roadmap-left-header">关键特性</div>
                 <div class="roadmap-time-header">
@@ -153,7 +149,6 @@
                   </div>
                 {% endfor %}
               </div>
-              </div>
             </div>
           </div>
         </section>
@@ -189,17 +184,6 @@
         button.classList.add('active');
         const panel = document.getElementById(target);
         if (panel) panel.classList.add('active');
-      });
-    });
-
-    document.querySelectorAll('[data-collapsible]').forEach((card) => {
-      const toggle = card.querySelector('[data-toggle]');
-      const body = card.querySelector('[data-collapsible-body]');
-      if (!toggle || !body) return;
-      body.hidden = false;
-      toggle.addEventListener('click', () => {
-        body.hidden = !body.hidden;
-        card.classList.toggle('expanded', !body.hidden);
       });
     });
 
