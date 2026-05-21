@@ -133,6 +133,7 @@
                           <a class="milestone-card-menu-item" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}?return_to={{ url_for('view_placeholder', view_key='cloud-service-view') | urlencode }}">编辑</a>
                         </div>
                         <form method="post" action="{{ url_for('admin_service_resource_delete', record_id=record.id) }}" class="inline-delete-form milestone-menu-delete-form">
+                          <input type="hidden" name="return_to" value="{{ url_for('view_placeholder', view_key='cloud-service-view') }}">
                           <div class="milestone-card-menu-row">
                             <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
                           </div>

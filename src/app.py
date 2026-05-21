@@ -2672,10 +2672,11 @@ def admin_service_resource_delete(record_id):
     denied = require_feature('manage_service_resources', '当前账号不能管理云服务数据')
     if denied:
         return denied
+    return_to = request.form.get('return_to') or request.args.get('return_to') or url_for('view_placeholder', view_key='cloud-service-view')
     with get_conn() as conn:
         conn.execute("DELETE FROM service_resource_investment WHERE id = ?", (record_id,))
         conn.commit()
-    return redirect(url_for('admin_service_resources'))
+    return redirect(return_to)
 
 
 @app.route('/admin/service-resources/import-csv', methods=['POST'])
