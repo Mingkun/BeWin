@@ -51,8 +51,8 @@
     {% if project_groups %}
       <div class="project-tab-bar">
         {% for project in project_groups %}
-          <button class="project-tab-button {% if loop.first %}active{% endif %}" data-tab-target="tab-{{ loop.index0 }}">
-            {{ project.project_name }}
+          <button class="project-tab-button {% if loop.first %}active{% endif %}" data-tab-target="tab-{{ loop.index0 }}" title="{{ project.project_name }}">
+            <span class="project-tab-button-text">{{ project.project_name }}</span>
           </button>
         {% endfor %}
       </div>

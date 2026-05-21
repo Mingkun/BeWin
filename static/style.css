@@ -750,11 +750,27 @@ body.theme-ios-dark .backup-popover-text {
   border: 0;
   background: #dbeafe;
   color: #1d4ed8;
-  padding: 10px 16px;
+  padding: 10px 12px;
+  width: 10em;
+  min-width: 10em;
+  max-width: 10em;
   border-radius: 999px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-tab-button-text {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
 }
 
 .project-tab-button.active {
