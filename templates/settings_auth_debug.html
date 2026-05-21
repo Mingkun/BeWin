@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-{{ branding.theme }}">
+  <div class="page settings-page">
+    <header class="toolbar">
+      <div>
+        <h1>{{ page_title }}</h1>
+        <p>{{ page_desc }}</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+      </div>
+    </header>
+
+    <div class="card system-page-card" style="padding:16px; margin-bottom:16px;">
+      <div style="font-size:16px; font-weight:700; margin-bottom:10px;">当前会话用户</div>
+      <pre style="white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.6; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; overflow:auto;">{{ current_user_pretty }}</pre>
+    </div>
+
+    <div class="card system-page-card" style="padding:16px;">
+      <div style="font-size:16px; font-weight:700; margin-bottom:10px;">SSO / OAuth 原始用户信息</div>
+      <pre style="white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.6; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; overflow:auto;">{{ oauth_raw_pretty }}</pre>
+    </div>
+  </div>
+</body>
+</html>

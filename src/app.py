@@ -2125,6 +2125,29 @@ def settings_permissions_page():
     )
 
 
+@app.route('/settings/auth-debug')
+@login_required
+def settings_auth_debug_page():
+    denied = require_feature('view_system', '当前账号不能访问系统页')
+    if denied:
+        return denied
+    denied = require_feature('manage_permissions', '当前账号不能查看登录调试信息')
+    if denied:
+        return denied
+
+    current_user = get_current_user() or {}
+    oauth_raw = current_user.get('raw') or {}
+    return render_template(
+        'settings_auth_debug.html',
+        page_title='登录调试信息',
+        page_desc='查看当前登录用户信息，以及 SSO / OAuth 返回的原始字段，便于配置权限匹配。',
+        branding=get_branding(),
+        current_user_pretty=json.dumps(current_user, ensure_ascii=False, indent=2),
+        oauth_raw_pretty=json.dumps(oauth_raw, ensure_ascii=False, indent=2),
+        **build_auth_context(),
+    )
+
+
 @app.route('/settings/backups', methods=['GET', 'POST'])
 @login_required
 def settings_backups_page():
