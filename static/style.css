@@ -1386,8 +1386,8 @@ body.theme-ios-dark .backup-popover-text {
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
-  padding: 10px;
+  gap: 6px;
+  padding: 8px;
   background: #ffffff !important;
   opacity: 1 !important;
   border: 1px solid #dbe3ee;
@@ -1395,7 +1395,7 @@ body.theme-ios-dark .backup-popover-text {
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  white-space: nowrap;
+  white-space: normal;
   z-index: 20;
 }
 
@@ -1423,10 +1423,10 @@ body.theme-ios-dark .backup-popover-text {
 }
 
 .button.tiny {
-  min-height: 32px;
-  min-width: 56px;
-  padding: 0 12px;
-  font-size: 13px;
+  min-height: 28px;
+  min-width: 44px;
+  padding: 0 10px;
+  font-size: 12px;
   border-radius: 999px;
 }
 
