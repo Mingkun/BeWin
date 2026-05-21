@@ -1668,22 +1668,32 @@ def seed_service_resources_if_empty():
         count = conn.execute("SELECT COUNT(*) FROM service_resource_investment").fetchone()[0]
         if count > 0:
             return
+        seeded_flag = conn.execute("SELECT value FROM app_settings WHERE key = ?", ('service_resources_seeded_once',)).fetchone()
+        if seeded_flag and str(seeded_flag[0] or '').strip() == '1':
+            return
 
+    imported = 0
     if SERVICE_RESOURCE_CSV_PATH.exists():
         with SERVICE_RESOURCE_CSV_PATH.open('rb') as f:
             class LocalFile:
                 def read(self_inner):
                     return f.read()
             imported = import_service_resource_csv_file(LocalFile(), replace=True)
-            if imported > 0:
-                return
 
-    seed_rows = [
-        {"五层部门": "云平台部", "L4云服务": "容器云", "功能和用途简介": "提供容器编排与运行环境", "HC（自有）": "4", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "120", "HCS（OD）": "30", "HCS（TM）": "15"},
-        {"五层部门": "云平台部", "L4云服务": "对象存储", "功能和用途简介": "提供对象存储与归档能力", "HC（自有）": "3", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "90", "HCS（OD）": "20", "HCS（TM）": "12"},
-        {"五层部门": "基础设施部", "L4云服务": "云网络", "功能和用途简介": "提供 VPC、负载均衡与网络连接能力", "HC（自有）": "5", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "140", "HCS（OD）": "35", "HCS（TM）": "18"},
-    ]
-    import_service_resource_rows([normalize_service_resource_row(row) for row in seed_rows], replace=True)
+    if imported <= 0:
+        seed_rows = [
+            {"五层部门": "云平台部", "L4云服务": "容器云", "功能和用途简介": "提供容器编排与运行环境", "HC（自有）": "4", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "120", "HCS（OD）": "30", "HCS（TM）": "15"},
+            {"五层部门": "云平台部", "L4云服务": "对象存储", "功能和用途简介": "提供对象存储与归档能力", "HC（自有）": "3", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "90", "HCS（OD）": "20", "HCS（TM）": "12"},
+            {"五层部门": "基础设施部", "L4云服务": "云网络", "功能和用途简介": "提供 VPC、负载均衡与网络连接能力", "HC（自有）": "5", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "140", "HCS（OD）": "35", "HCS（TM）": "18"},
+        ]
+        imported = import_service_resource_rows([normalize_service_resource_row(row) for row in seed_rows], replace=True)
+
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)",
+            ('service_resources_seeded_once', '1')
+        )
+        conn.commit()
 
 
 
