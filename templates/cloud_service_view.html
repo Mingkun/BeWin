@@ -104,7 +104,6 @@
               <th colspan="4" style="text-align:center;">汇总</th>
               <th colspan="3" style="text-align:center;">HC</th>
               <th colspan="3" style="text-align:center;">HCS</th>
-              <th rowspan="2">操作</th>
             </tr>
             <tr>
               <th>自有</th>
@@ -123,7 +122,33 @@
             {% for record in records %}
               <tr>
                 <td>{{ record.five_level_department or '' }}</td>
-                <td>{{ record.l4_cloud_service or '' }}</td>
+                <td>
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <span>{{ record.l4_cloud_service or '' }}</span>
+                    {% if user_features.manage_service_resources %}
+                    <div class="milestone-card-actions menu-wrap" style="padding-top:0; margin:0;">
+                      <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
+                      <div class="milestone-card-menu">
+                        <div class="milestone-card-menu-row">
+                          <a class="milestone-card-menu-item" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}?return_to={{ url_for('view_placeholder', view_key='cloud-service-view') | urlencode }}">编辑</a>
+                        </div>
+                        <form method="post" action="{{ url_for('admin_service_resource_delete', record_id=record.id) }}" class="inline-delete-form milestone-menu-delete-form">
+                          <div class="milestone-card-menu-row">
+                            <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
+                          </div>
+                          <div class="delete-popover" hidden>
+                            <span class="delete-popover-text">确认删除？</span>
+                            <div class="delete-popover-actions">
+                              <button class="button tiny danger" type="submit">删</button>
+                              <button class="button tiny secondary delete-cancel" type="button">取消</button>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                    {% endif %}
+                  </div>
+                </td>
                 <td>{{ record.function_description or '' }}</td>
                 <td>{{ record.summary_self_owned or '' }}</td>
                 <td>{{ record.summary_od or '' }}</td>
@@ -135,25 +160,6 @@
                 <td>{{ record.hcs_self_owned or '' }}</td>
                 <td>{{ record.hcs_od or '' }}</td>
                 <td>{{ record.hcs_tm or '' }}</td>
-                <td>
-                  {% if user_features.manage_service_resources %}
-                  <div class="inline-actions compact-actions">
-                    <a class="icon-action" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}?return_to={{ url_for('view_placeholder', view_key='cloud-service-view') | urlencode }}" title="修改" aria-label="修改">✏️</a>
-                    <form method="post" action="{{ url_for('admin_service_resource_delete', record_id=record.id) }}" class="inline-delete-form">
-                      <button class="icon-action danger delete-trigger" type="button" title="删除" aria-label="删除">🗑</button>
-                      <div class="delete-popover" hidden>
-                        <span class="delete-popover-text">确认删除？</span>
-                        <div class="delete-popover-actions">
-                          <button class="button tiny danger" type="submit">删</button>
-                          <button class="button tiny secondary delete-cancel" type="button">取消</button>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                  {% else %}
-                  -
-                  {% endif %}
-                </td>
               </tr>
             {% endfor %}
           </tbody>
