@@ -91,10 +91,10 @@
       </div>
       <div class="card stat-card">
         <div class="stat-label">投入结构拆解</div>
-        <div class="ios-preview-subtitle" style="margin-top:6px; line-height:1.9;">
-          自有：<strong style="color:#0f172a;">{{ summary.summary_self_owned }}</strong><br>
-          OD：<strong style="color:#0f172a;">{{ summary.summary_od }}</strong><br>
-          TM：<strong style="color:#0f172a;">{{ summary.summary_tm }}</strong>
+        <div class="ios-preview-subtitle" style="margin-top:6px; display:grid; grid-template-columns:max-content 1fr; gap:8px 14px; align-items:center; line-height:1.9;">
+          <span>自有：</span><strong style="color:#0f172a; text-align:right; display:block;">{{ summary.summary_self_owned }}</strong>
+          <span>OD：</span><strong style="color:#0f172a; text-align:right; display:block;">{{ summary.summary_od }}</strong>
+          <span>TM：</span><strong style="color:#0f172a; text-align:right; display:block;">{{ summary.summary_tm }}</strong>
         </div>
       </div>
       <div class="card stat-card">
