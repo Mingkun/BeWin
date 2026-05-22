@@ -1,39 +1,59 @@
 import json
 import os
 import secrets
-import threading
-import time
+import sqlite3
+from datetime import datetime, timedelta
+from pathlib import Path
 from urllib.parse import parse_qs, urlencode
 
 import requests
 from flask import Response, redirect, request, session, url_for
 
 
-_OAUTH_CODE_LOCK = threading.Lock()
-_OAUTH_CODE_CACHE = {}
-_OAUTH_CODE_TTL_SECONDS = 120
+BASE_DIR = Path(__file__).resolve().parents[1]
+DB_PATH = BASE_DIR / 'data' / 'releaseplan.db'
+_OAUTH_CODE_TTL_SECONDS = 600
 
 
-def _cleanup_oauth_code_cache(now=None):
-    now = now or time.time()
-    expired = [code for code, ts in _OAUTH_CODE_CACHE.items() if now - ts > _OAUTH_CODE_TTL_SECONDS]
-    for code in expired:
-        _OAUTH_CODE_CACHE.pop(code, None)
+def _cleanup_oauth_code_cache(conn):
+    cutoff = (datetime.utcnow() - timedelta(seconds=_OAUTH_CODE_TTL_SECONDS)).strftime('%Y-%m-%d %H:%M:%S')
+    conn.execute('DELETE FROM oauth_code_consumption WHERE created_at < ?', (cutoff,))
 
 
 def _mark_oauth_code_used(code):
-    now = time.time()
-    with _OAUTH_CODE_LOCK:
-        _cleanup_oauth_code_cache(now)
-        if code in _OAUTH_CODE_CACHE:
-            return False
-        _OAUTH_CODE_CACHE[code] = now
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.execute(
+            '''
+            CREATE TABLE IF NOT EXISTS oauth_code_consumption (
+                code TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL
+            )
+            '''
+        )
+        _cleanup_oauth_code_cache(conn)
+        conn.execute(
+            'INSERT INTO oauth_code_consumption (code, created_at) VALUES (?, ?)',
+            (code, datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')),
+        )
+        conn.commit()
         return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        conn.close()
 
 
 def _release_oauth_code(code):
-    with _OAUTH_CODE_LOCK:
-        _OAUTH_CODE_CACHE.pop(code, None)
+    if not DB_PATH.exists():
+        return
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.execute('DELETE FROM oauth_code_consumption WHERE code = ?', (code,))
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def oauth_authorize_url():

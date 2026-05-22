@@ -1084,6 +1084,14 @@ def init_db():
         )
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS oauth_code_consumption (
+                code TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS milestone_condolence_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 five_level_department TEXT NOT NULL,
