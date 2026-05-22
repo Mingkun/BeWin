@@ -56,7 +56,7 @@ cd "$BASE_DIR"
 set -a
 [ -f "$BASE_DIR/.env" ] && . "$BASE_DIR/.env"
 set +a
-exec "$BASE_DIR/.venv/bin/gunicorn" --workers 2 --bind "${HOST:-0.0.0.0}:${PORT:-5010}" wsgi:app
+exec "$BASE_DIR/.venv/bin/gunicorn" --workers 1 --bind "${HOST:-0.0.0.0}:${PORT:-5010}" wsgi:app
 EOF
 chmod +x "$BASE_DIR/start.sh"
 

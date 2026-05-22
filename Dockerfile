@@ -31,4 +31,4 @@ RUN mkdir -p /app/data
 
 EXPOSE 5010
 
-CMD ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:5010", "wsgi:app"]
+CMD ["gunicorn", "--workers", "1", "--bind", "0.0.0.0:5010", "wsgi:app"]
