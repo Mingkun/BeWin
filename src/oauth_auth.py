@@ -213,10 +213,12 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
             return Response('OAuth2 登录失败: state 校验失败', status=400)
         if not _mark_oauth_code_used(code):
             existing_user = session.get('oauth_user')
+            next_url = normalize_next_url(session.get('oauth_next') or '/')
             if existing_user:
-                next_url = normalize_next_url(session.get('oauth_next') or '/')
+                session.pop('oauth_state', None)
+                session.pop('oauth_next', None)
                 return redirect(next_url)
-            return Response('OAuth2 登录失败: 授权码已被重复使用', status=400)
+            return redirect(next_url)
 
         try:
             token_resp = requests.post(
