@@ -83,14 +83,28 @@
     </div>
     {% endif %}
 
-    <div class="stats-grid">
-      <div class="card stat-card"><div class="stat-label">记录数</div><div class="stat-value">{{ summary.count }}</div></div>
-      <div class="card stat-card"><div class="stat-label">汇总（自有）</div><div class="stat-value">{{ summary.summary_self_owned }}</div></div>
-      <div class="card stat-card"><div class="stat-label">汇总（OD）</div><div class="stat-value">{{ summary.summary_od }}</div></div>
-      <div class="card stat-card"><div class="stat-label">汇总（TM）</div><div class="stat-value">{{ summary.summary_tm }}</div></div>
-      <div class="card stat-card"><div class="stat-label">汇总（合计）</div><div class="stat-value">{{ summary.summary_total }}</div></div>
-      <div class="card stat-card"><div class="stat-label">HC 总计</div><div class="stat-value">{{ summary.hc_total }}</div></div>
-      <div class="card stat-card"><div class="stat-label">HCS 总计</div><div class="stat-value">{{ summary.hcs_total }}</div></div>
+    <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));">
+      <div class="card stat-card" style="background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%); border:1px solid #bfdbfe;">
+        <div class="stat-label">总览</div>
+        <div class="stat-value">{{ summary.summary_total }}</div>
+        <div class="ios-preview-subtitle" style="margin-top:8px;">{{ summary.count }} 条记录，合计口径 = 自有 + OD + 0.8×TM</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">投入结构拆解</div>
+        <div class="ios-preview-subtitle" style="margin-top:6px; line-height:1.9;">
+          自有：<strong style="color:#0f172a;">{{ summary.summary_self_owned }}</strong><br>
+          OD：<strong style="color:#0f172a;">{{ summary.summary_od }}</strong><br>
+          TM：<strong style="color:#0f172a;">{{ summary.summary_tm }}</strong>
+        </div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">人力口径拆解</div>
+        <div class="ios-preview-subtitle" style="margin-top:6px; line-height:1.9;">
+          HC 总计：<strong style="color:#0f172a;">{{ summary.hc_total }}</strong><br>
+          HCS 总计：<strong style="color:#0f172a;">{{ summary.hcs_total }}</strong><br>
+          <span style="color:#64748b;">说明：上面“汇总”= HC + HCS 后再按 TM 折算</span>
+        </div>
+      </div>
     </div>
 
     {% if records %}
