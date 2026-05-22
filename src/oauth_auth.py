@@ -12,7 +12,22 @@ from flask import Response, redirect, request, session, url_for
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 DB_PATH = BASE_DIR / 'data' / 'releaseplan.db'
+OAUTH_DEBUG_LOG_PATH = BASE_DIR / 'logs' / 'oauth_callback_debug.log'
 _OAUTH_CODE_TTL_SECONDS = 600
+
+
+def _log_oauth_debug(event, **payload):
+    try:
+        OAUTH_DEBUG_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        record = {
+            'time': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+            'event': event,
+            **payload,
+        }
+        with OAUTH_DEBUG_LOG_PATH.open('a', encoding='utf-8') as fh:
+            fh.write(json.dumps(record, ensure_ascii=False) + '\n')
+    except Exception:
+        pass
 
 
 def _cleanup_oauth_code_cache(conn):
@@ -207,13 +222,32 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
             return redirect(url_for('index'))
         code = request.args.get('code', '').strip()
         state = request.args.get('state', '').strip()
+        _log_oauth_debug(
+            'callback_received',
+            path=request.path,
+            full_path=request.full_path,
+            host=request.host,
+            url=request.url,
+            forwarded_prefix=request.headers.get('X-Forwarded-Prefix', ''),
+            forwarded_proto=request.headers.get('X-Forwarded-Proto', ''),
+            has_code=bool(code),
+            code_preview=code[:12],
+            state=state,
+            session_oauth_state=session.get('oauth_state'),
+            has_oauth_user=bool(session.get('oauth_user')),
+            session_oauth_next=session.get('oauth_next'),
+            remote_addr=request.headers.get('X-Forwarded-For', request.remote_addr),
+        )
         if not code:
+            _log_oauth_debug('callback_missing_code')
             return Response('OAuth2 登录失败: 缺少 code', status=400)
         if not state or state != session.get('oauth_state'):
+            _log_oauth_debug('callback_state_mismatch', state=state, session_oauth_state=session.get('oauth_state'))
             return Response('OAuth2 登录失败: state 校验失败', status=400)
         if not _mark_oauth_code_used(code):
             existing_user = session.get('oauth_user')
             next_url = normalize_next_url(session.get('oauth_next') or '/')
+            _log_oauth_debug('callback_duplicate_code', code_preview=code[:12], has_oauth_user=bool(existing_user), next_url=next_url)
             if existing_user:
                 session.pop('oauth_state', None)
                 session.pop('oauth_next', None)
