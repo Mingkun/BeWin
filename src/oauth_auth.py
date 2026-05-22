@@ -1,10 +1,39 @@
 import json
 import os
 import secrets
+import threading
+import time
 from urllib.parse import parse_qs, urlencode
 
 import requests
 from flask import Response, redirect, request, session, url_for
+
+
+_OAUTH_CODE_LOCK = threading.Lock()
+_OAUTH_CODE_CACHE = {}
+_OAUTH_CODE_TTL_SECONDS = 120
+
+
+def _cleanup_oauth_code_cache(now=None):
+    now = now or time.time()
+    expired = [code for code, ts in _OAUTH_CODE_CACHE.items() if now - ts > _OAUTH_CODE_TTL_SECONDS]
+    for code in expired:
+        _OAUTH_CODE_CACHE.pop(code, None)
+
+
+def _mark_oauth_code_used(code):
+    now = time.time()
+    with _OAUTH_CODE_LOCK:
+        _cleanup_oauth_code_cache(now)
+        if code in _OAUTH_CODE_CACHE:
+            return False
+        _OAUTH_CODE_CACHE[code] = now
+        return True
+
+
+def _release_oauth_code(code):
+    with _OAUTH_CODE_LOCK:
+        _OAUTH_CODE_CACHE.pop(code, None)
 
 
 def oauth_authorize_url():
@@ -162,59 +191,69 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
             return Response('OAuth2 登录失败: 缺少 code', status=400)
         if not state or state != session.get('oauth_state'):
             return Response('OAuth2 登录失败: state 校验失败', status=400)
+        if not _mark_oauth_code_used(code):
+            existing_user = session.get('oauth_user')
+            if existing_user:
+                next_url = normalize_next_url(session.get('oauth_next') or '/')
+                return redirect(next_url)
+            return Response('OAuth2 登录失败: 授权码已被重复使用', status=400)
 
-        token_resp = requests.post(
-            oauth_token_url(),
-            data={
-                'grant_type': 'authorization_code',
-                'code': code,
-                'redirect_uri': oauth_redirect_uri(),
-                'client_id': oauth_client_id(),
-                'client_secret': oauth_client_secret(),
-            },
-            headers={
-                'Accept': 'application/json, application/x-www-form-urlencoded;q=0.9, text/plain;q=0.8',
-            },
-            timeout=15,
-        )
-        if token_resp.status_code >= 400:
-            detail = token_resp.text.strip()
-            if len(detail) > 300:
-                detail = detail[:300] + '...'
-            return Response(f'OAuth2 登录失败: token 交换失败，响应为 {detail or token_resp.status_code}', status=400)
-        access_token, token_data, body_text = extract_access_token(token_resp)
-        if not access_token:
-            detail = ''
-            try:
-                detail = json.dumps(token_data, ensure_ascii=False)
-            except Exception:
-                detail = body_text.strip()
-            if len(detail) > 300:
-                detail = detail[:300] + '...'
-            return Response(f'OAuth2 登录失败: 缺少 access_token，响应为 {detail or token_resp.text[:300]}', status=400)
-
-        userinfo_resp = requests.get(
-            oauth_userinfo_url(),
-            headers={'Authorization': f'Bearer {access_token}'},
-            timeout=15,
-        )
-        if userinfo_resp.status_code >= 400:
-            return Response('OAuth2 登录失败: 获取用户信息失败', status=400)
-        userinfo = userinfo_resp.json()
-        session.pop('oauth_state', None)
-        session['oauth_user'] = build_oauth_user(
-            userinfo,
-            match_permission_rule=match_permission_rule,
-            default_feature_flags=default_feature_flags,
-            normalize_feature_flags=normalize_feature_flags,
-        )
         try:
-            from src.app import record_login_audit
-            record_login_audit(session['oauth_user'])
+            token_resp = requests.post(
+                oauth_token_url(),
+                data={
+                    'grant_type': 'authorization_code',
+                    'code': code,
+                    'redirect_uri': oauth_redirect_uri(),
+                    'client_id': oauth_client_id(),
+                    'client_secret': oauth_client_secret(),
+                },
+                headers={
+                    'Accept': 'application/json, application/x-www-form-urlencoded;q=0.9, text/plain;q=0.8',
+                },
+                timeout=15,
+            )
+            if token_resp.status_code >= 400:
+                detail = token_resp.text.strip()
+                if len(detail) > 300:
+                    detail = detail[:300] + '...'
+                return Response(f'OAuth2 登录失败: token 交换失败，响应为 {detail or token_resp.status_code}', status=400)
+            access_token, token_data, body_text = extract_access_token(token_resp)
+            if not access_token:
+                detail = ''
+                try:
+                    detail = json.dumps(token_data, ensure_ascii=False)
+                except Exception:
+                    detail = body_text.strip()
+                if len(detail) > 300:
+                    detail = detail[:300] + '...'
+                return Response(f'OAuth2 登录失败: 缺少 access_token，响应为 {detail or token_resp.text[:300]}', status=400)
+
+            userinfo_resp = requests.get(
+                oauth_userinfo_url(),
+                headers={'Authorization': f'Bearer {access_token}'},
+                timeout=15,
+            )
+            if userinfo_resp.status_code >= 400:
+                return Response('OAuth2 登录失败: 获取用户信息失败', status=400)
+            userinfo = userinfo_resp.json()
+            session.pop('oauth_state', None)
+            session['oauth_user'] = build_oauth_user(
+                userinfo,
+                match_permission_rule=match_permission_rule,
+                default_feature_flags=default_feature_flags,
+                normalize_feature_flags=normalize_feature_flags,
+            )
+            try:
+                from src.app import record_login_audit
+                record_login_audit(session['oauth_user'])
+            except Exception:
+                pass
+            next_url = normalize_next_url(session.pop('oauth_next', None) or '/')
+            return redirect(next_url)
         except Exception:
-            pass
-        next_url = normalize_next_url(session.pop('oauth_next', None) or '/')
-        return redirect(next_url)
+            _release_oauth_code(code)
+            raise
 
     @app.route('/auth/logout')
     def oauth_logout():
