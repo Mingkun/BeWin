@@ -95,27 +95,42 @@
 
     {% if records %}
       <div class="table-wrap card">
-        <table class="data-table">
+        <table class="data-table clean-project-table" id="cloud-service-table">
+          <colgroup>
+            <col style="width: 160px;">
+            <col style="width: 220px;">
+            <col style="width: 280px;">
+            <col style="width: 90px;">
+            <col style="width: 90px;">
+            <col style="width: 90px;">
+            <col style="width: 100px;">
+            <col style="width: 90px;">
+            <col style="width: 90px;">
+            <col style="width: 90px;">
+            <col style="width: 90px;">
+            <col style="width: 90px;">
+            <col style="width: 90px;">
+          </colgroup>
           <thead>
             <tr>
-              <th rowspan="2">五层部门</th>
-              <th rowspan="2">L4云服务</th>
-              <th rowspan="2">功能和用途简介</th>
+              <th rowspan="2">五层部门<div class="col-resizer"></div></th>
+              <th rowspan="2">L4云服务<div class="col-resizer"></div></th>
+              <th rowspan="2">功能和用途简介<div class="col-resizer"></div></th>
               <th colspan="4" style="text-align:center;">汇总</th>
               <th colspan="3" style="text-align:center;">HC</th>
               <th colspan="3" style="text-align:center;">HCS</th>
             </tr>
             <tr>
-              <th>自有</th>
-              <th>OD</th>
-              <th>TM</th>
-              <th title="公式：自有 + OD + 0.8*TM">合计</th>
-              <th>自有</th>
-              <th>OD</th>
-              <th>TM</th>
-              <th>自有</th>
-              <th>OD</th>
-              <th>TM</th>
+              <th>自有<div class="col-resizer"></div></th>
+              <th>OD<div class="col-resizer"></div></th>
+              <th>TM<div class="col-resizer"></div></th>
+              <th title="公式：自有 + OD + 0.8*TM">合计<div class="col-resizer"></div></th>
+              <th>自有<div class="col-resizer"></div></th>
+              <th>OD<div class="col-resizer"></div></th>
+              <th>TM<div class="col-resizer"></div></th>
+              <th>自有<div class="col-resizer"></div></th>
+              <th>OD<div class="col-resizer"></div></th>
+              <th>TM<div class="col-resizer"></div></th>
             </tr>
           </thead>
           <tbody>
@@ -299,6 +314,57 @@
           item.hidden = true;
         });
       });
+
+      (function enableCloudServiceTableResize() {
+        const table = document.getElementById('cloud-service-table');
+        if (!table) return;
+
+        const storageKey = 'releaseplan.cloudServiceTable.columnWidths.v1';
+        const cols = Array.from(table.querySelectorAll('colgroup col'));
+        const headers = Array.from(table.querySelectorAll('thead th'));
+        const leafHeaders = headers.filter((header) => header.querySelector('.col-resizer'));
+
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+          saved.forEach((width, index) => {
+            if (cols[index] && Number(width) > 40) {
+              cols[index].style.width = `${Number(width)}px`;
+            }
+          });
+        } catch (error) {}
+
+        function persistWidths() {
+          const widths = cols.map((col) => parseFloat(col.style.width) || col.getBoundingClientRect().width || 0);
+          localStorage.setItem(storageKey, JSON.stringify(widths));
+        }
+
+        leafHeaders.forEach((header, index) => {
+          const resizer = header.querySelector('.col-resizer');
+          if (!resizer || !cols[index]) return;
+
+          resizer.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const startX = event.clientX;
+            const startWidth = cols[index].getBoundingClientRect().width;
+
+            function onMouseMove(moveEvent) {
+              const nextWidth = Math.max(60, startWidth + (moveEvent.clientX - startX));
+              cols[index].style.width = `${nextWidth}px`;
+            }
+
+            function onMouseUp() {
+              document.removeEventListener('mousemove', onMouseMove);
+              document.removeEventListener('mouseup', onMouseUp);
+              persistWidths();
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+          });
+        });
+      })();
     })();
   </script>
 </body>
