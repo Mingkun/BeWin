@@ -99,10 +99,10 @@
       </div>
       <div class="card stat-card">
         <div class="stat-label">业务场景拆解</div>
-        <div class="ios-preview-subtitle" style="margin-top:6px; line-height:1.9;">
-          HC 总计：<strong style="color:#0f172a;">{{ summary.hc_total }}</strong><br>
-          HCS 总计：<strong style="color:#0f172a;">{{ summary.hcs_total }}</strong><br>
-          <span style="color:#64748b;">说明：上面“总计”= 自有人数 + OD人数 + 0.8×TM人数</span>
+        <div class="ios-preview-subtitle" style="margin-top:6px; display:grid; grid-template-columns:max-content 1fr; gap:8px 14px; align-items:center; line-height:1.9;">
+          <span>HC 总计：</span><strong style="color:#0f172a; text-align:right; display:block;">{{ summary.hc_total }}</strong>
+          <span>HCS 总计：</span><strong style="color:#0f172a; text-align:right; display:block;">{{ summary.hcs_total }}</strong>
+          <span style="color:#64748b; grid-column:1 / -1;">说明：上面“总计”= 自有人数 + OD人数 + 0.8×TM人数</span>
         </div>
       </div>
     </div>
