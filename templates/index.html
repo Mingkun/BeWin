@@ -27,7 +27,7 @@
             <span class="user-chip" aria-label="当前登录用户" title="当前登录用户"></span>
             <span class="logout-popover">
               <span class="logout-user-name">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
-              <a class="button secondary" href="{{ url_for('oauth_logout') }}">退出登录</a>
+              <a class="button secondary" href="{{ url_for('logout') }}">退出登录</a>
             </span>
           </span>
         {% else %}
