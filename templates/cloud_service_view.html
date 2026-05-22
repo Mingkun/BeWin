@@ -212,19 +212,22 @@
               ctx.arc(cx, cy, radius, startAngle, startAngle + angle);
               ctx.closePath();
               ctx.fillStyle = colors[item.sourceIndex % colors.length];
-              ctx.shadowColor = 'rgba(255,255,255,0.5)';
-              ctx.shadowBlur = 10;
+              ctx.shadowColor = colors[item.sourceIndex % colors.length];
+              ctx.shadowBlur = 22;
               ctx.fill();
+              ctx.lineWidth = 2.5;
+              ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+              ctx.stroke();
               ctx.shadowBlur = 0;
               startAngle += angle;
             });
 
             ctx.beginPath();
-            ctx.fillStyle = 'rgba(255,255,255,0.88)';
+            ctx.fillStyle = 'rgba(255,255,255,0.98)';
             ctx.arc(cx, cy, 46, 0, Math.PI * 2);
             ctx.fill();
-            ctx.lineWidth = 1.5;
-            ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'rgba(255,255,255,1)';
             ctx.stroke();
 
             ctx.fillStyle = '#111827';
@@ -240,7 +243,7 @@
                 const color = colors[item.sourceIndex % colors.length];
                 const hidden = hiddenItems.has(item.sourceIndex);
                 const percent = total > 0 && !hidden ? ((item.value / total) * 100).toFixed(1) : '0.0';
-                return `<button type="button" class="pie-legend-item${hidden ? ' is-hidden' : ''}" data-pie-index="${item.sourceIndex}" style="display:flex; width:100%; align-items:center; gap:10px; font-size:13px; border:none; cursor:pointer; text-align:left;"><span style="width:12px; height:12px; border-radius:999px; background:${color}; display:inline-block; flex-shrink:0;"></span><span style="flex:1; color:#111827; text-decoration:${hidden ? 'line-through' : 'none'}; opacity:${hidden ? '0.55' : '1'};">${item.label}</span><span style="color:#6b7280; text-decoration:${hidden ? 'line-through' : 'none'}; opacity:${hidden ? '0.55' : '1'};">${hidden ? '--' : item.value.toFixed(2) + ' / ' + percent + '%'}</span></button>`;
+                return `<button type="button" class="pie-legend-item${hidden ? ' is-hidden' : ''}" data-pie-index="${item.sourceIndex}" style="display:flex; width:100%; align-items:center; gap:10px; font-size:13px; border:none; cursor:pointer; text-align:left;"><span style="width:12px; height:12px; border-radius:999px; background:${color}; box-shadow:0 0 10px ${color}; display:inline-block; flex-shrink:0;"></span><span style="flex:1; color:#111827; text-decoration:${hidden ? 'line-through' : 'none'}; opacity:${hidden ? '0.55' : '1'};">${item.label}</span><span style="color:#6b7280; text-decoration:${hidden ? 'line-through' : 'none'}; opacity:${hidden ? '0.55' : '1'};">${hidden ? '--' : item.value.toFixed(2) + ' / ' + percent + '%'}</span></button>`;
               })
               .join('');
 
