@@ -42,7 +42,16 @@
         </label>
         <label>投入比例<input type="text" name="allocation_ratio" value="{{ record.allocation_ratio or '' }}" placeholder="例如 50% 或 0.5"></label>
         <label>角色<input type="text" name="role_name" value="{{ record.role_name or '' }}"></label>
-        <label>状态<input type="text" name="status" value="{{ record.status or '' }}"></label>
+        <label>状态
+          <select name="status">
+            <option value="" {% if not record.status %}selected{% endif %}>空白</option>
+            <option value="在岗" {% if record.status == '在岗' %}selected{% endif %}>在岗</option>
+            <option value="请假" {% if record.status == '请假' %}selected{% endif %}>请假</option>
+            <option value="支持外部会战" {% if record.status == '支持外部会战' %}selected{% endif %}>支持外部会战</option>
+            <option value="待入场" {% if record.status == '待入场' %}selected{% endif %}>待入场</option>
+            <option value="待切出" {% if record.status == '待切出' %}selected{% endif %}>待切出</option>
+          </select>
+        </label>
         <label style="grid-column:1 / -1;">备注<textarea name="remarks" rows="4">{{ record.remarks or '' }}</textarea></label>
       </div>
       <div class="form-actions">
