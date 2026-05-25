@@ -54,7 +54,47 @@
       <div class="card stat-card"><div class="stat-label">已关联部门</div><div class="stat-value">{{ summary.department_bound_count }}</div></div>
       <div class="card stat-card"><div class="stat-label">已关联项目</div><div class="stat-value">{{ summary.project_bound_count }}</div></div>
       <div class="card stat-card"><div class="stat-label">状态非空</div><div class="stat-value">{{ summary.active_count }}</div></div>
+      <div class="card stat-card"><div class="stat-label">投入比例汇总</div><div class="stat-value">{{ '%.2f'|format(summary.allocation_total) }}</div></div>
     </div>
+
+    {% if department_summary or project_summary %}
+    <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); margin-top:16px;">
+      <div class="card">
+        <div style="font-size:16px; font-weight:700; margin-bottom:10px;">按部门汇总</div>
+        {% if department_summary %}
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>部门</th><th>人数</th><th>投入比例汇总</th></tr></thead>
+            <tbody>
+              {% for item in department_summary %}
+              <tr><td>{{ item.name }}</td><td>{{ item.count }}</td><td>{{ '%.2f'|format(item.allocation_total) }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty">暂无部门汇总。</div>
+        {% endif %}
+      </div>
+      <div class="card">
+        <div style="font-size:16px; font-weight:700; margin-bottom:10px;">按项目汇总</div>
+        {% if project_summary %}
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>项目</th><th>人数</th><th>投入比例汇总</th></tr></thead>
+            <tbody>
+              {% for item in project_summary %}
+              <tr><td>{{ item.name }}</td><td>{{ item.count }}</td><td>{{ '%.2f'|format(item.allocation_total) }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty">暂无项目汇总。</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
 
     {% if records %}
     <div class="table-wrap card">

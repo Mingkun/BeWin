@@ -1506,15 +1506,33 @@ def form_to_resource_person_data(form):
     }
 
 
+def parse_ratio_value(value):
+    text = (value or '').strip()
+    if not text:
+        return 0.0
+    if text.endswith('%'):
+        try:
+            return float(text[:-1]) / 100.0
+        except ValueError:
+            return 0.0
+    try:
+        number = float(text)
+        return number / 100.0 if number > 1 else number
+    except ValueError:
+        return 0.0
+
+
 def build_resource_people_summary(rows):
     active_count = sum(1 for row in rows if (row.get('status') or '').strip())
     project_bound_count = sum(1 for row in rows if (row.get('project_name') or '').strip())
     department_bound_count = sum(1 for row in rows if (row.get('department_full_name') or '').strip())
+    allocation_total = round(sum(parse_ratio_value(row.get('allocation_ratio')) for row in rows), 2)
     return {
         'count': len(rows),
         'active_count': active_count,
         'project_bound_count': project_bound_count,
         'department_bound_count': department_bound_count,
+        'allocation_total': allocation_total,
     }
 
 
@@ -1538,6 +1556,25 @@ def filter_resource_people(rows, person_type='', department_name='', project_nam
         return person_type_ok and department_ok and project_ok
 
     return [row for row in rows if matched(row)]
+
+
+def build_resource_group_summary(rows, group_key):
+    grouped = {}
+    for row in rows:
+        key = (row.get(group_key) or '').strip() or '未填写'
+        if key not in grouped:
+            grouped[key] = {
+                'name': key,
+                'count': 0,
+                'allocation_total': 0.0,
+            }
+        grouped[key]['count'] += 1
+        grouped[key]['allocation_total'] += parse_ratio_value(row.get('allocation_ratio'))
+    result = list(grouped.values())
+    for item in result:
+        item['allocation_total'] = round(item['allocation_total'], 2)
+    result.sort(key=lambda item: (-item['count'], item['name']))
+    return result
 
 
 def parse_date_parts(date_text):
@@ -2636,6 +2673,8 @@ def view_placeholder(view_key):
             'resource_view.html',
             records=filtered_rows,
             summary=build_resource_people_summary(filtered_rows),
+            department_summary=build_resource_group_summary(filtered_rows, 'department_full_name'),
+            project_summary=build_resource_group_summary(filtered_rows, 'project_name'),
             filter_options=get_resource_people_filter_options(rows),
             filters={
                 'person_type': person_type,
