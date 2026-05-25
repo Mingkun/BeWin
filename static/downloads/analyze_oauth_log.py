@@ -1,4 +1,24 @@
 #!/usr/bin/env python3
+"""
+ReleasePlan SSO/OAuth 日志分析脚本
+
+常用用法：
+1. 在 ReleasePlan 安装目录运行：
+   python3 analyze_oauth_log.py
+
+2. 指定安装目录：
+   python3 analyze_oauth_log.py --base-dir /path/to/ReleasePlan
+
+3. 指定日志文件和输出报告：
+   python3 analyze_oauth_log.py \
+     --log-path /path/to/oauth_callback_debug.log \
+     --report-path /path/to/oauth_sso_diagnosis_report.txt
+
+默认行为：
+- 自动探测 ReleasePlan 安装目录
+- 默认读取 <安装目录>/logs/oauth_callback_debug.log
+- 默认输出 <安装目录>/oauth_sso_diagnosis_report.txt
+"""
 import argparse
 import json
 from collections import Counter
