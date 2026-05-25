@@ -1506,6 +1506,40 @@ def form_to_resource_person_data(form):
     }
 
 
+def build_resource_people_summary(rows):
+    active_count = sum(1 for row in rows if (row.get('status') or '').strip())
+    project_bound_count = sum(1 for row in rows if (row.get('project_name') or '').strip())
+    department_bound_count = sum(1 for row in rows if (row.get('department_full_name') or '').strip())
+    return {
+        'count': len(rows),
+        'active_count': active_count,
+        'project_bound_count': project_bound_count,
+        'department_bound_count': department_bound_count,
+    }
+
+
+def get_resource_people_filter_options(rows):
+    return {
+        'person_types': sorted({(row.get('person_type') or '').strip() for row in rows if (row.get('person_type') or '').strip()}),
+        'departments': sorted({(row.get('department_full_name') or '').strip() for row in rows if (row.get('department_full_name') or '').strip()}),
+        'projects': sorted({(row.get('project_name') or '').strip() for row in rows if (row.get('project_name') or '').strip()}),
+    }
+
+
+def filter_resource_people(rows, person_type='', department_name='', project_name=''):
+    person_type = (person_type or '').strip().lower()
+    department_name = (department_name or '').strip().lower()
+    project_name = (project_name or '').strip().lower()
+
+    def matched(row):
+        person_type_ok = not person_type or (row.get('person_type') or '').strip().lower() == person_type
+        department_ok = not department_name or (row.get('department_full_name') or '').strip().lower() == department_name
+        project_ok = not project_name or (row.get('project_name') or '').strip().lower() == project_name
+        return person_type_ok and department_ok and project_ok
+
+    return [row for row in rows if matched(row)]
+
+
 def parse_date_parts(date_text):
     value = (date_text or '').strip()
     if not value:
@@ -2589,6 +2623,25 @@ def view_placeholder(view_key):
             quarters=QUARTERS,
             display_year=display_year,
             today_marker_percent=today_marker_percent,
+            **build_auth_context(),
+        )
+
+    if view_key == 'project-budget-resource':
+        rows = load_resource_people()
+        person_type = (request.args.get('person_type') or '').strip()
+        department_name = (request.args.get('department_name') or '').strip()
+        project_name = (request.args.get('project_name') or '').strip()
+        filtered_rows = filter_resource_people(rows, person_type=person_type, department_name=department_name, project_name=project_name)
+        return render_template(
+            'resource_view.html',
+            records=filtered_rows,
+            summary=build_resource_people_summary(filtered_rows),
+            filter_options=get_resource_people_filter_options(rows),
+            filters={
+                'person_type': person_type,
+                'department_name': department_name,
+                'project_name': project_name,
+            },
             **build_auth_context(),
         )
 

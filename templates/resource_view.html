@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>资源视图</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <div>
+        <h1>资源视图</h1>
+        <p>按人员粒度查看部门、项目、投入比例和状态信息。</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+        <a class="button secondary" href="{{ url_for('admin_departments') }}">部门库</a>
+        <a class="button secondary" href="{{ url_for('admin_resource_people') }}">人员资源库</a>
+      </div>
+    </header>
+
+    <form class="card filter-form" method="get" action="{{ url_for('view_placeholder', view_key='project-budget-resource') }}">
+      <div class="form-grid form-grid-3">
+        <label>人员类型
+          <select name="person_type">
+            <option value="">全部</option>
+            {% for item in filter_options.person_types %}
+            <option value="{{ item }}" {% if filters.person_type == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>部门
+          <select name="department_name">
+            <option value="">全部</option>
+            {% for item in filter_options.departments %}
+            <option value="{{ item }}" {% if filters.department_name == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>所属项目
+          <select name="project_name">
+            <option value="">全部</option>
+            {% for item in filter_options.projects %}
+            <option value="{{ item }}" {% if filters.project_name == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+    </form>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));">
+      <div class="card stat-card"><div class="stat-label">总人数</div><div class="stat-value">{{ summary.count }}</div></div>
+      <div class="card stat-card"><div class="stat-label">已关联部门</div><div class="stat-value">{{ summary.department_bound_count }}</div></div>
+      <div class="card stat-card"><div class="stat-label">已关联项目</div><div class="stat-value">{{ summary.project_bound_count }}</div></div>
+      <div class="card stat-card"><div class="stat-label">状态非空</div><div class="stat-value">{{ summary.active_count }}</div></div>
+    </div>
+
+    {% if records %}
+    <div class="table-wrap card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>工号</th>
+            <th>姓名</th>
+            <th>人员类型</th>
+            <th>最小部门</th>
+            <th>所属项目</th>
+            <th>投入比例</th>
+            <th>角色</th>
+            <th>状态</th>
+            <th>备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records %}
+          <tr>
+            <td>{{ record.employee_id or '' }}</td>
+            <td>{{ record.employee_name or '' }}</td>
+            <td>{{ record.person_type or '' }}</td>
+            <td>{{ record.department_full_name or '' }}</td>
+            <td>{{ record.project_name or '' }}</td>
+            <td>{{ record.allocation_ratio or '' }}</td>
+            <td>{{ record.role_name or '' }}</td>
+            <td>{{ record.status or '' }}</td>
+            <td>{{ record.remarks or '' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty">当前还没有匹配的资源数据。</div>
+    {% endif %}
+  </div>
+  <script>
+    (function () {
+      const filterForm = document.querySelector('.filter-form');
+      if (!filterForm) return;
+      filterForm.querySelectorAll('select').forEach((select) => {
+        select.addEventListener('change', () => filterForm.submit());
+      });
+    })();
+  </script>
+</body>
+</html>
