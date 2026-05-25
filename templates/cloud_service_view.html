@@ -379,13 +379,14 @@
         function sortByHeader(header) {
           const sortKey = header.dataset.sortKey;
           const sortType = header.dataset.sortType || 'text';
+          const datasetKey = sortKey.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
           const direction = currentSortKey === sortKey && currentSortDirection === 'asc' ? 'desc' : 'asc';
           const multiplier = direction === 'asc' ? 1 : -1;
           const rows = Array.from(tbody.querySelectorAll('tr'));
 
           rows.sort((rowA, rowB) => {
-            const valueA = normalizeValue(rowA.dataset[sortKey], sortType);
-            const valueB = normalizeValue(rowB.dataset[sortKey], sortType);
+            const valueA = normalizeValue(rowA.dataset[datasetKey], sortType);
+            const valueB = normalizeValue(rowB.dataset[datasetKey], sortType);
             if (valueA < valueB) return -1 * multiplier;
             if (valueA > valueB) return 1 * multiplier;
             return 0;
