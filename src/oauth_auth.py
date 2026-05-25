@@ -95,6 +95,10 @@ def oauth_scope():
     return os.getenv('RELEASEPLAN_OAUTH_SCOPE', 'openid profile email').strip()
 
 
+def oauth_userinfo_token_mode():
+    return (os.getenv('RELEASEPLAN_OAUTH_USERINFO_TOKEN_MODE') or 'auto').strip().lower()
+
+
 def oauth_redirect_uri():
     configured = os.getenv('RELEASEPLAN_OAUTH_REDIRECT_URI', '').strip()
     if configured:
@@ -285,14 +289,61 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
                     detail = detail[:300] + '...'
                 return Response(f'OAuth2 登录失败: 缺少 access_token，响应为 {detail or token_resp.text[:300]}', status=400)
 
-            userinfo_resp = requests.get(
-                oauth_userinfo_url(),
-                headers={'Authorization': f'Bearer {access_token}'},
-                timeout=15,
-            )
-            if userinfo_resp.status_code >= 400:
-                return Response('OAuth2 登录失败: 获取用户信息失败', status=400)
-            userinfo = userinfo_resp.json()
+            userinfo_modes = []
+            configured_mode = oauth_userinfo_token_mode()
+            if configured_mode and configured_mode != 'auto':
+                userinfo_modes.append(configured_mode)
+            userinfo_modes.extend([mode for mode in ['bearer', 'query_access_token', 'query_token'] if mode not in userinfo_modes])
+
+            userinfo = None
+            last_userinfo_resp = None
+            for mode in userinfo_modes:
+                headers = {}
+                params = {}
+                if mode == 'bearer':
+                    headers['Authorization'] = f'Bearer {access_token}'
+                elif mode == 'query_access_token':
+                    params['access_token'] = access_token
+                elif mode == 'query_token':
+                    params['token'] = access_token
+                else:
+                    continue
+
+                userinfo_resp = requests.get(
+                    oauth_userinfo_url(),
+                    headers=headers,
+                    params=params,
+                    timeout=15,
+                )
+                last_userinfo_resp = userinfo_resp
+                response_preview = (userinfo_resp.text or '').strip()
+                if len(response_preview) > 300:
+                    response_preview = response_preview[:300] + '...'
+                _log_oauth_debug(
+                    'userinfo_attempt',
+                    mode=mode,
+                    status_code=userinfo_resp.status_code,
+                    response_preview=response_preview,
+                )
+
+                if userinfo_resp.status_code >= 400:
+                    continue
+                try:
+                    candidate = userinfo_resp.json()
+                except ValueError:
+                    continue
+                if isinstance(candidate, dict) and (candidate.get('errorCode') or candidate.get('error') or candidate.get('code')):
+                    continue
+                userinfo = candidate
+                break
+
+            if userinfo is None:
+                detail = ''
+                if last_userinfo_resp is not None:
+                    detail = (last_userinfo_resp.text or '').strip()
+                if len(detail) > 300:
+                    detail = detail[:300] + '...'
+                return Response(f'OAuth2 登录失败: 获取用户信息失败，响应为 {detail or "未知错误"}', status=400)
             session.pop('oauth_state', None)
             session['oauth_user'] = build_oauth_user(
                 userinfo,
