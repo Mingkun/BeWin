@@ -19,6 +19,50 @@
         <a class="button" href="{{ url_for('admin_resource_person_new') }}">新增人员</a>
       </div>
     </header>
+    <form class="card filter-form" method="get" action="{{ url_for('admin_resource_people') }}">
+      <div class="form-grid form-grid-3">
+        <label>工号 / 姓名
+          <input type="text" name="keyword" value="{{ filters.keyword or '' }}" placeholder="输入工号或姓名关键词">
+        </label>
+        <label>所属项目
+          <select name="project_name">
+            <option value="">全部</option>
+            {% for item in filter_options.projects %}
+            <option value="{{ item }}" {% if filters.project_name == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>最小部门
+          <select name="department_name">
+            <option value="">全部</option>
+            {% for item in filter_options.departments %}
+            <option value="{{ item }}" {% if filters.department_name == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>角色
+          <select name="role_name">
+            <option value="">全部</option>
+            {% for item in filter_options.roles %}
+            <option value="{{ item }}" {% if filters.role_name == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>状态
+          <select name="status">
+            <option value="">全部</option>
+            {% for item in filter_options.statuses %}
+            <option value="{{ item }}" {% if filters.status == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <div class="form-actions" style="margin-top:12px;">
+        <button class="button" type="submit">查询</button>
+        <a class="button secondary" href="{{ url_for('admin_resource_people') }}">重置</a>
+      </div>
+    </form>
+
     {% if records %}
     <div class="table-wrap card">
       <table class="data-table">

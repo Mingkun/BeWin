@@ -1476,6 +1476,33 @@ def load_resource_people():
         return result
 
 
+def get_resource_people_admin_filter_options(rows):
+    return {
+        'projects': sorted({(row.get('project_name') or '').strip() for row in rows if (row.get('project_name') or '').strip()}),
+        'departments': sorted({(row.get('department_full_name') or '').strip() for row in rows if (row.get('department_full_name') or '').strip()}),
+        'roles': sorted({(row.get('role_name') or '').strip() for row in rows if (row.get('role_name') or '').strip()}),
+        'statuses': sorted({(row.get('status') or '').strip() for row in rows if (row.get('status') or '').strip()}),
+    }
+
+
+def filter_resource_people_admin(rows, keyword='', project_name='', department_name='', role_name='', status=''):
+    keyword = (keyword or '').strip().lower()
+    project_name = (project_name or '').strip().lower()
+    department_name = (department_name or '').strip().lower()
+    role_name = (role_name or '').strip().lower()
+    status = (status or '').strip().lower()
+
+    def matched(row):
+        keyword_ok = (not keyword) or keyword in (row.get('employee_id') or '').strip().lower() or keyword in (row.get('employee_name') or '').strip().lower()
+        project_ok = (not project_name) or (row.get('project_name') or '').strip().lower() == project_name
+        department_ok = (not department_name) or (row.get('department_full_name') or '').strip().lower() == department_name
+        role_ok = (not role_name) or (row.get('role_name') or '').strip().lower() == role_name
+        status_ok = (not status) or (row.get('status') or '').strip().lower() == status
+        return keyword_ok and project_ok and department_ok and role_ok and status_ok
+
+    return [row for row in rows if matched(row)]
+
+
 def load_resource_person(record_id):
     init_db()
     with get_conn() as conn:
@@ -3052,7 +3079,13 @@ def admin_resource_people():
     if denied:
         return denied
     rows = load_resource_people()
-    return render_template('resource_person_list.html', records=rows, **build_auth_context())
+    keyword = (request.args.get('keyword') or '').strip()
+    project_name = (request.args.get('project_name') or '').strip()
+    department_name = (request.args.get('department_name') or '').strip()
+    role_name = (request.args.get('role_name') or '').strip()
+    status = (request.args.get('status') or '').strip()
+    filtered_rows = filter_resource_people_admin(rows, keyword=keyword, project_name=project_name, department_name=department_name, role_name=role_name, status=status)
+    return render_template('resource_person_list.html', records=filtered_rows, filter_options=get_resource_people_admin_filter_options(rows), filters={'keyword': keyword, 'project_name': project_name, 'department_name': department_name, 'role_name': role_name, 'status': status}, **build_auth_context())
 
 
 @app.route('/admin/resource-people/new', methods=['GET', 'POST'])
