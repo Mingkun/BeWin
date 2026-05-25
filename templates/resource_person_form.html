@@ -23,7 +23,17 @@
       <div class="form-grid form-grid-2">
         <label>工号<input type="text" name="employee_id" value="{{ record.employee_id or '' }}"></label>
         <label>姓名<input type="text" name="employee_name" value="{{ record.employee_name or '' }}"></label>
-        <label>人员类型<input type="text" name="person_type" value="{{ record.person_type or '' }}"></label>
+        <label>人员类型
+          <select name="person_type">
+            <option value="" {% if not record.person_type %}selected{% endif %}>空白</option>
+            <option value="自有" {% if record.person_type == '自有' %}selected{% endif %}>自有</option>
+            <option value="OD" {% if record.person_type == 'OD' %}selected{% endif %}>OD</option>
+            <option value="TM" {% if record.person_type == 'TM' %}selected{% endif %}>TM</option>
+            <option value="在岸" {% if record.person_type == '在岸' %}selected{% endif %}>在岸</option>
+            <option value="实习生" {% if record.person_type == '实习生' %}selected{% endif %}>实习生</option>
+            <option value="博士后" {% if record.person_type == '博士后' %}selected{% endif %}>博士后</option>
+          </select>
+        </label>
         <label>最小部门
           <select name="department_id">
             <option value="">为空</option>
