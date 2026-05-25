@@ -1,18 +1,29 @@
 #!/usr/bin/env python3
+import argparse
 import json
 from collections import Counter
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parents[1]
-LOG_PATH = BASE_DIR / 'logs' / 'oauth_callback_debug.log'
-REPORT_PATH = BASE_DIR / 'static' / 'downloads' / 'oauth_sso_diagnosis_report.txt'
+
+def detect_base_dir(explicit_base=None):
+    if explicit_base:
+        return Path(explicit_base).resolve()
+
+    script_path = Path(__file__).resolve()
+    candidates = [Path.cwd(), script_path.parent, script_path.parent.parent]
+    for candidate in candidates:
+        if (candidate / 'src').exists() and (candidate / 'templates').exists():
+            return candidate
+        if candidate.name == 'scripts' and (candidate.parent / 'src').exists():
+            return candidate.parent
+    return Path.cwd().resolve()
 
 
-def load_records():
-    if not LOG_PATH.exists():
+def load_records(log_path):
+    if not log_path.exists():
         return []
     records = []
-    for line in LOG_PATH.read_text(encoding='utf-8', errors='ignore').splitlines():
+    for line in log_path.read_text(encoding='utf-8', errors='ignore').splitlines():
         line = line.strip()
         if not line:
             continue
@@ -24,20 +35,31 @@ def load_records():
 
 
 def main():
-    records = load_records()
+    parser = argparse.ArgumentParser(description='分析 ReleasePlan 的 OAuth/SSO 调试日志，并生成中文诊断报告。')
+    parser.add_argument('--base-dir', default='', help='ReleasePlan 安装根目录，不传则自动探测')
+    parser.add_argument('--log-path', default='', help='OAuth 调试日志路径，不传则默认使用 <base-dir>/logs/oauth_callback_debug.log')
+    parser.add_argument('--report-path', default='', help='输出报告路径，不传则默认输出到 <base-dir>/oauth_sso_diagnosis_report.txt')
+    args = parser.parse_args()
+
+    base_dir = detect_base_dir(args.base_dir)
+    log_path = Path(args.log_path).resolve() if args.log_path else (base_dir / 'logs' / 'oauth_callback_debug.log')
+    report_path = Path(args.report_path).resolve() if args.report_path else (base_dir / 'oauth_sso_diagnosis_report.txt')
+
+    records = load_records(log_path)
     lines = []
     lines.append('ReleasePlan SSO/OAuth 日志诊断报告')
     lines.append('')
-    lines.append(f'日志文件: {LOG_PATH}')
+    lines.append(f'项目目录: {base_dir}')
+    lines.append(f'日志文件: {log_path}')
     lines.append(f'记录条数: {len(records)}')
     lines.append('')
 
     if not records:
         lines.append('未发现日志记录。')
         lines.append('建议：先实际走一遍 SSO 登录，再重新生成本报告。')
-        REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-        REPORT_PATH.write_text('\n'.join(lines) + '\n', encoding='utf-8')
-        print(REPORT_PATH)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        print(report_path)
         return
 
     event_counter = Counter()
@@ -124,9 +146,9 @@ def main():
     lines.append('- 如需进一步定位，可让管理员在服务器本机执行本脚本后直接查看文本报告，无需导出原始日志。')
     lines.append('')
 
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text('\n'.join(lines) + '\n', encoding='utf-8')
-    print(REPORT_PATH)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    print(report_path)
 
 
 if __name__ == '__main__':
