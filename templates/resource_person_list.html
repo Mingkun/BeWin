@@ -115,7 +115,21 @@
                 </select>
               </td>
               <td><input type="text" name="allocation_ratio" value="{{ record.allocation_ratio or '' }}" style="width:80px;"></td>
-              <td><input type="text" name="role_name" value="{{ record.role_name or '' }}" style="width:90px;"></td>
+              <td>
+                <select name="role_name" style="max-width:110px;">
+                  <option value="" {% if not record.role_name %}selected{% endif %}>空白</option>
+                  <option value="开发" {% if record.role_name == '开发' %}selected{% endif %}>开发</option>
+                  <option value="测试" {% if record.role_name == '测试' %}selected{% endif %}>测试</option>
+                  <option value="运维" {% if record.role_name == '运维' %}selected{% endif %}>运维</option>
+                  <option value="资料" {% if record.role_name == '资料' %}selected{% endif %}>资料</option>
+                  <option value="用户体验" {% if record.role_name == '用户体验' %}selected{% endif %}>用户体验</option>
+                  <option value="架构师" {% if record.role_name == '架构师' %}selected{% endif %}>架构师</option>
+                  <option value="项目经理" {% if record.role_name == '项目经理' %}selected{% endif %}>项目经理</option>
+                  <option value="产品管理" {% if record.role_name == '产品管理' %}selected{% endif %}>产品管理</option>
+                  <option value="HR" {% if record.role_name == 'HR' %}selected{% endif %}>HR</option>
+                  <option value="其他" {% if record.role_name == '其他' %}selected{% endif %}>其他</option>
+                </select>
+              </td>
               <td>
                 <select name="status" style="max-width:120px;">
                   <option value="" {% if not record.status %}selected{% endif %}>空白</option>
