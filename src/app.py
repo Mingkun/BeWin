@@ -1840,15 +1840,10 @@ def local_login_form():
 
 @app.route('/logout')
 def logout():
-    current_user = get_current_user() or {}
-    auth_type = (current_user.get('auth_type') or '').strip().lower()
     session.pop('oauth_user', None)
     session.pop('local_user', None)
     session.pop('oauth_state', None)
     session.pop('oauth_next', None)
-    logout_url = os.getenv('RELEASEPLAN_OAUTH_LOGOUT_URL', '').strip()
-    if auth_type == 'oauth2' and logout_url and oauth_enabled():
-        return redirect(logout_url)
     return redirect(url_for('login_entry'))
 
 
