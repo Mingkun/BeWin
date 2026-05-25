@@ -143,7 +143,63 @@ Copy/edit `.env` as needed:
 - `RELEASEPLAN_OAUTH_LOGOUT_URL`
 - `RELEASEPLAN_OAUTH_ADMIN_ROLES`
 - `RELEASEPLAN_OAUTH_ADMIN_EMAILS`
+- `RELEASEPLAN_OAUTH_DEBUG_LOG_PATH`
+- `RELEASEPLAN_OAUTH_DEBUG_STDOUT`
 - `HOST`
 - `PORT`
 
 By default it runs on `0.0.0.0:5010`.
+
+### Docker / Docker Compose 推荐日志配置
+
+如果使用 Docker 部署，建议把 OAuth 调试日志写到挂载卷，并同时输出到容器标准输出。
+
+推荐环境变量：
+
+```env
+RELEASEPLAN_OAUTH_DEBUG_LOG_PATH=/app/data/oauth_callback_debug.log
+RELEASEPLAN_OAUTH_DEBUG_STDOUT=true
+```
+
+这样有两个好处：
+- 日志会持久化到数据卷，容器重建后仍可保留
+- 同时也能直接通过 `docker logs` 查看
+
+#### docker run 示例
+
+```bash
+docker run -d \
+  --name releaseplan \
+  -p 5010:5010 \
+  -v $(pwd)/data:/app/data \
+  -e RELEASEPLAN_OAUTH_DEBUG_LOG_PATH=/app/data/oauth_callback_debug.log \
+  -e RELEASEPLAN_OAUTH_DEBUG_STDOUT=true \
+  releaseplan:latest
+```
+
+#### docker-compose 示例
+
+```yaml
+services:
+  releaseplan:
+    image: releaseplan:latest
+    ports:
+      - "5010:5010"
+    volumes:
+      - ./data:/app/data
+    environment:
+      RELEASEPLAN_OAUTH_DEBUG_LOG_PATH: /app/data/oauth_callback_debug.log
+      RELEASEPLAN_OAUTH_DEBUG_STDOUT: "true"
+```
+
+排查时可配合：
+
+```bash
+docker logs -f releaseplan
+```
+
+以及在容器或宿主挂载目录中查看：
+
+```bash
+cat ./data/oauth_callback_debug.log
+```
