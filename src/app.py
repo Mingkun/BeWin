@@ -1783,8 +1783,19 @@ def seed_service_resources_if_empty():
 def login_entry():
     mode = auth_mode()
     next_url = normalize_next_url(request.args.get('next') or '/')
+    local_enabled = local_admin_enabled()
+    oauth_enabled_flag = oauth_enabled()
     if mode == 'none':
         return redirect(url_for('index'))
+    if local_enabled and oauth_enabled_flag:
+        return render_template(
+            'login_choice.html',
+            next=next_url,
+            local_enabled=local_enabled,
+            oauth_enabled=oauth_enabled_flag,
+            branding=get_branding(),
+            **build_auth_context(),
+        )
     if mode == 'local':
         return redirect(url_for('local_login_form', next=next_url))
     if mode == 'oauth2':
@@ -1792,8 +1803,8 @@ def login_entry():
     return render_template(
         'login_choice.html',
         next=next_url,
-        local_enabled=local_admin_enabled(),
-        oauth_enabled=oauth_enabled(),
+        local_enabled=local_enabled,
+        oauth_enabled=oauth_enabled_flag,
         branding=get_branding(),
         **build_auth_context(),
     )
