@@ -108,18 +108,18 @@
 
     {% if records %}
     <div class="table-wrap card" style="margin-top:16px;">
-      <table class="data-table">
+      <table class="data-table" id="resource-records-table">
         <thead>
           <tr>
-            <th>工号</th>
-            <th>姓名</th>
-            <th>人员类型</th>
-            <th>最小部门</th>
-            <th>所属项目</th>
-            <th>投入比例</th>
-            <th>角色</th>
-            <th>状态</th>
-            <th>备注</th>
+            <th data-sort-type="text">工号</th>
+            <th data-sort-type="text">姓名</th>
+            <th data-sort-type="text">人员类型</th>
+            <th data-sort-type="text">最小部门</th>
+            <th data-sort-type="text">所属项目</th>
+            <th data-sort-type="number">投入比例</th>
+            <th data-sort-type="text">角色</th>
+            <th data-sort-type="text">状态</th>
+            <th data-sort-type="text">备注</th>
           </tr>
         </thead>
         <tbody>
@@ -175,6 +175,7 @@
 
       enableSummarySort('department-summary-table');
       enableSummarySort('project-summary-table');
+      enableSummarySort('resource-records-table');
     })();
   </script>
 </body>
