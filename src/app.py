@@ -16,7 +16,7 @@ import shutil
 import zipfile
 import uuid
 
-from src.oauth_auth import register_oauth_routes
+from src.oauth_auth import OAUTH_DEBUG_LOG_PATH, register_oauth_routes
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = BASE_DIR / '.env'
@@ -2222,6 +2222,9 @@ def settings_permissions_page():
 def settings_auth_debug_page():
     current_user = get_current_user() or {}
     oauth_raw = current_user.get('raw') or {}
+    oauth_log_exists = OAUTH_DEBUG_LOG_PATH.exists()
+    oauth_log_size = OAUTH_DEBUG_LOG_PATH.stat().st_size if oauth_log_exists else 0
+    oauth_log_mtime = datetime.fromtimestamp(OAUTH_DEBUG_LOG_PATH.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S') if oauth_log_exists else ''
     return render_template(
         'settings_auth_debug.html',
         page_title='登录调试信息',
@@ -2230,6 +2233,10 @@ def settings_auth_debug_page():
         current_user_pretty=json.dumps(current_user, ensure_ascii=False, indent=2),
         oauth_raw_pretty=json.dumps(oauth_raw, ensure_ascii=False, indent=2),
         active_logins=list_recent_active_logins(24),
+        oauth_log_path=str(OAUTH_DEBUG_LOG_PATH),
+        oauth_log_exists=oauth_log_exists,
+        oauth_log_size=oauth_log_size,
+        oauth_log_mtime=oauth_log_mtime,
         **build_auth_context(),
     )
 

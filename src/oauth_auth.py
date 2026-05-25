@@ -17,15 +17,24 @@ _OAUTH_CODE_TTL_SECONDS = 600
 
 
 def _log_oauth_debug(event, **payload):
+    record = {
+        'time': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+        'event': event,
+        **payload,
+    }
+    text = json.dumps(record, ensure_ascii=False) + '\n'
     try:
         OAUTH_DEBUG_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        record = {
-            'time': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
-            'event': event,
-            **payload,
-        }
         with OAUTH_DEBUG_LOG_PATH.open('a', encoding='utf-8') as fh:
-            fh.write(json.dumps(record, ensure_ascii=False) + '\n')
+            fh.write(text)
+        return
+    except Exception:
+        pass
+
+    fallback_path = Path('/tmp/releaseplan_oauth_callback_debug.log')
+    try:
+        with fallback_path.open('a', encoding='utf-8') as fh:
+            fh.write(text)
     except Exception:
         pass
 
@@ -213,6 +222,7 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
         session['oauth_next'] = next_url
         query = {
             'client_id': oauth_client_id(),
+            'client_secret': oauth_client_secret(),
             'redirect_uri': oauth_redirect_uri(),
             'response_type': 'code',
             'scope': oauth_scope(),
