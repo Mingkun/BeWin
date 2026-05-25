@@ -36,8 +36,8 @@
 
     <div class="entry-card-grid">
       {% for card in home_cards %}
-      <a class="entry-card {% if card.key in ['department-budget-resource', 'project-budget-resource'] %}entry-card-pending{% endif %}" href="{{ card.href }}">
-        {% if card.key in ['department-budget-resource', 'project-budget-resource'] %}
+      <a class="entry-card {% if card.key in ['department-budget-resource'] %}entry-card-pending{% endif %}" href="{{ card.href }}">
+        {% if card.key in ['department-budget-resource'] %}
         <div class="entry-card-badge">待建设</div>
         {% endif %}
         <div class="entry-card-title">{{ card.title }}</div>
