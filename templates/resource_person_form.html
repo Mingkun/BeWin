@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if mode == 'edit' %}编辑人员{% else %}新增人员{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <div>
+        <h1>{% if mode == 'edit' %}编辑人员{% else %}新增人员{% endif %}</h1>
+        <p>所属项目从项目视图已有项目中选择，部门从部门库中选择，均允许为空。</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+        <a class="button secondary" href="{{ url_for('admin_resource_people') }}">返回列表</a>
+      </div>
+    </header>
+
+    <form method="post" class="card form-card">
+      <div class="form-grid form-grid-2">
+        <label>工号<input type="text" name="employee_id" value="{{ record.employee_id or '' }}"></label>
+        <label>姓名<input type="text" name="employee_name" value="{{ record.employee_name or '' }}"></label>
+        <label>人员类型<input type="text" name="person_type" value="{{ record.person_type or '' }}"></label>
+        <label>最小部门
+          <select name="department_id">
+            <option value="">为空</option>
+            {% for item in department_options %}
+            <option value="{{ item.id }}" {% if record.department_id == item.id %}selected{% endif %}>{{ item.department_full_name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>所属项目
+          <select name="project_id">
+            <option value="">为空</option>
+            {% for item in project_options %}
+            <option value="{{ item.id }}" {% if record.project_id == item.id %}selected{% endif %}>{{ item.project_name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>投入比例<input type="text" name="allocation_ratio" value="{{ record.allocation_ratio or '' }}" placeholder="例如 50% 或 0.5"></label>
+        <label>角色<input type="text" name="role_name" value="{{ record.role_name or '' }}"></label>
+        <label>状态<input type="text" name="status" value="{{ record.status or '' }}"></label>
+        <label style="grid-column:1 / -1;">备注<textarea name="remarks" rows="4">{{ record.remarks or '' }}</textarea></label>
+      </div>
+      <div class="form-actions">
+        <button class="button" type="submit">保存</button>
+        <a class="button secondary" href="{{ url_for('admin_resource_people') }}">取消</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

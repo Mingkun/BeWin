@@ -1040,6 +1040,41 @@ def init_db():
         )
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS departments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                level_1_department TEXT,
+                level_2_department TEXT,
+                level_3_department TEXT,
+                level_4_department TEXT,
+                level_5_department TEXT,
+                level_6_department TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS resource_people (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee_id TEXT,
+                employee_name TEXT,
+                person_type TEXT,
+                department_id INTEGER,
+                project_id INTEGER,
+                allocation_ratio TEXT,
+                role_name TEXT,
+                status TEXT,
+                remarks TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(department_id) REFERENCES departments(id) ON DELETE SET NULL,
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE SET NULL
+            )
+            """
+        )
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS requirements (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 requirement_code TEXT,
@@ -1329,6 +1364,146 @@ def load_project(project_id):
             (project_id,),
         ).fetchone()
         return dict(row) if row else None
+
+
+def load_project_options():
+    init_db()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, project_name
+            FROM projects
+            WHERE TRIM(COALESCE(project_name, '')) <> ''
+            ORDER BY project_name ASC, id ASC
+            """
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def load_departments():
+    init_db()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, level_1_department, level_2_department, level_3_department, level_4_department, level_5_department, level_6_department
+            FROM departments
+            ORDER BY level_1_department ASC, level_2_department ASC, level_3_department ASC, level_4_department ASC, level_5_department ASC, level_6_department ASC, id ASC
+            """
+        ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item['department_full_name'] = ' / '.join([
+                (item.get('level_1_department') or '').strip(),
+                (item.get('level_2_department') or '').strip(),
+                (item.get('level_3_department') or '').strip(),
+                (item.get('level_4_department') or '').strip(),
+                (item.get('level_5_department') or '').strip(),
+                (item.get('level_6_department') or '').strip(),
+            ])
+            item['department_full_name'] = ' / '.join([part for part in item['department_full_name'].split(' / ') if part])
+            result.append(item)
+        return result
+
+
+def load_department(department_id):
+    init_db()
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT id, level_1_department, level_2_department, level_3_department, level_4_department, level_5_department, level_6_department
+            FROM departments
+            WHERE id = ?
+            """,
+            (department_id,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def form_to_department_data(form):
+    return {
+        'level_1_department': (form.get('level_1_department') or '').strip(),
+        'level_2_department': (form.get('level_2_department') or '').strip(),
+        'level_3_department': (form.get('level_3_department') or '').strip(),
+        'level_4_department': (form.get('level_4_department') or '').strip(),
+        'level_5_department': (form.get('level_5_department') or '').strip(),
+        'level_6_department': (form.get('level_6_department') or '').strip(),
+    }
+
+
+def load_resource_people():
+    init_db()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                rp.id,
+                rp.employee_id,
+                rp.employee_name,
+                rp.person_type,
+                rp.department_id,
+                rp.project_id,
+                rp.allocation_ratio,
+                rp.role_name,
+                rp.status,
+                rp.remarks,
+                d.level_1_department,
+                d.level_2_department,
+                d.level_3_department,
+                d.level_4_department,
+                d.level_5_department,
+                d.level_6_department,
+                p.project_name
+            FROM resource_people rp
+            LEFT JOIN departments d ON d.id = rp.department_id
+            LEFT JOIN projects p ON p.id = rp.project_id
+            ORDER BY rp.employee_id ASC, rp.employee_name ASC, rp.id ASC
+            """
+        ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item['department_full_name'] = ' / '.join([
+                (item.get('level_1_department') or '').strip(),
+                (item.get('level_2_department') or '').strip(),
+                (item.get('level_3_department') or '').strip(),
+                (item.get('level_4_department') or '').strip(),
+                (item.get('level_5_department') or '').strip(),
+                (item.get('level_6_department') or '').strip(),
+            ])
+            item['department_full_name'] = ' / '.join([part for part in item['department_full_name'].split(' / ') if part])
+            result.append(item)
+        return result
+
+
+def load_resource_person(record_id):
+    init_db()
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT id, employee_id, employee_name, person_type, department_id, project_id, allocation_ratio, role_name, status, remarks
+            FROM resource_people
+            WHERE id = ?
+            """,
+            (record_id,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def form_to_resource_person_data(form):
+    department_id = (form.get('department_id') or '').strip()
+    project_id = (form.get('project_id') or '').strip()
+    return {
+        'employee_id': (form.get('employee_id') or '').strip(),
+        'employee_name': (form.get('employee_name') or '').strip(),
+        'person_type': (form.get('person_type') or '').strip(),
+        'department_id': int(department_id) if department_id.isdigit() else None,
+        'project_id': int(project_id) if project_id.isdigit() else None,
+        'allocation_ratio': (form.get('allocation_ratio') or '').strip(),
+        'role_name': (form.get('role_name') or '').strip(),
+        'status': (form.get('status') or '').strip(),
+        'remarks': (form.get('remarks') or '').strip(),
+    }
 
 
 def parse_date_parts(date_text):
@@ -2689,6 +2864,178 @@ def admin_service_resources():
     seed_service_resources_if_empty()
     rows = load_service_resources()
     return render_template('service_resource_list.html', records=rows, **build_auth_context())
+
+
+@app.route('/admin/departments')
+@login_required
+def admin_departments():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    rows = load_departments()
+    return render_template('department_list.html', records=rows, **build_auth_context())
+
+
+@app.route('/admin/departments/new', methods=['GET', 'POST'])
+@login_required
+def admin_department_new():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    if request.method == 'POST':
+        data = form_to_department_data(request.form)
+        with get_conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO departments (
+                    level_1_department, level_2_department, level_3_department,
+                    level_4_department, level_5_department, level_6_department
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    data['level_1_department'], data['level_2_department'], data['level_3_department'],
+                    data['level_4_department'], data['level_5_department'], data['level_6_department'],
+                ),
+            )
+            conn.commit()
+        return redirect(url_for('admin_departments'))
+    return render_template('department_form.html', record={}, mode='new', **build_auth_context())
+
+
+@app.route('/admin/departments/<int:department_id>/edit', methods=['GET', 'POST'])
+@login_required
+def admin_department_edit(department_id):
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    record = load_department(department_id)
+    if not record:
+        return redirect(url_for('admin_departments'))
+    if request.method == 'POST':
+        data = form_to_department_data(request.form)
+        with get_conn() as conn:
+            conn.execute(
+                """
+                UPDATE departments
+                SET level_1_department = ?,
+                    level_2_department = ?,
+                    level_3_department = ?,
+                    level_4_department = ?,
+                    level_5_department = ?,
+                    level_6_department = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (
+                    data['level_1_department'], data['level_2_department'], data['level_3_department'],
+                    data['level_4_department'], data['level_5_department'], data['level_6_department'],
+                    department_id,
+                ),
+            )
+            conn.commit()
+        return redirect(url_for('admin_departments'))
+    return render_template('department_form.html', record=record, mode='edit', **build_auth_context())
+
+
+@app.route('/admin/departments/<int:department_id>/delete', methods=['POST'])
+@login_required
+def admin_department_delete(department_id):
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    with get_conn() as conn:
+        conn.execute("DELETE FROM departments WHERE id = ?", (department_id,))
+        conn.commit()
+    return redirect(url_for('admin_departments'))
+
+
+@app.route('/admin/resource-people')
+@login_required
+def admin_resource_people():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    rows = load_resource_people()
+    return render_template('resource_person_list.html', records=rows, **build_auth_context())
+
+
+@app.route('/admin/resource-people/new', methods=['GET', 'POST'])
+@login_required
+def admin_resource_person_new():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    department_options = load_departments()
+    project_options = load_project_options()
+    if request.method == 'POST':
+        data = form_to_resource_person_data(request.form)
+        with get_conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO resource_people (
+                    employee_id, employee_name, person_type, department_id, project_id,
+                    allocation_ratio, role_name, status, remarks
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    data['employee_id'], data['employee_name'], data['person_type'], data['department_id'], data['project_id'],
+                    data['allocation_ratio'], data['role_name'], data['status'], data['remarks'],
+                ),
+            )
+            conn.commit()
+        return redirect(url_for('admin_resource_people'))
+    return render_template('resource_person_form.html', record={}, mode='new', department_options=department_options, project_options=project_options, **build_auth_context())
+
+
+@app.route('/admin/resource-people/<int:record_id>/edit', methods=['GET', 'POST'])
+@login_required
+def admin_resource_person_edit(record_id):
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    record = load_resource_person(record_id)
+    if not record:
+        return redirect(url_for('admin_resource_people'))
+    department_options = load_departments()
+    project_options = load_project_options()
+    if request.method == 'POST':
+        data = form_to_resource_person_data(request.form)
+        with get_conn() as conn:
+            conn.execute(
+                """
+                UPDATE resource_people
+                SET employee_id = ?,
+                    employee_name = ?,
+                    person_type = ?,
+                    department_id = ?,
+                    project_id = ?,
+                    allocation_ratio = ?,
+                    role_name = ?,
+                    status = ?,
+                    remarks = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (
+                    data['employee_id'], data['employee_name'], data['person_type'], data['department_id'], data['project_id'],
+                    data['allocation_ratio'], data['role_name'], data['status'], data['remarks'], record_id,
+                ),
+            )
+            conn.commit()
+        return redirect(url_for('admin_resource_people'))
+    return render_template('resource_person_form.html', record=record, mode='edit', department_options=department_options, project_options=project_options, **build_auth_context())
+
+
+@app.route('/admin/resource-people/<int:record_id>/delete', methods=['POST'])
+@login_required
+def admin_resource_person_delete(record_id):
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    with get_conn() as conn:
+        conn.execute("DELETE FROM resource_people WHERE id = ?", (record_id,))
+        conn.commit()
+    return redirect(url_for('admin_resource_people'))
 
 
 @app.route('/admin/service-resources/new', methods=['GET', 'POST'])

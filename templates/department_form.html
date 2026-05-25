@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if mode == 'edit' %}编辑部门{% else %}新增部门{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <div>
+        <h1>{% if mode == 'edit' %}编辑部门{% else %}新增部门{% endif %}</h1>
+        <p>按层级维护部门信息，最多支持到 6 层。</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+        <a class="button secondary" href="{{ url_for('admin_departments') }}">返回列表</a>
+      </div>
+    </header>
+
+    <form method="post" class="card form-card">
+      <div class="form-grid form-grid-2">
+        <label>一级部门<input type="text" name="level_1_department" value="{{ record.level_1_department or '' }}"></label>
+        <label>二级部门<input type="text" name="level_2_department" value="{{ record.level_2_department or '' }}"></label>
+        <label>三级部门<input type="text" name="level_3_department" value="{{ record.level_3_department or '' }}"></label>
+        <label>四级部门<input type="text" name="level_4_department" value="{{ record.level_4_department or '' }}"></label>
+        <label>五级部门<input type="text" name="level_5_department" value="{{ record.level_5_department or '' }}"></label>
+        <label>六级部门<input type="text" name="level_6_department" value="{{ record.level_6_department or '' }}"></label>
+      </div>
+      <div class="form-actions">
+        <button class="button" type="submit">保存</button>
+        <a class="button secondary" href="{{ url_for('admin_departments') }}">取消</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
