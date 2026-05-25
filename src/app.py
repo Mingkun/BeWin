@@ -2220,10 +2220,6 @@ def settings_permissions_page():
 @app.route('/settings/auth-debug')
 @login_required
 def settings_auth_debug_page():
-    denied = require_feature('view_system', '当前账号不能访问系统页')
-    if denied:
-        return denied
-
     current_user = get_current_user() or {}
     oauth_raw = current_user.get('raw') or {}
     return render_template(
