@@ -35,10 +35,10 @@
         {% if department_summary %}
         <div class="table-wrap">
           <table class="data-table" id="department-summary-table">
-            <thead><tr><th data-sort-type="text">部门</th><th data-sort-type="number">相关人数</th><th data-sort-type="number">按投入比例折算汇总</th></tr></thead>
+            <thead><tr><th data-sort-type="text">部门</th><th data-sort-type="number">部门人数</th><th data-sort-type="number">已投入到项目占比</th></tr></thead>
             <tbody>
               {% for item in department_summary %}
-              <tr><td>{{ item.name }}</td><td>{{ item.count }}</td><td>{{ '%.2f'|format(item.allocation_total) }}</td></tr>
+              <tr><td>{{ item.name }}</td><td>{{ item.count }}</td><td>{{ '%.2f%%'|format(item.project_bound_ratio * 100) }}</td></tr>
               {% endfor %}
             </tbody>
           </table>

@@ -1587,7 +1587,7 @@ def filter_resource_people(rows, person_type='', department_name='', project_nam
     return [row for row in rows if matched(row)]
 
 
-def build_resource_group_summary(rows, group_key):
+def build_resource_group_summary(rows, group_key, mode='allocation_total'):
     grouped = {}
     for row in rows:
         key = (row.get(group_key) or '').strip() or '未填写'
@@ -1596,12 +1596,17 @@ def build_resource_group_summary(rows, group_key):
                 'name': key,
                 'count': 0,
                 'allocation_total': 0.0,
+                'project_bound_count': 0,
+                'project_bound_ratio': 0.0,
             }
         grouped[key]['count'] += 1
         grouped[key]['allocation_total'] += parse_ratio_value(row.get('allocation_ratio'))
+        if (row.get('project_name') or '').strip():
+            grouped[key]['project_bound_count'] += 1
     result = list(grouped.values())
     for item in result:
         item['allocation_total'] = round(item['allocation_total'], 2)
+        item['project_bound_ratio'] = round((item['project_bound_count'] / item['count']) if item['count'] else 0.0, 4)
     result.sort(key=lambda item: (-item['count'], item['name']))
     return result
 
@@ -2703,8 +2708,8 @@ def view_placeholder(view_key):
             'resource_view.html',
             records=filtered_rows,
             summary=build_resource_people_summary(filtered_rows),
-            department_summary=build_resource_group_summary(filtered_rows, 'department_full_name'),
-            project_summary=build_resource_group_summary(filtered_rows, 'project_name'),
+            department_summary=build_resource_group_summary(filtered_rows, 'department_full_name', mode='project_bound_ratio'),
+            project_summary=build_resource_group_summary(filtered_rows, 'project_name', mode='allocation_total'),
             filter_options=get_resource_people_filter_options(rows),
             filters={
                 'person_type': person_type,
