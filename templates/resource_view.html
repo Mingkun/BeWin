@@ -64,10 +64,10 @@
         {% if department_summary %}
         <div class="table-wrap">
           <table class="data-table">
-            <thead><tr><th>部门</th><th>人数</th><th>已投入到项目占比</th></tr></thead>
+            <thead><tr><th>部门</th><th>相关人数</th><th>按投入比例折算汇总</th></tr></thead>
             <tbody>
               {% for item in department_summary %}
-              <tr><td>{{ item.name }}</td><td>{{ item.count }}</td><td>{{ '%.2f%%'|format(item.project_bound_ratio * 100) }}</td></tr>
+              <tr><td>{{ item.name }}</td><td>{{ item.count }}</td><td>{{ '%.2f'|format(item.allocation_total) }}</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -81,10 +81,10 @@
         {% if project_summary %}
         <div class="table-wrap">
           <table class="data-table">
-            <thead><tr><th>项目</th><th>人数</th><th>已投入到项目占比</th></tr></thead>
+            <thead><tr><th>项目</th><th>相关人数</th><th>按投入比例折算汇总</th></tr></thead>
             <tbody>
               {% for item in project_summary %}
-              <tr><td>{{ item.name }}</td><td>{{ item.count }}</td><td>{{ '%.2f%%'|format(item.project_bound_ratio * 100) }}</td></tr>
+              <tr><td>{{ item.name }}</td><td>{{ item.count }}</td><td>{{ '%.2f'|format(item.allocation_total) }}</td></tr>
               {% endfor %}
             </tbody>
           </table>

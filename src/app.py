@@ -1566,15 +1566,13 @@ def build_resource_group_summary(rows, group_key):
             grouped[key] = {
                 'name': key,
                 'count': 0,
-                'project_bound_count': 0,
-                'project_bound_ratio': 0.0,
+                'allocation_total': 0.0,
             }
         grouped[key]['count'] += 1
-        if (row.get('project_name') or '').strip():
-            grouped[key]['project_bound_count'] += 1
+        grouped[key]['allocation_total'] += parse_ratio_value(row.get('allocation_ratio'))
     result = list(grouped.values())
     for item in result:
-        item['project_bound_ratio'] = round((item['project_bound_count'] / item['count']) if item['count'] else 0.0, 4)
+        item['allocation_total'] = round(item['allocation_total'], 2)
     result.sort(key=lambda item: (-item['count'], item['name']))
     return result
 
