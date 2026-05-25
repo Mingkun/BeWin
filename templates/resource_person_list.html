@@ -82,6 +82,50 @@
         </thead>
         <tbody>
           {% for record in records %}
+          {% if edit_id and edit_id|int == record.id %}
+          <tr>
+            <form method="post" action="{{ url_for('admin_resource_person_edit', record_id=record.id) }}">
+              <td><input type="text" name="employee_id" value="{{ record.employee_id or '' }}" style="width:100px;"></td>
+              <td><input type="text" name="employee_name" value="{{ record.employee_name or '' }}" style="width:100px;"></td>
+              <td><input type="text" name="person_type" value="{{ record.person_type or '' }}" style="width:100px;"></td>
+              <td>
+                <select name="department_id" style="max-width:180px;">
+                  <option value="">为空</option>
+                  {% for item in department_options %}
+                  <option value="{{ item.id }}" {% if record.department_id == item.id %}selected{% endif %}>{{ item.department_full_name }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <select name="project_id" style="max-width:180px;">
+                  <option value="">为空</option>
+                  {% for item in project_options %}
+                  <option value="{{ item.id }}" {% if record.project_id == item.id %}selected{% endif %}>{{ item.project_name }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input type="text" name="allocation_ratio" value="{{ record.allocation_ratio or '' }}" style="width:80px;"></td>
+              <td><input type="text" name="role_name" value="{{ record.role_name or '' }}" style="width:90px;"></td>
+              <td>
+                <select name="status" style="max-width:120px;">
+                  <option value="" {% if not record.status %}selected{% endif %}>空白</option>
+                  <option value="在岗" {% if record.status == '在岗' %}selected{% endif %}>在岗</option>
+                  <option value="请假" {% if record.status == '请假' %}selected{% endif %}>请假</option>
+                  <option value="支持外部会战" {% if record.status == '支持外部会战' %}selected{% endif %}>支持外部会战</option>
+                  <option value="待入场" {% if record.status == '待入场' %}selected{% endif %}>待入场</option>
+                  <option value="待切出" {% if record.status == '待切出' %}selected{% endif %}>待切出</option>
+                </select>
+              </td>
+              <td><input type="text" name="remarks" value="{{ record.remarks or '' }}" style="width:120px;"></td>
+              <td>
+                <div class="inline-actions">
+                  <button class="button tiny" type="submit">保存</button>
+                  <a class="button tiny secondary" href="{{ url_for('admin_resource_people', keyword=filters.keyword, project_name=filters.project_name, department_name=filters.department_name, role_name=filters.role_name, status=filters.status) }}">取消</a>
+                </div>
+              </td>
+            </form>
+          </tr>
+          {% else %}
           <tr>
             <td>{{ record.employee_id or '' }}</td>
             <td>{{ record.employee_name or '' }}</td>
@@ -94,7 +138,7 @@
             <td>{{ record.remarks or '' }}</td>
             <td>
               <div class="inline-actions">
-                <a class="icon-action" href="{{ url_for('admin_resource_person_edit', record_id=record.id) }}" title="编辑">✏️</a>
+                <a class="icon-action" href="{{ url_for('admin_resource_people', keyword=filters.keyword, project_name=filters.project_name, department_name=filters.department_name, role_name=filters.role_name, status=filters.status, edit_id=record.id) }}" title="编辑">✏️</a>
                 <form method="post" action="{{ url_for('admin_resource_person_delete', record_id=record.id) }}" class="inline-delete-form">
                   <button class="icon-action danger delete-trigger" type="button" title="删除">🗑</button>
                   <div class="delete-popover" hidden>
@@ -108,6 +152,7 @@
               </div>
             </td>
           </tr>
+          {% endif %}
           {% endfor %}
         </tbody>
       </table>

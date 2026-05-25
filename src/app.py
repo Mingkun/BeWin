@@ -3084,13 +3084,16 @@ def admin_resource_people():
     if denied:
         return denied
     rows = load_resource_people()
+    department_options = load_departments()
+    project_options = load_project_options()
     keyword = (request.args.get('keyword') or '').strip()
     project_name = (request.args.get('project_name') or '').strip()
     department_name = (request.args.get('department_name') or '').strip()
     role_name = (request.args.get('role_name') or '').strip()
     status = (request.args.get('status') or '').strip()
+    edit_id = (request.args.get('edit_id') or '').strip()
     filtered_rows = filter_resource_people_admin(rows, keyword=keyword, project_name=project_name, department_name=department_name, role_name=role_name, status=status)
-    return render_template('resource_person_list.html', records=filtered_rows, filter_options=get_resource_people_admin_filter_options(rows), filters={'keyword': keyword, 'project_name': project_name, 'department_name': department_name, 'role_name': role_name, 'status': status}, **build_auth_context())
+    return render_template('resource_person_list.html', records=filtered_rows, filter_options=get_resource_people_admin_filter_options(rows), filters={'keyword': keyword, 'project_name': project_name, 'department_name': department_name, 'role_name': role_name, 'status': status}, edit_id=edit_id, department_options=department_options, project_options=project_options, **build_auth_context())
 
 
 @app.route('/admin/resource-people/new', methods=['GET', 'POST'])
