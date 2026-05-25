@@ -24,6 +24,28 @@ def get_oauth_debug_log_path():
     return DEFAULT_OAUTH_DEBUG_LOG_PATH
 
 
+def _mask_sensitive_value(key, value):
+    key_text = str(key or '').strip().lower()
+    if value is None:
+        return value
+    if key_text in {'client_secret', 'access_token', 'authorization', 'id_token', 'refresh_token', 'token'}:
+        value_text = str(value)
+        if len(value_text) <= 8:
+            return '***'
+        return f"{value_text[:4]}***{value_text[-4:]}"
+    return value
+
+
+def _sanitize_payload(payload):
+    if isinstance(payload, dict):
+        return {key: _sanitize_payload(_mask_sensitive_value(key, value)) for key, value in payload.items()}
+    if isinstance(payload, list):
+        return [_sanitize_payload(item) for item in payload]
+    if isinstance(payload, tuple):
+        return [_sanitize_payload(item) for item in payload]
+    return payload
+
+
 def _log_oauth_debug(event, **payload):
     caller = inspect.currentframe().f_back
     source = {}
@@ -41,7 +63,7 @@ def _log_oauth_debug(event, **payload):
         'time': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
         'event': event,
         **source,
-        **payload,
+        **_sanitize_payload(payload),
     }
     text = json.dumps(record, ensure_ascii=False) + '\n'
     primary_path = get_oauth_debug_log_path()
@@ -247,12 +269,16 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
         session['oauth_next'] = next_url
         query = {
             'client_id': oauth_client_id(),
-            'client_secret': oauth_client_secret(),
             'redirect_uri': oauth_redirect_uri(),
             'response_type': 'code',
             'scope': oauth_scope(),
             'state': state,
         }
+        _log_oauth_debug(
+            'authorize_redirect',
+            authorize_url=oauth_authorize_url(),
+            query=query,
+        )
         return redirect(oauth_authorize_url() + ('&' if '?' in oauth_authorize_url() else '?') + urlencode(query))
 
     @app.route('/auth/callback')
@@ -294,18 +320,26 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
             return redirect(next_url)
 
         try:
+            token_request_data = {
+                'grant_type': 'authorization_code',
+                'code': code,
+                'redirect_uri': oauth_redirect_uri(),
+                'client_id': oauth_client_id(),
+                'client_secret': oauth_client_secret(),
+            }
+            token_request_headers = {
+                'Accept': 'application/json, application/x-www-form-urlencoded;q=0.9, text/plain;q=0.8',
+            }
+            _log_oauth_debug(
+                'token_request',
+                token_url=oauth_token_url(),
+                data=token_request_data,
+                headers=token_request_headers,
+            )
             token_resp = requests.post(
                 oauth_token_url(),
-                data={
-                    'grant_type': 'authorization_code',
-                    'code': code,
-                    'redirect_uri': oauth_redirect_uri(),
-                    'client_id': oauth_client_id(),
-                    'client_secret': oauth_client_secret(),
-                },
-                headers={
-                    'Accept': 'application/json, application/x-www-form-urlencoded;q=0.9, text/plain;q=0.8',
-                },
+                data=token_request_data,
+                headers=token_request_headers,
                 timeout=15,
             )
             if token_resp.status_code >= 400:
@@ -344,6 +378,13 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
                 else:
                     continue
 
+                _log_oauth_debug(
+                    'userinfo_request',
+                    userinfo_url=oauth_userinfo_url(),
+                    mode=mode,
+                    headers=headers,
+                    params=params,
+                )
                 userinfo_resp = requests.get(
                     oauth_userinfo_url(),
                     headers=headers,
