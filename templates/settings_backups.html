@@ -81,6 +81,9 @@
           {% else %}
           <div style="font-size:13px; color:#64748b;">当前暂无可下载升级包</div>
           {% endif %}
+
+          <a class="button secondary" href="{{ url_for('static', filename='downloads/diagnose_oauth_sso.sh') }}">下载 SSO 诊断脚本</a>
+          <a class="button secondary" href="{{ url_for('static', filename='downloads/oauth_sso_diagnosis_report.txt') }}">下载 SSO 日志分析报告</a>
         </div>
       </div>
 
