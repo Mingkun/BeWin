@@ -127,29 +127,43 @@
           </colgroup>
           <thead>
             <tr>
-              <th rowspan="2">五层部门<div class="col-resizer"></div></th>
-              <th rowspan="2">L4云服务<div class="col-resizer"></div></th>
-              <th rowspan="2">功能和用途简介<div class="col-resizer"></div></th>
+              <th rowspan="2" data-sort-key="department" data-sort-type="text" tabindex="0" role="button" aria-label="按五层部门排序">五层部门<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th rowspan="2" data-sort-key="service" data-sort-type="text" tabindex="0" role="button" aria-label="按L4云服务排序">L4云服务<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th rowspan="2" data-sort-key="description" data-sort-type="text" tabindex="0" role="button" aria-label="按功能和用途简介排序">功能和用途简介<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
               <th colspan="4" style="text-align:center;">汇总</th>
               <th colspan="3" style="text-align:center;">HC</th>
               <th colspan="3" style="text-align:center;">HCS</th>
             </tr>
             <tr>
-              <th>自有<div class="col-resizer"></div></th>
-              <th>OD<div class="col-resizer"></div></th>
-              <th>TM<div class="col-resizer"></div></th>
-              <th title="公式：自有 + OD + 0.8*TM">合计<div class="col-resizer"></div></th>
-              <th>自有<div class="col-resizer"></div></th>
-              <th>OD<div class="col-resizer"></div></th>
-              <th>TM<div class="col-resizer"></div></th>
-              <th>自有<div class="col-resizer"></div></th>
-              <th>OD<div class="col-resizer"></div></th>
-              <th>TM<div class="col-resizer"></div></th>
+              <th data-sort-key="summary-self-owned" data-sort-type="number" tabindex="0" role="button" aria-label="按汇总自有排序">自有<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th data-sort-key="summary-od" data-sort-type="number" tabindex="0" role="button" aria-label="按汇总OD排序">OD<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th data-sort-key="summary-tm" data-sort-type="number" tabindex="0" role="button" aria-label="按汇总TM排序">TM<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th data-sort-key="summary-total" data-sort-type="number" tabindex="0" role="button" aria-label="按汇总合计排序" title="公式：自有 + OD + 0.8*TM">合计<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th data-sort-key="hc-self-owned" data-sort-type="number" tabindex="0" role="button" aria-label="按HC自有排序">自有<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th data-sort-key="hc-od" data-sort-type="number" tabindex="0" role="button" aria-label="按HC OD排序">OD<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th data-sort-key="hc-tm" data-sort-type="number" tabindex="0" role="button" aria-label="按HC TM排序">TM<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th data-sort-key="hcs-self-owned" data-sort-type="number" tabindex="0" role="button" aria-label="按HCS自有排序">自有<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th data-sort-key="hcs-od" data-sort-type="number" tabindex="0" role="button" aria-label="按HCS OD排序">OD<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th data-sort-key="hcs-tm" data-sort-type="number" tabindex="0" role="button" aria-label="按HCS TM排序">TM<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
             </tr>
           </thead>
           <tbody>
             {% for record in records %}
-              <tr>
+              <tr
+                data-department="{{ (record.five_level_department or '') | e }}"
+                data-service="{{ (record.l4_cloud_service or '') | e }}"
+                data-description="{{ (record.function_description or '') | e }}"
+                data-summary-self-owned="{{ record.summary_self_owned or 0 }}"
+                data-summary-od="{{ record.summary_od or 0 }}"
+                data-summary-tm="{{ record.summary_tm or 0 }}"
+                data-summary-total="{{ '%.2f'|format((record.summary_self_owned|float) + (record.summary_od|float) + 0.8 * (record.summary_tm|float)) }}"
+                data-hc-self-owned="{{ record.hc_self_owned or 0 }}"
+                data-hc-od="{{ record.hc_od or 0 }}"
+                data-hc-tm="{{ record.hc_tm or 0 }}"
+                data-hcs-self-owned="{{ record.hcs_self_owned or 0 }}"
+                data-hcs-od="{{ record.hcs_od or 0 }}"
+                data-hcs-tm="{{ record.hcs_tm or 0 }}"
+              >
                 <td>{{ record.five_level_department or '' }}</td>
                 <td>
                   <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
@@ -328,6 +342,74 @@
           item.hidden = true;
         });
       });
+
+      (function enableCloudServiceTableSort() {
+        const table = document.getElementById('cloud-service-table');
+        if (!table) return;
+
+        const tbody = table.querySelector('tbody');
+        const sortableHeaders = Array.from(table.querySelectorAll('th[data-sort-key]'));
+        if (!tbody || !sortableHeaders.length) return;
+
+        let currentSortKey = '';
+        let currentSortDirection = 'asc';
+
+        function normalizeValue(value, type) {
+          if (type === 'number') {
+            const parsed = Number.parseFloat(value || '0');
+            return Number.isNaN(parsed) ? 0 : parsed;
+          }
+          return String(value || '').trim().toLocaleLowerCase('zh-CN');
+        }
+
+        function updateSortIndicators(activeHeader, direction) {
+          sortableHeaders.forEach((header) => {
+            const indicator = header.querySelector('.sort-indicator');
+            if (!indicator) return;
+            if (header === activeHeader) {
+              indicator.textContent = direction === 'asc' ? ' ▲' : ' ▼';
+              header.setAttribute('aria-sort', direction === 'asc' ? 'ascending' : 'descending');
+            } else {
+              indicator.textContent = '';
+              header.setAttribute('aria-sort', 'none');
+            }
+          });
+        }
+
+        function sortByHeader(header) {
+          const sortKey = header.dataset.sortKey;
+          const sortType = header.dataset.sortType || 'text';
+          const direction = currentSortKey === sortKey && currentSortDirection === 'asc' ? 'desc' : 'asc';
+          const multiplier = direction === 'asc' ? 1 : -1;
+          const rows = Array.from(tbody.querySelectorAll('tr'));
+
+          rows.sort((rowA, rowB) => {
+            const valueA = normalizeValue(rowA.dataset[sortKey], sortType);
+            const valueB = normalizeValue(rowB.dataset[sortKey], sortType);
+            if (valueA < valueB) return -1 * multiplier;
+            if (valueA > valueB) return 1 * multiplier;
+            return 0;
+          });
+
+          rows.forEach((row) => tbody.appendChild(row));
+          currentSortKey = sortKey;
+          currentSortDirection = direction;
+          updateSortIndicators(header, direction);
+        }
+
+        sortableHeaders.forEach((header) => {
+          header.setAttribute('aria-sort', 'none');
+          header.addEventListener('click', (event) => {
+            if (event.target.closest('.col-resizer')) return;
+            sortByHeader(header);
+          });
+          header.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            sortByHeader(header);
+          });
+        });
+      })();
 
       (function enableCloudServiceTableResize() {
         const table = document.getElementById('cloud-service-table');
