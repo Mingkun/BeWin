@@ -2223,9 +2223,6 @@ def settings_auth_debug_page():
     denied = require_feature('view_system', '当前账号不能访问系统页')
     if denied:
         return denied
-    denied = require_feature('manage_permissions', '当前账号不能查看登录调试信息')
-    if denied:
-        return denied
 
     current_user = get_current_user() or {}
     oauth_raw = current_user.get('raw') or {}
