@@ -1,3 +1,4 @@
+import inspect
 import json
 import os
 import secrets
@@ -24,9 +25,22 @@ def get_oauth_debug_log_path():
 
 
 def _log_oauth_debug(event, **payload):
+    caller = inspect.currentframe().f_back
+    source = {}
+    try:
+        if caller is not None:
+            source = {
+                'source_file': Path(caller.f_code.co_filename).name,
+                'source_line': caller.f_lineno,
+                'source_func': caller.f_code.co_name,
+            }
+    finally:
+        del caller
+
     record = {
         'time': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
         'event': event,
+        **source,
         **payload,
     }
     text = json.dumps(record, ensure_ascii=False) + '\n'
