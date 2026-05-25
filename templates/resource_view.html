@@ -21,7 +21,7 @@
     </header>
 
     <form class="card filter-form" method="get" action="{{ url_for('view_placeholder', view_key='project-budget-resource') }}">
-      <div class="form-grid form-grid-3">
+      <div class="form-grid form-grid-2">
         <label>人员类型
           <select name="person_type">
             <option value="">全部</option>
@@ -46,6 +46,13 @@
             {% endfor %}
           </select>
         </label>
+        <label>工号 / 姓名
+          <input type="text" name="keyword" value="{{ filters.keyword or '' }}" placeholder="输入工号或姓名关键词">
+        </label>
+      </div>
+      <div class="form-actions" style="margin-top:12px;">
+        <button class="button" type="submit">查询</button>
+        <a class="button secondary" href="{{ url_for('view_placeholder', view_key='project-budget-resource') }}">重置</a>
       </div>
     </form>
 

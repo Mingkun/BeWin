@@ -1544,16 +1544,18 @@ def get_resource_people_filter_options(rows):
     }
 
 
-def filter_resource_people(rows, person_type='', department_name='', project_name=''):
+def filter_resource_people(rows, person_type='', department_name='', project_name='', keyword=''):
     person_type = (person_type or '').strip().lower()
     department_name = (department_name or '').strip().lower()
     project_name = (project_name or '').strip().lower()
+    keyword = (keyword or '').strip().lower()
 
     def matched(row):
         person_type_ok = not person_type or (row.get('person_type') or '').strip().lower() == person_type
         department_ok = not department_name or (row.get('department_full_name') or '').strip().lower() == department_name
         project_ok = not project_name or (row.get('project_name') or '').strip().lower() == project_name
-        return person_type_ok and department_ok and project_ok
+        keyword_ok = not keyword or keyword in (row.get('employee_id') or '').strip().lower() or keyword in (row.get('employee_name') or '').strip().lower()
+        return person_type_ok and department_ok and project_ok and keyword_ok
 
     return [row for row in rows if matched(row)]
 
@@ -2668,7 +2670,8 @@ def view_placeholder(view_key):
         person_type = (request.args.get('person_type') or '').strip()
         department_name = (request.args.get('department_name') or '').strip()
         project_name = (request.args.get('project_name') or '').strip()
-        filtered_rows = filter_resource_people(rows, person_type=person_type, department_name=department_name, project_name=project_name)
+        keyword = (request.args.get('keyword') or '').strip()
+        filtered_rows = filter_resource_people(rows, person_type=person_type, department_name=department_name, project_name=project_name, keyword=keyword)
         return render_template(
             'resource_view.html',
             records=filtered_rows,
@@ -2680,6 +2683,7 @@ def view_placeholder(view_key):
                 'person_type': person_type,
                 'department_name': department_name,
                 'project_name': project_name,
+                'keyword': keyword,
             },
             **build_auth_context(),
         )
