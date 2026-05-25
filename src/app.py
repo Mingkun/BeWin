@@ -2023,6 +2023,53 @@ def import_service_resource_csv_file(file_storage, replace=True):
     return import_service_resource_rows(rows, replace=replace)
 
 
+def import_resource_people_csv_file(file_storage, replace=True):
+    content = file_storage.read().decode('utf-8-sig')
+    reader = csv.DictReader(StringIO(content))
+    rows = list(reader)
+    department_options = load_departments()
+    project_options = load_project_options()
+    department_map = {((item.get('department_full_name') or '').strip()): item.get('id') for item in department_options}
+    project_map = {((item.get('project_name') or '').strip()): item.get('id') for item in project_options}
+
+    normalized_rows = []
+    for row in rows:
+        department_name = (row.get('最小部门') or '').strip()
+        project_name = (row.get('所属项目') or '').strip()
+        normalized_rows.append({
+            'employee_id': (row.get('工号') or '').strip(),
+            'employee_name': (row.get('姓名') or '').strip(),
+            'person_type': (row.get('人员类型') or '').strip(),
+            'department_id': department_map.get(department_name) if department_name else None,
+            'project_id': project_map.get(project_name) if project_name else None,
+            'allocation_ratio': (row.get('投入比例') or '').strip(),
+            'role_name': (row.get('角色') or '').strip(),
+            'status': (row.get('状态') or '').strip(),
+            'remarks': (row.get('备注') or '').strip(),
+        })
+
+    with get_conn() as conn:
+        if replace:
+            conn.execute('DELETE FROM resource_people')
+        conn.executemany(
+            """
+            INSERT INTO resource_people (
+                employee_id, employee_name, person_type, department_id, project_id,
+                allocation_ratio, role_name, status, remarks
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    row['employee_id'], row['employee_name'], row['person_type'], row['department_id'], row['project_id'],
+                    row['allocation_ratio'], row['role_name'], row['status'], row['remarks'],
+                )
+                for row in normalized_rows
+            ],
+        )
+        conn.commit()
+    return len(normalized_rows)
+
+
 def seed_service_resources_if_empty():
     init_db()
     with get_conn() as conn:
@@ -3075,6 +3122,59 @@ def admin_department_delete(department_id):
         conn.execute("DELETE FROM departments WHERE id = ?", (department_id,))
         conn.commit()
     return redirect(url_for('admin_departments'))
+
+
+@app.route('/admin/resource-people/import-csv', methods=['POST'])
+@login_required
+def admin_resource_people_import_csv():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    file = request.files.get('csv_file')
+    if file and file.filename:
+        import_resource_people_csv_file(file, replace=True)
+    return redirect(url_for('admin_resource_people'))
+
+
+@app.route('/admin/resource-people/template-csv')
+@login_required
+def admin_resource_people_template_csv():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['工号', '姓名', '人员类型', '最小部门', '所属项目', '投入比例', '角色', '状态', '备注'])
+    response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('人员资源库_导出模板.csv')}"
+    return response
+
+
+@app.route('/admin/resource-people/export-csv')
+@login_required
+def admin_resource_people_export_csv():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    rows = load_resource_people()
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['工号', '姓名', '人员类型', '最小部门', '所属项目', '投入比例', '角色', '状态', '备注'])
+    for row in rows:
+        writer.writerow([
+            row.get('employee_id') or '',
+            row.get('employee_name') or '',
+            row.get('person_type') or '',
+            row.get('department_full_name') or '',
+            row.get('project_name') or '',
+            row.get('allocation_ratio') or '',
+            row.get('role_name') or '',
+            row.get('status') or '',
+            row.get('remarks') or '',
+        ])
+    response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('人员资源库_导出数据.csv')}"
+    return response
 
 
 @app.route('/admin/resource-people')

@@ -16,9 +16,24 @@
       <div class="toolbar-actions">
         <a class="button home-button" href="{{ url_for('index') }}">首页</a>
         <a class="button secondary" href="{{ url_for('admin_departments') }}">部门库</a>
+        <a class="button secondary" href="{{ url_for('admin_resource_people_template_csv') }}">导出模板</a>
+        <a class="button secondary" href="{{ url_for('admin_resource_people_export_csv') }}">导出数据</a>
+        <button class="button warning" type="button" onclick="document.getElementById('resource-people-import-panel').hidden = false;">导入数据</button>
         <a class="button" href="{{ url_for('admin_resource_person_new') }}">新增人员</a>
       </div>
     </header>
+    <div class="card import-panel" id="resource-people-import-panel" hidden>
+      <form method="post" action="{{ url_for('admin_resource_people_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form">
+        <div class="import-panel-title">导入人员资源数据</div>
+        <div class="import-panel-desc">请选择 CSV 文件，导入后会覆盖当前人员资源库数据。</div>
+        <div class="import-panel-actions">
+          <input type="file" name="csv_file" accept=".csv" required>
+          <button class="button warning" type="submit">确认导入</button>
+          <button class="button secondary" type="button" onclick="document.getElementById('resource-people-import-panel').hidden = true;">取消</button>
+        </div>
+      </form>
+    </div>
+
     <form class="card filter-form" method="get" action="{{ url_for('admin_resource_people') }}">
       <div class="form-grid form-grid-3">
         <label>工号 / 姓名
