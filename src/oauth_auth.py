@@ -12,8 +12,15 @@ from flask import Response, redirect, request, session, url_for
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 DB_PATH = BASE_DIR / 'data' / 'releaseplan.db'
-OAUTH_DEBUG_LOG_PATH = BASE_DIR / 'logs' / 'oauth_callback_debug.log'
+DEFAULT_OAUTH_DEBUG_LOG_PATH = BASE_DIR / 'logs' / 'oauth_callback_debug.log'
 _OAUTH_CODE_TTL_SECONDS = 600
+
+
+def get_oauth_debug_log_path():
+    configured = (os.getenv('RELEASEPLAN_OAUTH_DEBUG_LOG_PATH') or '').strip()
+    if configured:
+        return Path(configured).expanduser().resolve()
+    return DEFAULT_OAUTH_DEBUG_LOG_PATH
 
 
 def _log_oauth_debug(event, **payload):
@@ -23,20 +30,24 @@ def _log_oauth_debug(event, **payload):
         **payload,
     }
     text = json.dumps(record, ensure_ascii=False) + '\n'
+    primary_path = get_oauth_debug_log_path()
     try:
-        OAUTH_DEBUG_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with OAUTH_DEBUG_LOG_PATH.open('a', encoding='utf-8') as fh:
+        primary_path.parent.mkdir(parents=True, exist_ok=True)
+        with primary_path.open('a', encoding='utf-8') as fh:
             fh.write(text)
-        return
     except Exception:
-        pass
+        fallback_path = Path('/tmp/releaseplan_oauth_callback_debug.log')
+        try:
+            with fallback_path.open('a', encoding='utf-8') as fh:
+                fh.write(text)
+        except Exception:
+            pass
 
-    fallback_path = Path('/tmp/releaseplan_oauth_callback_debug.log')
-    try:
-        with fallback_path.open('a', encoding='utf-8') as fh:
-            fh.write(text)
-    except Exception:
-        pass
+    if (os.getenv('RELEASEPLAN_OAUTH_DEBUG_STDOUT') or 'true').strip().lower() == 'true':
+        try:
+            print(f'[releaseplan-oauth-debug] {text.rstrip()}', flush=True)
+        except Exception:
+            pass
 
 
 def _cleanup_oauth_code_cache(conn):
