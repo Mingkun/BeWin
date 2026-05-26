@@ -25,7 +25,7 @@
       <div class="card stat-card"><div class="stat-label">已关联部门</div><div class="stat-value">{{ summary.department_bound_count }}</div></div>
       <div class="card stat-card"><div class="stat-label">已关联项目</div><div class="stat-value">{{ summary.project_bound_count }}</div></div>
       <div class="card stat-card"><div class="stat-label">状态非空</div><div class="stat-value">{{ summary.active_count }}</div></div>
-      <div class="card stat-card"><div class="stat-label">投入比例汇总</div><div class="stat-value">{{ '%.2f'|format(summary.allocation_total) }}</div></div>
+      <div class="card stat-card"><div class="stat-label">已投入到项目占比</div><div class="stat-value">{{ '%.2f%%'|format(summary.project_bound_ratio * 100) }}</div></div>
     </div>
 
     {% if department_summary or project_summary %}

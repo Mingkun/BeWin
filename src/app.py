@@ -1554,12 +1554,15 @@ def build_resource_people_summary(rows):
     project_bound_count = sum(1 for row in rows if (row.get('project_name') or '').strip())
     department_bound_count = sum(1 for row in rows if (row.get('department_full_name') or '').strip())
     allocation_total = round(sum(parse_ratio_value(row.get('allocation_ratio')) for row in rows), 2)
+    count = len(rows)
+    project_bound_ratio = round((project_bound_count / count) if count else 0.0, 4)
     return {
-        'count': len(rows),
+        'count': count,
         'active_count': active_count,
         'project_bound_count': project_bound_count,
         'department_bound_count': department_bound_count,
         'allocation_total': allocation_total,
+        'project_bound_ratio': project_bound_ratio,
     }
 
 
