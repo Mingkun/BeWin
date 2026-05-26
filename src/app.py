@@ -2503,7 +2503,6 @@ def settings_permissions_page():
         rule_types = request.form.getlist('permission_type[]')
         rule_values = request.form.getlist('permission_value[]')
         rule_roles = request.form.getlist('permission_role[]')
-        feature_matrix = {key: request.form.getlist(f'permission_feature_{key}[]') for key in FEATURE_KEYS}
         rules = []
         total = max(len(rule_types), len(rule_values), len(rule_roles))
         for idx in range(total):
@@ -2514,8 +2513,8 @@ def settings_permissions_page():
                 continue
             features = default_feature_flags(rule_role)
             for key in FEATURE_KEYS:
-                values = feature_matrix.get(key) or []
-                features[key] = idx < len(values) and values[idx] == 'on'
+                feature_value = (request.form.get(f'permission_feature_{key}[{idx}]') or 'off').strip().lower()
+                features[key] = feature_value == 'on'
             rules.append({
                 'type': rule_type,
                 'value': rule_value,

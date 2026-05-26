@@ -153,7 +153,7 @@
             <input type="hidden" name="permission_value[]">
             <input type="hidden" name="permission_role[]">
             {% for key in feature_keys %}
-            <input type="hidden" data-hidden-feature="{{ key }}" name="permission_feature_{{ key }}[]" value="off">
+            <input type="hidden" data-hidden-feature="{{ key }}" data-hidden-feature-name="permission_feature_{{ key }}" value="off">
             {% endfor %}
           </div>
         </template>
@@ -241,7 +241,7 @@
       function renderPermissionHiddenFields() {
         if (!permissionHiddenFields || !permissionHiddenTemplate) return;
         permissionHiddenFields.innerHTML = '';
-        permissionRulesState.forEach((rule) => {
+        permissionRulesState.forEach((rule, index) => {
           const fragment = permissionHiddenTemplate.content.cloneNode(true);
           const row = fragment.querySelector('.permission-hidden-row');
           const hiddenInputs = row.querySelectorAll('input[type="hidden"]');
@@ -250,7 +250,10 @@
           hiddenInputs[2].value = rule.role || 'guest';
           featureKeys.forEach((key) => {
             const input = row.querySelector(`[data-hidden-feature="${key}"]`);
-            if (input) input.value = rule.features && rule.features[key] ? 'on' : 'off';
+            if (input) {
+              input.name = `${input.dataset.hiddenFeatureName}[${index}]`;
+              input.value = rule.features && rule.features[key] ? 'on' : 'off';
+            }
           });
           permissionHiddenFields.appendChild(fragment);
         });
