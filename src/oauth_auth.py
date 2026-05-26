@@ -363,15 +363,19 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
             configured_mode = oauth_userinfo_token_mode()
             if configured_mode and configured_mode != 'auto':
                 userinfo_modes.append(configured_mode)
-            userinfo_modes.extend([mode for mode in ['bearer', 'query_access_token', 'query_token'] if mode not in userinfo_modes])
+            userinfo_modes.extend([mode for mode in ['json_access_token', 'bearer', 'query_access_token', 'query_token'] if mode not in userinfo_modes])
 
             userinfo = None
             last_userinfo_resp = None
             for mode in userinfo_modes:
-                headers = {}
+                headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
                 params = {}
-                if mode == 'bearer':
+                json_data = None
+                if mode == 'json_access_token':
+                    json_data = {'access_token': access_token}
+                elif mode == 'bearer':
                     headers['Authorization'] = f'Bearer {access_token}'
+                    json_data = {}
                 elif mode == 'query_access_token':
                     params['access_token'] = access_token
                 elif mode == 'query_token':
@@ -385,13 +389,22 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
                     mode=mode,
                     headers=headers,
                     params=params,
+                    json_data=json_data,
                 )
-                userinfo_resp = requests.get(
-                    oauth_userinfo_url(),
-                    headers=headers,
-                    params=params,
-                    timeout=15,
-                )
+                if mode in {'json_access_token', 'bearer'}:
+                    userinfo_resp = requests.post(
+                        oauth_userinfo_url(),
+                        headers=headers,
+                        json=json_data,
+                        timeout=15,
+                    )
+                else:
+                    userinfo_resp = requests.get(
+                        oauth_userinfo_url(),
+                        headers=headers,
+                        params=params,
+                        timeout=15,
+                    )
                 last_userinfo_resp = userinfo_resp
                 response_preview = (userinfo_resp.text or '').strip()
                 if len(response_preview) > 300:
