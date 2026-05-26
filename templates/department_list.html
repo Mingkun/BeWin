@@ -58,5 +58,38 @@
     <div class="empty">当前还没有部门数据。</div>
     {% endif %}
   </div>
+  <script>
+    (function () {
+      document.querySelectorAll('.inline-delete-form').forEach((form) => {
+        const trigger = form.querySelector('.delete-trigger');
+        const popover = form.querySelector('.delete-popover');
+        const cancel = form.querySelector('.delete-cancel');
+        if (!trigger || !popover) return;
+
+        trigger.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          document.querySelectorAll('.delete-popover').forEach((item) => {
+            if (item !== popover) item.hidden = true;
+          });
+          popover.hidden = !popover.hidden;
+        });
+
+        if (cancel) {
+          cancel.addEventListener('click', (event) => {
+            event.preventDefault();
+            popover.hidden = true;
+          });
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('.inline-delete-form')) return;
+        document.querySelectorAll('.delete-popover').forEach((item) => {
+          item.hidden = true;
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
