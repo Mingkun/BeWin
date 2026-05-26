@@ -31,12 +31,31 @@
         </thead>
         <tbody>
           {% for record in records %}
+          {% if edit_id and edit_id|int == record.id %}
+          <tr>
+            <form method="post" action="{{ url_for('admin_department_edit', department_id=record.id) }}">
+              <td>{{ record.id }}</td>
+              <td>
+                <div class="form-grid form-grid-2" style="gap:8px; min-width:320px;">
+                  <input type="text" name="level_1_department" value="{{ record.level_1_department or '' }}" placeholder="一级部门">
+                  <input type="text" name="level_2_department" value="{{ record.level_2_department or '' }}" placeholder="二级部门">
+                </div>
+              </td>
+              <td>
+                <div class="inline-actions">
+                  <button class="button tiny" type="submit">保存</button>
+                  <a class="button tiny secondary" href="{{ url_for('admin_departments') }}">取消</a>
+                </div>
+              </td>
+            </form>
+          </tr>
+          {% else %}
           <tr>
             <td>{{ record.id }}</td>
             <td>{{ record.department_full_name or '-' }}</td>
             <td>
               <div class="inline-actions">
-                <a class="icon-action" href="{{ url_for('admin_department_edit', department_id=record.id) }}" title="编辑">✏️</a>
+                <a class="icon-action" href="{{ url_for('admin_departments', edit_id=record.id) }}" title="编辑">✏️</a>
                 <form method="post" action="{{ url_for('admin_department_delete', department_id=record.id) }}" class="inline-delete-form">
                   <button class="icon-action danger delete-trigger" type="button" title="删除">🗑</button>
                   <div class="delete-popover" hidden>
@@ -50,6 +69,7 @@
               </div>
             </td>
           </tr>
+          {% endif %}
           {% endfor %}
         </tbody>
       </table>

@@ -3031,7 +3031,8 @@ def admin_departments():
     if denied:
         return denied
     rows = load_departments()
-    return render_template('department_list.html', records=rows, **build_auth_context())
+    edit_id = (request.args.get('edit_id') or '').strip()
+    return render_template('department_list.html', records=rows, edit_id=edit_id, **build_auth_context())
 
 
 @app.route('/admin/departments/new', methods=['GET', 'POST'])
