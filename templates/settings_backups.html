@@ -78,6 +78,25 @@
 
           {% if download_packages['update'] and download_packages['update']['filename'] %}
           <a class="button secondary" href="{{ url_for('static', filename='downloads/' ~ download_packages['update']['filename']) }}">下载{{ download_packages['update']['label'] }}</a>
+          <div class="card" style="width:100%; padding:14px 16px; background:#f8fafc; border:1px solid #e2e8f0;">
+            <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;">升级包使用说明</div>
+            <div style="font-size:13px; color:#475569; line-height:1.7;">
+              <div><strong>适用场景：</strong> 服务器上已经装过 ReleasePlan，只想升级到当前版本。</div>
+              <div style="margin-top:6px;"><strong>使用步骤：</strong></div>
+              <ol style="margin:6px 0 0 18px; padding:0;">
+                <li>下载升级包并上传到服务器</li>
+                <li>进入当前 ReleasePlan 安装目录</li>
+                <li>先备份旧目录，避免误覆盖</li>
+                <li>解压升级包，把里面文件覆盖到当前安装目录</li>
+                <li>执行 <code>systemctl restart releaseplan.service</code> 使升级生效</li>
+              </ol>
+              <div style="margin-top:8px;"><strong>示例命令：</strong></div>
+              <pre style="margin:6px 0 0; padding:10px 12px; background:#0f172a; color:#e2e8f0; border-radius:8px; overflow:auto; font-size:12px;">tar -xzf releaseplan-update-版本号.tar.gz
+cp -a releaseplan-update-版本号/* /你的/ReleasePlan/目录/
+systemctl restart releaseplan.service</pre>
+              <div style="margin-top:8px;"><strong>注意：</strong> 升级包不是全新安装包，不含独立初始化流程。首次部署请下载完整安装包或轻量安装包。</div>
+            </div>
+          </div>
           {% else %}
           <div style="font-size:13px; color:#64748b;">当前暂无可下载升级包</div>
           {% endif %}

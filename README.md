@@ -23,6 +23,30 @@ chmod +x package_release.sh
 Output:
 
 - `dist/releaseplan-portable.tar.gz`
+- `dist/releaseplan-portable-lite.tar.gz`
+- `dist/releaseplan-portable-full.tar.gz`
+
+## Upgrade package
+
+The project also provides an upgrade package for existing ReleasePlan deployments.
+
+Typical file name:
+
+- `releaseplan-update-vXX.X.tar.gz`
+
+Usage:
+
+```bash
+tar -xzf releaseplan-update-vXX.X.tar.gz
+cp -a releaseplan-update-vXX.X/* /your/ReleasePlan/path/
+systemctl restart releaseplan.service
+```
+
+Notes:
+
+- Upgrade package is for existing deployments only
+- First-time deployment should use the full package or lite package
+- It is recommended to back up the old directory before overwrite upgrade
 
 ## Docker deployment (recommended for old systems)
 
