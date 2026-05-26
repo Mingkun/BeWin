@@ -1437,6 +1437,7 @@ body.theme-ios-dark .backup-popover-text {
 .delete-popover-actions .button {
   flex: 1 1 0;
   width: auto;
+  white-space: nowrap;
 }
 
 .button.tiny {
