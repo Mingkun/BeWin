@@ -1385,9 +1385,9 @@ def load_departments():
     with get_conn() as conn:
         rows = conn.execute(
             """
-            SELECT id, level_1_department, level_2_department, level_3_department, level_4_department, level_5_department, level_6_department
+            SELECT id, level_1_department, level_2_department
             FROM departments
-            ORDER BY level_1_department ASC, level_2_department ASC, level_3_department ASC, level_4_department ASC, level_5_department ASC, level_6_department ASC, id ASC
+            ORDER BY level_1_department ASC, level_2_department ASC, id ASC
             """
         ).fetchall()
         result = []
@@ -1396,10 +1396,6 @@ def load_departments():
             item['department_full_name'] = ' / '.join([
                 (item.get('level_1_department') or '').strip(),
                 (item.get('level_2_department') or '').strip(),
-                (item.get('level_3_department') or '').strip(),
-                (item.get('level_4_department') or '').strip(),
-                (item.get('level_5_department') or '').strip(),
-                (item.get('level_6_department') or '').strip(),
             ])
             item['department_full_name'] = ' / '.join([part for part in item['department_full_name'].split(' / ') if part])
             result.append(item)
@@ -1411,7 +1407,7 @@ def load_department(department_id):
     with get_conn() as conn:
         row = conn.execute(
             """
-            SELECT id, level_1_department, level_2_department, level_3_department, level_4_department, level_5_department, level_6_department
+            SELECT id, level_1_department, level_2_department
             FROM departments
             WHERE id = ?
             """,
@@ -1424,10 +1420,6 @@ def form_to_department_data(form):
     return {
         'level_1_department': (form.get('level_1_department') or '').strip(),
         'level_2_department': (form.get('level_2_department') or '').strip(),
-        'level_3_department': (form.get('level_3_department') or '').strip(),
-        'level_4_department': (form.get('level_4_department') or '').strip(),
-        'level_5_department': (form.get('level_5_department') or '').strip(),
-        'level_6_department': (form.get('level_6_department') or '').strip(),
     }
 
 
@@ -1449,10 +1441,6 @@ def load_resource_people():
                 rp.remarks,
                 d.level_1_department,
                 d.level_2_department,
-                d.level_3_department,
-                d.level_4_department,
-                d.level_5_department,
-                d.level_6_department,
                 p.project_name
             FROM resource_people rp
             LEFT JOIN departments d ON d.id = rp.department_id
@@ -1466,10 +1454,6 @@ def load_resource_people():
             item['department_full_name'] = ' / '.join([
                 (item.get('level_1_department') or '').strip(),
                 (item.get('level_2_department') or '').strip(),
-                (item.get('level_3_department') or '').strip(),
-                (item.get('level_4_department') or '').strip(),
-                (item.get('level_5_department') or '').strip(),
-                (item.get('level_6_department') or '').strip(),
             ])
             item['department_full_name'] = ' / '.join([part for part in item['department_full_name'].split(' / ') if part])
             result.append(item)
@@ -3066,13 +3050,11 @@ def admin_department_new():
             conn.execute(
                 """
                 INSERT INTO departments (
-                    level_1_department, level_2_department, level_3_department,
-                    level_4_department, level_5_department, level_6_department
-                ) VALUES (?, ?, ?, ?, ?, ?)
+                    level_1_department, level_2_department
+                ) VALUES (?, ?)
                 """,
                 (
-                    data['level_1_department'], data['level_2_department'], data['level_3_department'],
-                    data['level_4_department'], data['level_5_department'], data['level_6_department'],
+                    data['level_1_department'], data['level_2_department'],
                 ),
             )
             conn.commit()
@@ -3097,16 +3079,11 @@ def admin_department_edit(department_id):
                 UPDATE departments
                 SET level_1_department = ?,
                     level_2_department = ?,
-                    level_3_department = ?,
-                    level_4_department = ?,
-                    level_5_department = ?,
-                    level_6_department = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """,
                 (
-                    data['level_1_department'], data['level_2_department'], data['level_3_department'],
-                    data['level_4_department'], data['level_5_department'], data['level_6_department'],
+                    data['level_1_department'], data['level_2_department'],
                     department_id,
                 ),
             )
