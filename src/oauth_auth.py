@@ -176,7 +176,8 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
 
     matched_rule = match_permission_rule(username=username, email=email)
     if matched_rule:
-        final_roles = [matched_rule]
+        matched_role = str(matched_rule.get('role') or 'guest').strip().lower()
+        final_roles = ['admin'] if matched_role == 'admin' else ['guest']
     else:
         admin_roles = {
             role.strip().lower()
