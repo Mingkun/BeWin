@@ -1428,14 +1428,15 @@ body.theme-ios-dark .backup-popover-text {
 
 .delete-popover-actions {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  flex-direction: row;
+  align-items: center;
   justify-content: stretch;
   gap: 8px;
 }
 
 .delete-popover-actions .button {
-  width: 100%;
+  flex: 1 1 0;
+  width: auto;
 }
 
 .button.tiny {
