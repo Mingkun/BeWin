@@ -16,23 +16,8 @@
       <div class="toolbar-actions">
         <a class="button home-button" href="{{ url_for('index') }}">首页</a>
         <a class="button secondary" href="{{ url_for('admin_resource_people') }}">人员资源库</a>
-        <button class="button" type="button" onclick="document.getElementById('department-create-panel').hidden = false;">新增部门</button>
       </div>
     </header>
-    <div class="card import-panel" id="department-create-panel" hidden>
-      <form method="post" action="{{ url_for('admin_department_new') }}" class="import-panel-form">
-        <div class="import-panel-title">新增部门</div>
-        <div class="import-panel-desc">直接在当前页创建一级、二级部门。</div>
-        <div class="form-grid form-grid-2" style="margin-top:12px;">
-          <label>一级部门<input type="text" name="level_1_department" required></label>
-          <label>二级部门<input type="text" name="level_2_department"></label>
-        </div>
-        <div class="inline-actions" style="margin-top:12px;">
-          <button class="button" type="submit">保存</button>
-          <button class="button secondary" type="button" onclick="document.getElementById('department-create-panel').hidden = true;">取消</button>
-        </div>
-      </form>
-    </div>
     {% if records %}
     <div class="table-wrap card">
       <table class="data-table">
@@ -44,6 +29,22 @@
           </tr>
         </thead>
         <tbody>
+          <tr>
+            <form method="post" action="{{ url_for('admin_department_new') }}">
+              <td>新增</td>
+              <td>
+                <div class="form-grid form-grid-2" style="gap:8px; min-width:320px;">
+                  <input type="text" name="level_1_department" placeholder="一级部门" required>
+                  <input type="text" name="level_2_department" placeholder="二级部门">
+                </div>
+              </td>
+              <td>
+                <div class="inline-actions">
+                  <button class="button tiny" type="submit">保存</button>
+                </div>
+              </td>
+            </form>
+          </tr>
           {% for record in records %}
           {% if edit_id and edit_id|int == record.id %}
           <tr>
