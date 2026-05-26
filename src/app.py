@@ -1044,10 +1044,6 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 level_1_department TEXT,
                 level_2_department TEXT,
-                level_3_department TEXT,
-                level_4_department TEXT,
-                level_5_department TEXT,
-                level_6_department TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
