@@ -321,6 +321,7 @@
             if (Number.isNaN(index)) return;
             permissionRulesState.splice(index, 1);
             renderPermissionRuleList();
+            if (permissionForm) permissionForm.requestSubmit();
           });
         });
 
