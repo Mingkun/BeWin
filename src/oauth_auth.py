@@ -173,8 +173,9 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
     normalized_roles = [str(role).strip().lower() for role in roles if str(role).strip()]
     email = (userinfo.get('email') or '').strip().lower()
     username = (userinfo.get('preferred_username') or userinfo.get('login') or userinfo.get('name') or '').strip().lower()
+    employee_number = str(userinfo.get('employeeNumber') or userinfo.get('employee_number') or '').strip().lower()
 
-    matched_rule = match_permission_rule(username=username, email=email)
+    matched_rule = match_permission_rule(source='sso', username=username, email=email, employee_number=employee_number)
     if matched_rule:
         matched_role = str(matched_rule.get('role') or 'guest').strip().lower()
         final_roles = ['admin'] if matched_role == 'admin' else ['guest']
@@ -226,6 +227,8 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
         'user_id': userinfo.get('sub') or userinfo.get('id') or userinfo.get('user_id') or '',
         'name': userinfo.get('name') or userinfo.get('preferred_username') or userinfo.get('login') or '',
         'email': userinfo.get('email') or '',
+        'username': userinfo.get('preferred_username') or userinfo.get('login') or userinfo.get('name') or '',
+        'employee_number': userinfo.get('employeeNumber') or userinfo.get('employee_number') or '',
         'roles': final_roles,
         'features': normalize_feature_flags(features, final_roles[0] if final_roles else 'guest'),
         'raw': userinfo,

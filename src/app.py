@@ -17,6 +17,7 @@ import zipfile
 import uuid
 
 from src.oauth_auth import DEFAULT_OAUTH_DEBUG_LOG_PATH, get_oauth_debug_log_path, register_oauth_routes
+from src import permission_config as permission_config_service
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = BASE_DIR / '.env'
@@ -325,180 +326,35 @@ def get_backup_dir():
     return Path(configured) if configured else BASE_DIR / 'backups'
 
 
-def get_permission_rules_path():
-    return BASE_DIR / 'data' / 'permission_rules.json'
+FEATURE_KEYS = permission_config_service.FEATURE_KEYS
 
 
 def load_permission_rules():
-    path = get_permission_rules_path()
-    if not path.exists():
-        return []
-    try:
-        data = json.loads(path.read_text(encoding='utf-8'))
-        return data if isinstance(data, list) else []
-    except Exception:
-        return []
+    return permission_config_service.load_permission_rules(BASE_DIR)
 
 
 def save_permission_rules(items):
-    path = get_permission_rules_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding='utf-8')
-
-
-FEATURE_KEYS = [
-    'view_system',
-    'manage_permissions',
-    'manage_backup',
-    'submit_requirement',
-    'manage_requirement_status',
-    'manage_projects',
-    'manage_features',
-    'manage_service_resources',
-    'import_export_data',
-]
-
-PERMISSION_PRESETS = [
-    {
-        'key': 'super_admin',
-        'label': '超级管理员',
-        'role': 'admin',
-        'features': {key: True for key in FEATURE_KEYS},
-    },
-    {
-        'key': 'readonly_guest',
-        'label': '只读访客',
-        'role': 'guest',
-        'features': {
-            'view_system': False,
-            'manage_permissions': False,
-            'manage_backup': False,
-            'submit_requirement': False,
-            'manage_requirement_status': False,
-            'manage_projects': False,
-            'manage_features': False,
-            'manage_service_resources': False,
-            'import_export_data': False,
-        },
-    },
-    {
-        'key': 'requirement_submitter',
-        'label': '需求提交人',
-        'role': 'guest',
-        'features': {
-            'view_system': False,
-            'manage_permissions': False,
-            'manage_backup': False,
-            'submit_requirement': True,
-            'manage_requirement_status': False,
-            'manage_projects': False,
-            'manage_features': False,
-            'manage_service_resources': False,
-            'import_export_data': False,
-        },
-    },
-    {
-        'key': 'project_editor',
-        'label': '项目维护人',
-        'role': 'guest',
-        'features': {
-            'view_system': False,
-            'manage_permissions': False,
-            'manage_backup': False,
-            'submit_requirement': True,
-            'manage_requirement_status': False,
-            'manage_projects': True,
-            'manage_features': True,
-            'manage_service_resources': False,
-            'import_export_data': True,
-        },
-    },
-    {
-        'key': 'service_editor',
-        'label': '云服务维护人',
-        'role': 'guest',
-        'features': {
-            'view_system': False,
-            'manage_permissions': False,
-            'manage_backup': False,
-            'submit_requirement': True,
-            'manage_requirement_status': False,
-            'manage_projects': False,
-            'manage_features': False,
-            'manage_service_resources': True,
-            'import_export_data': True,
-        },
-    },
-]
+    return permission_config_service.save_permission_rules(BASE_DIR, items)
 
 
 def default_feature_flags(role):
-    role = normalize_permission_role(role)
-    if role == 'admin':
-        return {key: True for key in FEATURE_KEYS}
-    return {
-        'view_system': False,
-        'manage_permissions': False,
-        'manage_backup': False,
-        'submit_requirement': True,
-        'manage_requirement_status': False,
-        'manage_projects': False,
-        'manage_features': False,
-        'manage_service_resources': False,
-        'import_export_data': True,
-    }
+    return permission_config_service.default_feature_flags(role)
 
 
 def normalize_permission_role(role_text):
-    role = (role_text or '').strip().lower()
-    return 'admin' if role == 'admin' else 'guest'
+    return permission_config_service.normalize_permission_role(role_text)
 
 
 def normalize_feature_flags(raw, role):
-    defaults = default_feature_flags(role)
-    if not isinstance(raw, dict):
-        return defaults
-    normalized = defaults.copy()
-    for key in FEATURE_KEYS:
-        if key in raw:
-            normalized[key] = bool(raw[key])
-    return normalized
+    return permission_config_service.normalize_feature_flags(raw, role)
 
 
 def get_permission_presets():
-    presets = []
-    for item in PERMISSION_PRESETS:
-        role = normalize_permission_role(item.get('role'))
-        presets.append({
-            'key': item.get('key'),
-            'label': item.get('label'),
-            'role': role,
-            'features': normalize_feature_flags(item.get('features'), role),
-        })
-    return presets
+    return permission_config_service.get_permission_presets()
 
 
 def match_permission_rule(username='', email=''):
-    username = (username or '').strip().lower()
-    email = (email or '').strip().lower()
-    for item in load_permission_rules():
-        rule_type = (item.get('type') or '').strip().lower()
-        raw_rule_value = (item.get('value') or '').strip()
-        rule_values = [part.strip().lower() for part in raw_rule_value.split(';') if part.strip()]
-        if not rule_values:
-            continue
-        matched = False
-        if rule_type == 'username' and username and username in rule_values:
-            matched = True
-        if rule_type == 'email' and email and email in rule_values:
-            matched = True
-        if matched:
-            role = normalize_permission_role(item.get('role'))
-            return {
-                'role': role,
-                'features': normalize_feature_flags(item.get('features'), role),
-            }
-    return None
+    return permission_config_service.match_permission_rule(BASE_DIR, username=username, email=email)
 
 
 def ensure_backup_dir():
@@ -2129,7 +1985,7 @@ def local_login_form():
         password = request.form.get('password') or ''
         next_url = normalize_next_url(request.form.get('next') or request.args.get('next') or '/')
         if verify_local_admin(username, password):
-            matched_rule = match_permission_rule(username=username, email='')
+            matched_rule = match_permission_rule(source='local', username=username, email='')
             role = (matched_rule or {}).get('role') or 'admin'
             session['local_user'] = {
                 'user_id': username,
@@ -2142,7 +1998,7 @@ def local_login_form():
             record_login_audit(session['local_user'])
             return redirect(next_url)
         if verify_local_guest(username, password):
-            matched_rule = match_permission_rule(username=username, email='')
+            matched_rule = match_permission_rule(source='local', username=username, email='')
             role = (matched_rule or {}).get('role') or 'guest'
             session['local_user'] = {
                 'user_id': username,
@@ -2505,17 +2361,20 @@ def settings_permissions_page():
         rule_roles = request.form.getlist('permission_role[]')
         rules = []
         total = max(len(rule_types), len(rule_values), len(rule_roles))
+        rule_sources = request.form.getlist('permission_source[]')
         for idx in range(total):
-            rule_type = (rule_types[idx] if idx < len(rule_types) else '').strip().lower()
+            rule_source = permission_config_service.normalize_permission_source(rule_sources[idx] if idx < len(rule_sources) else 'sso')
+            rule_type = permission_config_service.normalize_permission_type(rule_source, rule_types[idx] if idx < len(rule_types) else '')
             rule_value = (rule_values[idx] if idx < len(rule_values) else '').strip()
             rule_role = normalize_permission_role(rule_roles[idx] if idx < len(rule_roles) else 'guest')
-            if rule_type not in {'username', 'email'} or not rule_value:
+            if not rule_value:
                 continue
             features = default_feature_flags(rule_role)
             for key in FEATURE_KEYS:
                 feature_value = (request.form.get(f'permission_feature_{key}[{idx}]') or 'off').strip().lower()
                 features[key] = feature_value == 'on'
             rules.append({
+                'source': rule_source,
                 'type': rule_type,
                 'value': rule_value,
                 'role': rule_role,
@@ -2528,7 +2387,7 @@ def settings_permissions_page():
     return render_template(
         'settings_permissions.html',
         page_title='权限配置',
-        page_desc='管理本地用户名和 SSO 邮箱对应的角色与功能权限。',
+        page_desc='管理本地用户和 SSO 用户对应的角色与功能权限。本地支持用户名、邮箱，SSO 支持邮箱、工号。',
         branding=get_branding(),
         permission_rules=load_permission_rules(),
         permission_presets=get_permission_presets(),
@@ -2605,9 +2464,16 @@ def settings_backups_page():
             'RELEASEPLAN_AUTO_BACKUP_TIME': auto_backup_time,
             'RELEASEPLAN_AUTO_BACKUP_SCHEDULE': f"{auto_backup_time.split(':')[1]} {auto_backup_time.split(':')[0]} * * *" if ':' in auto_backup_time else '0 3 * * *',
         }
-        save_env_settings(updates)
-        os.environ.update(updates)
-        write_auto_backup_crontab(auto_backup_enabled, auto_backup_time)
+        try:
+            save_env_settings(updates)
+            os.environ.update(updates)
+            write_auto_backup_crontab(auto_backup_enabled, auto_backup_time)
+        except ValueError:
+            flash('备份时间格式不正确，请使用 HH:MM')
+            return redirect(url_for('settings_backups_page'))
+        except Exception as exc:
+            flash(f'保存备份设置失败：{exc}')
+            return redirect(url_for('settings_backups_page'))
         flash('备份设置已保存并立即生效')
         return redirect(url_for('settings_backups_page'))
 

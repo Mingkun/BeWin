@@ -31,24 +31,26 @@
     <form method="post" class="card system-page-card ios-settings-form system-settings-form" id="permission-settings-form">
       <div class="settings-group">
         <div class="settings-section-title">权限规则</div>
-        <div class="settings-section-desc">支持 username（本地账号）和 email（SSO 邮箱）两种规则。匹配值支持填写多个账号或邮箱，使用分号 ; 分隔。可直接套用预设，也可以手动调整每个功能权限。</div>
+        <div class="settings-section-desc">权限规则区分本地用户和 SSO 用户。本地用户支持按用户名、邮箱匹配，SSO 用户支持按邮箱、工号匹配。工号匹配 SSO 原始字段中的 employeeNumber。匹配值支持填写多个值，使用分号 ; 分隔。</div>
 
         <div style="border:1px solid var(--ios-light-gray); border-radius:12px; overflow:hidden; background:#fff; margin-bottom:12px;">
           <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
             <thead>
               <tr style="background:#f7f8fa; border-bottom:1px solid var(--ios-light-gray); font-size:12px; color:var(--ios-text-secondary); font-weight:600;">
+                <th style="padding:10px 12px; text-align:left; width:12%;">用户来源</th>
                 <th style="padding:10px 12px; text-align:left; width:14%;">匹配类型</th>
-                <th style="padding:10px 12px; text-align:left; width:34%;">匹配值</th>
-                <th style="padding:10px 12px; text-align:left; width:14%;">角色</th>
-                <th style="padding:10px 12px; text-align:left; width:24%;">权限摘要</th>
-                <th style="padding:10px 12px; text-align:center; width:14%;">操作</th>
+                <th style="padding:10px 12px; text-align:left; width:28%;">匹配值</th>
+                <th style="padding:10px 12px; text-align:left; width:12%;">角色</th>
+                <th style="padding:10px 12px; text-align:left; width:22%;">权限摘要</th>
+                <th style="padding:10px 12px; text-align:center; width:12%;">操作</th>
               </tr>
             </thead>
             <tbody id="permission-rule-list">
               {% for item in permission_rules %}
               {% set features = item.features or {} %}
               <tr class="permission-rule-row-button" data-index="{{ loop.index0 }}" style="border-bottom:1px solid var(--ios-light-gray); cursor:pointer;">
-                <td style="padding:12px; font-size:13px; word-break:break-word;">{{ '用户名' if item.type == 'username' else '邮箱' }}</td>
+                <td style="padding:12px; font-size:13px; word-break:break-word;">{{ '本地用户' if (item.source or 'sso') == 'local' else 'SSO用户' }}</td>
+                <td style="padding:12px; font-size:13px; word-break:break-word;">{{ '用户名' if item.type == 'username' else '工号' if item.type == 'employee_number' else '邮箱' }}</td>
                 <td style="padding:12px; font-size:13px; color:var(--ios-text-primary); word-break:break-word;">{{ item.value }}</td>
                 <td style="padding:12px; font-size:13px; word-break:break-word;">{{ '管理员' if item.role == 'admin' else '只读' }}</td>
                 <td style="padding:12px; font-size:12px; color:var(--ios-gray); word-break:break-word;">已启用 {{ (features.values() | select | list | length) if features else 0 }} 项</td>
@@ -100,18 +102,25 @@
                   </div>
                 </label>
                 <label class="ios-field ios-select-field">
+                  <span class="ios-field-label">用户来源</span>
+                  <div class="ios-select-wrap">
+                    <select id="permission-editor-source">
+                      <option value="local">本地用户</option>
+                      <option value="sso">SSO用户</option>
+                    </select>
+                    <span class="ios-chevron">›</span>
+                  </div>
+                </label>
+                <label class="ios-field ios-select-field">
                   <span class="ios-field-label">匹配类型</span>
                   <div class="ios-select-wrap">
-                    <select id="permission-editor-type">
-                      <option value="username">用户名</option>
-                      <option value="email">邮箱</option>
-                    </select>
+                    <select id="permission-editor-type"></select>
                     <span class="ios-chevron">›</span>
                   </div>
                 </label>
                 <label class="ios-field" style="grid-column: span 2;">
                   <span class="ios-field-label">匹配值</span>
-                  <input type="text" id="permission-editor-value" value="" placeholder="例如：admin;zhangsan 或 someone@company.com;other@company.com">
+                  <input type="text" id="permission-editor-value" value="" placeholder="例如：admin;zhangsan / someone@company.com / 10001;10002">
                 </label>
                 <label class="ios-field ios-select-field">
                   <span class="ios-field-label">角色</span>
@@ -149,6 +158,7 @@
 
         <template id="permission-rule-hidden-template">
           <div class="permission-hidden-row">
+            <input type="hidden" name="permission_source[]">
             <input type="hidden" name="permission_type[]">
             <input type="hidden" name="permission_value[]">
             <input type="hidden" name="permission_role[]">
@@ -177,6 +187,7 @@
       const permissionModalSubtitle = document.getElementById('permission-rule-modal-subtitle');
       const addPermissionRuleButton = document.getElementById('add-permission-rule');
       const permissionEditorPreset = document.getElementById('permission-editor-preset');
+      const permissionEditorSource = document.getElementById('permission-editor-source');
       const permissionEditorType = document.getElementById('permission-editor-type');
       const permissionEditorValue = document.getElementById('permission-editor-value');
       const permissionEditorRole = document.getElementById('permission-editor-role');
@@ -185,6 +196,26 @@
       const permissionModalClose = document.getElementById('permission-rule-modal-close');
       let permissionRulesState = {{ permission_rules | tojson }};
       let currentPermissionIndex = -1;
+
+      function getTypeOptionsBySource(source) {
+        return source === 'local'
+          ? [
+              { value: 'username', label: '用户名' },
+              { value: 'email', label: '邮箱' },
+            ]
+          : [
+              { value: 'email', label: '邮箱' },
+              { value: 'employee_number', label: '工号' },
+            ];
+      }
+
+      function refreshTypeOptions(source, selectedValue) {
+        if (!permissionEditorType) return;
+        const options = getTypeOptionsBySource(source);
+        permissionEditorType.innerHTML = options.map((item) => `<option value="${item.value}">${item.label}</option>`).join('');
+        const validValues = options.map((item) => item.value);
+        permissionEditorType.value = validValues.includes(selectedValue) ? selectedValue : options[0].value;
+      }
 
       function applyPresetToEditor(presetKey) {
         const preset = presetMap[presetKey];
@@ -203,6 +234,7 @@
           features[key] = !!(checkbox && checkbox.checked);
         });
         return {
+          source: (permissionEditorSource.value || 'sso').trim(),
           type: (permissionEditorType.value || 'email').trim(),
           value: (permissionEditorValue.value || '').trim(),
           role: (permissionEditorRole.value || 'guest').trim(),
@@ -212,7 +244,9 @@
 
       function fillEditor(rule) {
         if (permissionEditorPreset) permissionEditorPreset.value = '';
-        permissionEditorType.value = (rule && rule.type) || 'email';
+        const source = (rule && rule.source) || 'sso';
+        permissionEditorSource.value = source;
+        refreshTypeOptions(source, (rule && rule.type) || 'email');
         permissionEditorValue.value = (rule && rule.value) || '';
         permissionEditorRole.value = (rule && rule.role) || 'guest';
         const features = (rule && rule.features) || {};
@@ -228,7 +262,7 @@
           fillEditor(permissionRulesState[index]);
           permissionModalSubtitle.textContent = '编辑权限规则';
         } else {
-          fillEditor({ type: 'email', value: '', role: 'guest', features: {} });
+          fillEditor({ source: 'sso', type: 'email', value: '', role: 'guest', features: {} });
           permissionModalSubtitle.textContent = '新增权限规则';
         }
         permissionModal.style.display = 'block';
@@ -245,9 +279,10 @@
           const fragment = permissionHiddenTemplate.content.cloneNode(true);
           const row = fragment.querySelector('.permission-hidden-row');
           const hiddenInputs = row.querySelectorAll('input[type="hidden"]');
-          hiddenInputs[0].value = rule.type || 'username';
-          hiddenInputs[1].value = rule.value || '';
-          hiddenInputs[2].value = rule.role || 'guest';
+          hiddenInputs[0].value = rule.source || 'sso';
+          hiddenInputs[1].value = rule.type || ((rule.source || 'sso') === 'local' ? 'username' : 'email');
+          hiddenInputs[2].value = rule.value || '';
+          hiddenInputs[3].value = rule.role || 'guest';
           featureKeys.forEach((key) => {
             const input = row.querySelector(`[data-hidden-feature="${key}"]`);
             if (input) {
@@ -262,18 +297,20 @@
       function renderPermissionRuleList() {
         if (!permissionRuleList) return;
         if (!permissionRulesState.length) {
-          permissionRuleList.innerHTML = '<tr><td colspan="5" style="padding:12px; color:var(--ios-text-secondary); font-size:13px; text-align:center;">暂无权限规则，点击“新增规则”开始配置。</td></tr>';
+          permissionRuleList.innerHTML = '<tr><td colspan="6" style="padding:12px; color:var(--ios-text-secondary); font-size:13px; text-align:center;">暂无权限规则，点击“新增规则”开始配置。</td></tr>';
           renderPermissionHiddenFields();
           return;
         }
 
         permissionRuleList.innerHTML = permissionRulesState.map((item, index) => {
           const enabledCount = featureKeys.filter((key) => item.features && item.features[key]).length;
-          const typeLabel = item.type === 'email' ? '邮箱' : '用户名';
+          const sourceLabel = (item.source || 'sso') === 'local' ? '本地用户' : 'SSO用户';
+          const typeLabel = item.type === 'employee_number' ? '工号' : (item.type === 'email' ? '邮箱' : '用户名');
           const roleLabel = item.role === 'admin' ? '管理员' : '只读';
           const safeValue = String(item.value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
           return `
             <tr class="permission-rule-row-button" data-index="${index}" style="border-bottom:1px solid var(--ios-light-gray); cursor:pointer;">
+              <td style="padding:12px; font-size:13px; word-break:break-word;">${sourceLabel}</td>
               <td style="padding:12px; font-size:13px; word-break:break-word;">${typeLabel}</td>
               <td style="padding:12px; font-size:13px; color:var(--ios-text-primary); word-break:break-word;">${safeValue}</td>
               <td style="padding:12px; font-size:13px; word-break:break-word;">${roleLabel}</td>
@@ -342,6 +379,12 @@
         });
       }
 
+      if (permissionEditorSource) {
+        permissionEditorSource.addEventListener('change', () => {
+          refreshTypeOptions(permissionEditorSource.value || 'sso', permissionEditorType.value || 'email');
+        });
+      }
+
       if (addPermissionRuleButton) {
         addPermissionRuleButton.addEventListener('click', () => openPermissionModal(-1));
       }
@@ -379,6 +422,7 @@
         });
       });
 
+      refreshTypeOptions((permissionEditorSource && permissionEditorSource.value) || 'sso', 'email');
       renderPermissionRuleList();
     })();
   </script>
