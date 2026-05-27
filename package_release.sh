@@ -3,8 +3,9 @@ set -euo pipefail
 
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 OUT_DIR="$BASE_DIR/dist"
-LITE_NAME="releaseplan-portable-lite"
-FULL_NAME="releaseplan-portable-full"
+NEXT_VERSION="$(python3 "$BASE_DIR/scripts/next_release_version.py")"
+LITE_NAME="releaseplan-portable-lite-v${NEXT_VERSION}"
+FULL_NAME="releaseplan-portable-full-v${NEXT_VERSION}"
 LITE_DIR="$OUT_DIR/$LITE_NAME"
 FULL_DIR="$OUT_DIR/$FULL_NAME"
 LITE_ARCHIVE="$OUT_DIR/${LITE_NAME}.tar.gz"
