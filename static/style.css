@@ -788,7 +788,7 @@ body.theme-ios-dark .backup-popover-text {
 
 .roadmap-header-grid {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 0;
   background: #fff;
   border-radius: 16px;
@@ -867,7 +867,7 @@ body.theme-ios-dark .backup-popover-text {
 
 .feature-lane-row {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 0;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
