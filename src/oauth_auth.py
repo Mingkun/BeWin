@@ -187,7 +187,7 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
         }
         user_roles = {
             role.strip().lower()
-            for role in (os.getenv('RELEASEPLAN_OAUTH_GUEST_ROLES', 'user,guest,viewer,readonly,releaseplan-user,releaseplan-guest').split(','))
+            for role in (os.getenv('RELEASEPLAN_OAUTH_USER_ROLES') or os.getenv('RELEASEPLAN_OAUTH_GUEST_ROLES') or 'user,guest,viewer,readonly,releaseplan-user,releaseplan-guest').split(',')
             if role.strip()
         }
         admin_emails = {
@@ -197,7 +197,7 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
         }
         user_emails = {
             item.strip().lower()
-            for item in (os.getenv('RELEASEPLAN_OAUTH_GUEST_EMAILS', '').split(','))
+            for item in (os.getenv('RELEASEPLAN_OAUTH_USER_EMAILS') or os.getenv('RELEASEPLAN_OAUTH_GUEST_EMAILS') or '').split(',')
             if item.strip()
         }
         admin_usernames = {
@@ -207,7 +207,7 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
         }
         user_usernames = {
             item.strip().lower()
-            for item in (os.getenv('RELEASEPLAN_OAUTH_GUEST_USERNAMES', '').split(','))
+            for item in (os.getenv('RELEASEPLAN_OAUTH_USER_USERNAMES') or os.getenv('RELEASEPLAN_OAUTH_GUEST_USERNAMES') or '').split(',')
             if item.strip()
         }
 

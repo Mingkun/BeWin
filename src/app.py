@@ -35,7 +35,7 @@ FEATURE_CSV_PATH = BASE_DIR / "docs" / "feature_table.csv"
 DB_PATH = BASE_DIR / "data" / "releaseplan.db"
 SERVICE_RESOURCE_CSV_PATH = BASE_DIR / "docs" / "service_resource_investment.csv"
 REQUIREMENTS_LOG_PATH = BASE_DIR / "data" / "requirements_requests.md"
-MILESTONE_MEDIA_DIR = BASE_DIR / "picture" / "milestone_condolence"
+MILESTONE_MEDIA_DIR = BASE_DIR / "data" / "milestone_condolence"
 MILESTONE_COLUMNS = [
     "1/31", "2/28", "3/31", "4/30", "5/31", "6/30",
     "7/31", "8/31", "9/30", "10/31", "11/30", "12/31"
@@ -243,14 +243,14 @@ def save_milestone_condolence_image(file_storage):
     target_name = f"{uuid.uuid4().hex}{ext}"
     target_path = MILESTONE_MEDIA_DIR / target_name
     file_storage.save(target_path)
-    return f"picture/milestone_condolence/{target_name}"
+    return f"data/milestone_condolence/{target_name}"
 
 
 def milestone_image_url(image_path):
     path = (image_path or '').strip()
     if not path:
         return ''
-    if path.startswith('picture/milestone_condolence/'):
+    if path.startswith('data/milestone_condolence/'):
         filename = path.split('/', 2)[-1]
         return url_for('milestone_condolence_image', filename=filename)
     return url_for('static', filename=path)
@@ -300,6 +300,8 @@ def save_env_settings(updates):
         "RELEASEPLAN_AUTO_BACKUP_SCHEDULE",
         "RELEASEPLAN_LOCAL_ADMIN_USERNAME",
         "RELEASEPLAN_LOCAL_ADMIN_PASSWORD",
+        "RELEASEPLAN_LOCAL_USER_USERNAME",
+        "RELEASEPLAN_LOCAL_USER_PASSWORD",
         "RELEASEPLAN_LOCAL_GUEST_USERNAME",
         "RELEASEPLAN_LOCAL_GUEST_PASSWORD",
         "HOST",
@@ -539,9 +541,9 @@ def oauth_enabled():
 def local_admin_enabled():
     admin_username = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_USERNAME') or '').strip()
     admin_password = (os.getenv('RELEASEPLAN_LOCAL_ADMIN_PASSWORD') or '').strip()
-    guest_username = (os.getenv('RELEASEPLAN_LOCAL_GUEST_USERNAME') or '').strip()
-    guest_password = (os.getenv('RELEASEPLAN_LOCAL_GUEST_PASSWORD') or '').strip()
-    return bool((admin_username and admin_password) or (guest_username and guest_password))
+    user_username = (os.getenv('RELEASEPLAN_LOCAL_USER_USERNAME') or os.getenv('RELEASEPLAN_LOCAL_GUEST_USERNAME') or '').strip()
+    user_password = (os.getenv('RELEASEPLAN_LOCAL_USER_PASSWORD') or os.getenv('RELEASEPLAN_LOCAL_GUEST_PASSWORD') or '').strip()
+    return bool((admin_username and admin_password) or (user_username and user_password))
 
 
 def auth_mode():
@@ -622,10 +624,14 @@ def verify_local_admin(username, password):
     return username == expected_username and password == expected_password
 
 
-def verify_local_guest(username, password):
-    expected_username = (os.getenv('RELEASEPLAN_LOCAL_GUEST_USERNAME') or '').strip()
-    expected_password = (os.getenv('RELEASEPLAN_LOCAL_GUEST_PASSWORD') or '').strip()
+def verify_local_user(username, password):
+    expected_username = (os.getenv('RELEASEPLAN_LOCAL_USER_USERNAME') or os.getenv('RELEASEPLAN_LOCAL_GUEST_USERNAME') or '').strip()
+    expected_password = (os.getenv('RELEASEPLAN_LOCAL_USER_PASSWORD') or os.getenv('RELEASEPLAN_LOCAL_GUEST_PASSWORD') or '').strip()
     return username == expected_username and password == expected_password
+
+
+def verify_local_guest(username, password):
+    return verify_local_user(username, password)
 
 
 def get_request_client_ip():
@@ -1997,7 +2003,7 @@ def local_login_form():
             }
             record_login_audit(session['local_user'])
             return redirect(next_url)
-        if verify_local_guest(username, password):
+        if verify_local_user(username, password):
             matched_rule = match_permission_rule(source='local', username=username, email='')
             role = (matched_rule or {}).get('role') or 'user'
             session['local_user'] = {
@@ -3302,6 +3308,18 @@ def cloud_service_view_edit(record_id):
         )
         conn.commit()
     return redirect(url_for('view_placeholder', view_key='cloud-service-view'))
+
+
+try:
+    import src.routes_auth  # noqa: F401
+    import src.routes_settings  # noqa: F401
+    import src.routes_milestone  # noqa: F401
+    import src.routes_misc  # noqa: F401
+    import src.routes_resources  # noqa: F401
+    import src.routes_core_views  # noqa: F401
+    import src.routes_projects  # noqa: F401
+except Exception:
+    pass
 
 
 if __name__ == '__main__':
