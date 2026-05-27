@@ -372,7 +372,11 @@ def register_oauth_routes(app, *, oauth_enabled, normalize_next_url, match_permi
                 params = {}
                 json_data = None
                 if mode == 'json_access_token':
-                    json_data = {'access_token': access_token}
+                    json_data = {
+                            "client_id": oauth_client_id(),
+                            "access_token": access_token,
+                            "scope": oauth_scope()
+                    }
                 elif mode == 'bearer':
                     headers['Authorization'] = f'Bearer {access_token}'
                     json_data = {}
