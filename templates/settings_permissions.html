@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ page_title }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .permission-hint-card { margin-bottom: 12px; padding: 14px 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 12px; color: #475569; line-height: 1.8; }
+    .permission-hint-card strong { color: #0F172A; }
+    .permission-group-card { border: 1px solid var(--ios-light-gray); border-radius: 12px; overflow: hidden; background: #fff; margin-bottom: 14px; }
+    .permission-group-header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding: 12px 14px; background:#F7F8FA; border-bottom:1px solid var(--ios-light-gray); }
+    .permission-group-title { font-size: 14px; font-weight: 700; color: var(--ios-text-primary); }
+    .permission-group-desc { font-size: 12px; color: var(--ios-text-secondary); }
+    .permission-summary-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .permission-summary-tag { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; background:#EEF2FF; color:#3730A3; font-size:11px; }
+    .permission-editor-help { margin-top: 8px; padding: 10px 12px; background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:10px; font-size:12px; color:#475569; line-height:1.7; }
+    .permission-feature-section { margin-top: 14px; }
+    .permission-feature-section-title { font-size: 13px; font-weight: 700; color: #1C1C1E; margin-bottom: 8px; }
+  </style>
 </head>
 <body class="theme-{{ branding.theme }}">
   <div class="page settings-page">
@@ -33,49 +46,14 @@
         <div class="settings-section-title">权限规则</div>
         <div class="settings-section-desc">权限规则区分本地用户和 SSO 用户。本地用户支持按用户名、邮箱匹配，SSO 用户支持按邮箱、工号匹配。工号匹配 SSO 原始字段中的 employeeNumber。匹配值支持填写多个值，使用分号 ; 分隔。</div>
 
-        <div style="border:1px solid var(--ios-light-gray); border-radius:12px; overflow:hidden; background:#fff; margin-bottom:12px;">
-          <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
-            <thead>
-              <tr style="background:#f7f8fa; border-bottom:1px solid var(--ios-light-gray); font-size:12px; color:var(--ios-text-secondary); font-weight:600;">
-                <th style="padding:10px 12px; text-align:left; width:12%;">用户来源</th>
-                <th style="padding:10px 12px; text-align:left; width:14%;">匹配类型</th>
-                <th style="padding:10px 12px; text-align:left; width:28%;">匹配值</th>
-                <th style="padding:10px 12px; text-align:left; width:12%;">角色</th>
-                <th style="padding:10px 12px; text-align:left; width:22%;">权限摘要</th>
-                <th style="padding:10px 12px; text-align:center; width:12%;">操作</th>
-              </tr>
-            </thead>
-            <tbody id="permission-rule-list">
-              {% for item in permission_rules %}
-              {% set features = item.features or {} %}
-              <tr class="permission-rule-row-button" data-index="{{ loop.index0 }}" style="border-bottom:1px solid var(--ios-light-gray); cursor:pointer;">
-                <td style="padding:12px; font-size:13px; word-break:break-word;">{{ '本地用户' if (item.source or 'sso') == 'local' else 'SSO用户' }}</td>
-                <td style="padding:12px; font-size:13px; word-break:break-word;">{{ '用户名' if item.type == 'username' else '工号' if item.type == 'employee_number' else '邮箱' }}</td>
-                <td style="padding:12px; font-size:13px; color:var(--ios-text-primary); word-break:break-word;">{{ item.value }}</td>
-                <td style="padding:12px; font-size:13px; word-break:break-word;">{{ '管理员' if item.role == 'admin' else '只读' }}</td>
-                <td style="padding:12px; font-size:12px; color:var(--ios-gray); word-break:break-word;">已启用 {{ (features.values() | select | list | length) if features else 0 }} 项</td>
-                <td style="padding:12px; text-align:center;">
-                  <span class="inline-delete-form" style="display:inline-flex; position:relative;">
-                    <button class="icon-action danger permission-delete-trigger" type="button" title="删除" aria-label="删除" data-index="{{ loop.index0 }}">🗑</button>
-                    <div class="delete-popover" hidden>
-                      <span class="delete-popover-text">确认删除？</span>
-                      <div class="delete-popover-actions">
-                        <button class="button tiny danger permission-delete-confirm" type="button" data-index="{{ loop.index0 }}">删</button>
-                        <button class="button tiny secondary permission-delete-cancel" type="button">取消</button>
-                      </div>
-                    </div>
-                  </span>
-                </td>
-              </tr>
-              {% endfor %}
-              {% if not permission_rules %}
-              <tr>
-                <td colspan="5" style="padding:12px; color:var(--ios-text-secondary); font-size:13px; text-align:center;">暂无权限规则，点击“新增规则”开始配置。</td>
-              </tr>
-              {% endif %}
-            </tbody>
-          </table>
+        <div class="permission-hint-card">
+          <strong>建议用法</strong><br>
+          1. 本地用户优先按“用户名”配，邮箱只用于特殊情况。<br>
+          2. SSO 用户优先按“邮箱”或“工号”配，其中工号对应 <code>employeeNumber</code>。<br>
+          3. 可先套用预设，再微调下面的权限开关。
         </div>
+
+        <div id="permission-rule-list"></div>
 
         <div id="permission-rule-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:9999; padding:20px; box-sizing:border-box;">
           <div style="max-width:760px; margin:-18px auto 12px; background:#fff; border-radius:16px; padding:18px; box-sizing:border-box; max-height:calc(100vh - 2px); overflow:auto;">
@@ -134,16 +112,27 @@
                 </label>
               </div>
 
-              <div class="permission-feature-grid">
-                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">系统页</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="view_system" id="permission-editor-feature-view_system"><span class="ios-toggle-text">允许访问系统页</span></div></label>
-                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">权限配置</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_permissions" id="permission-editor-feature-manage_permissions"><span class="ios-toggle-text">允许修改权限</span></div></label>
-                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">备份管理</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_backup" id="permission-editor-feature-manage_backup"><span class="ios-toggle-text">允许备份/恢复/删除</span></div></label>
-                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">提交需求</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="submit_requirement" id="permission-editor-feature-submit_requirement"><span class="ios-toggle-text">允许提交需求</span></div></label>
-                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">需求状态</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_requirement_status" id="permission-editor-feature-manage_requirement_status"><span class="ios-toggle-text">允许改需求状态</span></div></label>
-                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">项目管理</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_projects" id="permission-editor-feature-manage_projects"><span class="ios-toggle-text">允许改项目</span></div></label>
-                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">关键特性</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_features" id="permission-editor-feature-manage_features"><span class="ios-toggle-text">允许改关键特性</span></div></label>
-                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">云服务数据</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_service_resources" id="permission-editor-feature-manage_service_resources"><span class="ios-toggle-text">允许改云服务数据</span></div></label>
-                <label class="ios-field ios-checkbox-field"><span class="ios-field-label">导入导出</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="import_export_data" id="permission-editor-feature-import_export_data"><span class="ios-toggle-text">允许导入导出</span></div></label>
+              <div id="permission-editor-help" class="permission-editor-help">SSO 用户默认支持邮箱、工号匹配。本地用户默认支持用户名、邮箱匹配。</div>
+
+              <div class="permission-feature-section">
+                <div class="permission-feature-section-title">系统权限</div>
+                <div class="permission-feature-grid">
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">系统页</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="view_system" id="permission-editor-feature-view_system"><span class="ios-toggle-text">允许访问系统页</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">权限配置</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_permissions" id="permission-editor-feature-manage_permissions"><span class="ios-toggle-text">允许修改权限</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">备份管理</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_backup" id="permission-editor-feature-manage_backup"><span class="ios-toggle-text">允许备份/恢复/删除</span></div></label>
+                </div>
+              </div>
+
+              <div class="permission-feature-section">
+                <div class="permission-feature-section-title">业务权限</div>
+                <div class="permission-feature-grid">
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">提交需求</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="submit_requirement" id="permission-editor-feature-submit_requirement"><span class="ios-toggle-text">允许提交需求</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">需求状态</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_requirement_status" id="permission-editor-feature-manage_requirement_status"><span class="ios-toggle-text">允许改需求状态</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">项目管理</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_projects" id="permission-editor-feature-manage_projects"><span class="ios-toggle-text">允许改项目</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">关键特性</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_features" id="permission-editor-feature-manage_features"><span class="ios-toggle-text">允许改关键特性</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">云服务数据</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="manage_service_resources" id="permission-editor-feature-manage_service_resources"><span class="ios-toggle-text">允许改云服务数据</span></div></label>
+                  <label class="ios-field ios-checkbox-field"><span class="ios-field-label">导入导出</span><div class="ios-toggle-row"><input type="checkbox" data-feature-key="import_export_data" id="permission-editor-feature-import_export_data"><span class="ios-toggle-text">允许导入导出</span></div></label>
+                </div>
               </div>
             </div>
 
@@ -194,6 +183,7 @@
       const permissionModalSave = document.getElementById('permission-rule-modal-save');
       const permissionModalCancel = document.getElementById('permission-rule-modal-cancel');
       const permissionModalClose = document.getElementById('permission-rule-modal-close');
+      const permissionEditorHelp = document.getElementById('permission-editor-help');
       let permissionRulesState = {{ permission_rules | tojson }};
       let currentPermissionIndex = -1;
 
@@ -215,6 +205,11 @@
         permissionEditorType.innerHTML = options.map((item) => `<option value="${item.value}">${item.label}</option>`).join('');
         const validValues = options.map((item) => item.value);
         permissionEditorType.value = validValues.includes(selectedValue) ? selectedValue : options[0].value;
+        if (permissionEditorHelp) {
+          permissionEditorHelp.innerHTML = source === 'local'
+            ? '当前是 <strong>本地用户</strong> 规则，可按 <strong>用户名</strong> 或 <strong>邮箱</strong> 匹配。建议优先使用用户名。'
+            : '当前是 <strong>SSO用户</strong> 规则，可按 <strong>邮箱</strong> 或 <strong>工号</strong> 匹配，其中工号对应原始字段 <code>employeeNumber</code>。';
+        }
       }
 
       function applyPresetToEditor(presetKey) {
@@ -297,37 +292,80 @@
       function renderPermissionRuleList() {
         if (!permissionRuleList) return;
         if (!permissionRulesState.length) {
-          permissionRuleList.innerHTML = '<tr><td colspan="6" style="padding:12px; color:var(--ios-text-secondary); font-size:13px; text-align:center;">暂无权限规则，点击“新增规则”开始配置。</td></tr>';
+          permissionRuleList.innerHTML = '<div class="permission-group-card"><div style="padding:12px; color:var(--ios-text-secondary); font-size:13px; text-align:center;">暂无权限规则，点击“新增规则”开始配置。</div></div>';
           renderPermissionHiddenFields();
           return;
         }
 
-        permissionRuleList.innerHTML = permissionRulesState.map((item, index) => {
-          const enabledCount = featureKeys.filter((key) => item.features && item.features[key]).length;
-          const sourceLabel = (item.source || 'sso') === 'local' ? '本地用户' : 'SSO用户';
-          const typeLabel = item.type === 'employee_number' ? '工号' : (item.type === 'email' ? '邮箱' : '用户名');
-          const roleLabel = item.role === 'admin' ? '管理员' : '只读';
-          const safeValue = String(item.value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          return `
-            <tr class="permission-rule-row-button" data-index="${index}" style="border-bottom:1px solid var(--ios-light-gray); cursor:pointer;">
-              <td style="padding:12px; font-size:13px; word-break:break-word;">${sourceLabel}</td>
-              <td style="padding:12px; font-size:13px; word-break:break-word;">${typeLabel}</td>
-              <td style="padding:12px; font-size:13px; color:var(--ios-text-primary); word-break:break-word;">${safeValue}</td>
-              <td style="padding:12px; font-size:13px; word-break:break-word;">${roleLabel}</td>
-              <td style="padding:12px; font-size:12px; color:var(--ios-gray); word-break:break-word;">已启用 ${enabledCount} 项</td>
-              <td style="padding:12px; text-align:center;">
-                <span class="inline-delete-form" style="display:inline-flex; position:relative;">
-                  <button class="icon-action danger permission-delete-trigger" type="button" title="删除" aria-label="删除" data-index="${index}">🗑</button>
-                  <div class="delete-popover" hidden>
-                    <span class="delete-popover-text">确认删除？</span>
-                    <div class="delete-popover-actions">
-                      <button class="button tiny danger permission-delete-confirm" type="button" data-index="${index}">删</button>
-                      <button class="button tiny secondary permission-delete-cancel" type="button">取消</button>
+        const groups = [
+          {
+            source: 'local',
+            title: '本地用户规则',
+            desc: '适用于本地账号登录，支持用户名和邮箱匹配。',
+          },
+          {
+            source: 'sso',
+            title: 'SSO 用户规则',
+            desc: '适用于 SSO 登录，支持邮箱和工号匹配。',
+          },
+        ];
+
+        permissionRuleList.innerHTML = groups.map((group) => {
+          const rows = permissionRulesState
+            .map((item, index) => ({ item, index }))
+            .filter(({ item }) => (item.source || 'sso') === group.source);
+
+          const body = rows.length ? rows.map(({ item, index }) => {
+            const enabledKeys = featureKeys.filter((key) => item.features && item.features[key]);
+            const typeLabel = item.type === 'employee_number' ? '工号' : (item.type === 'email' ? '邮箱' : '用户名');
+            const roleLabel = item.role === 'admin' ? '管理员' : '只读';
+            const safeValue = String(item.value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const summaryTags = enabledKeys.slice(0, 4).map((key) => `<span class="permission-summary-tag">${key}</span>`).join('');
+            const summaryMore = enabledKeys.length > 4 ? `<span class="permission-summary-tag">+${enabledKeys.length - 4}</span>` : '';
+            return `
+              <tr class="permission-rule-row-button" data-index="${index}" style="border-bottom:1px solid var(--ios-light-gray); cursor:pointer;">
+                <td style="padding:12px; font-size:13px; word-break:break-word;">${typeLabel}</td>
+                <td style="padding:12px; font-size:13px; color:var(--ios-text-primary); word-break:break-word;">${safeValue}</td>
+                <td style="padding:12px; font-size:13px; word-break:break-word;">${roleLabel}</td>
+                <td style="padding:12px; font-size:12px; color:var(--ios-gray); word-break:break-word;">已启用 ${enabledKeys.length} 项<div class="permission-summary-tags">${summaryTags}${summaryMore}</div></td>
+                <td style="padding:12px; text-align:center;">
+                  <span class="inline-delete-form" style="display:inline-flex; position:relative;">
+                    <button class="icon-action danger permission-delete-trigger" type="button" title="删除" aria-label="删除" data-index="${index}">🗑</button>
+                    <div class="delete-popover" hidden>
+                      <span class="delete-popover-text">确认删除？</span>
+                      <div class="delete-popover-actions">
+                        <button class="button tiny danger permission-delete-confirm" type="button" data-index="${index}">删</button>
+                        <button class="button tiny secondary permission-delete-cancel" type="button">取消</button>
+                      </div>
                     </div>
-                  </div>
-                </span>
-              </td>
-            </tr>
+                  </span>
+                </td>
+              </tr>
+            `;
+          }).join('') : '<tr><td colspan="5" style="padding:12px; color:var(--ios-text-secondary); font-size:13px; text-align:center;">暂无规则</td></tr>';
+
+          return `
+            <div class="permission-group-card">
+              <div class="permission-group-header">
+                <div>
+                  <div class="permission-group-title">${group.title}</div>
+                  <div class="permission-group-desc">${group.desc}</div>
+                </div>
+                <div style="font-size:12px; color:var(--ios-text-secondary);">${rows.length} 条规则</div>
+              </div>
+              <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#fff;">
+                <thead>
+                  <tr style="background:#f7f8fa; border-bottom:1px solid var(--ios-light-gray); font-size:12px; color:var(--ios-text-secondary); font-weight:600;">
+                    <th style="padding:10px 12px; text-align:left; width:16%;">匹配类型</th>
+                    <th style="padding:10px 12px; text-align:left; width:38%;">匹配值</th>
+                    <th style="padding:10px 12px; text-align:left; width:14%;">角色</th>
+                    <th style="padding:10px 12px; text-align:left; width:20%;">权限摘要</th>
+                    <th style="padding:10px 12px; text-align:center; width:12%;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>${body}</tbody>
+              </table>
+            </div>
           `;
         }).join('');
 
