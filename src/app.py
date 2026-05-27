@@ -2401,6 +2401,15 @@ def settings_permissions_page():
 def settings_auth_debug_page():
     current_user = get_current_user() or {}
     oauth_raw = current_user.get('raw') or {}
+    oauth_debug_summary = {
+        'display_name': current_user.get('name') or '',
+        'username': current_user.get('username') or oauth_raw.get('preferred_username') or oauth_raw.get('login') or oauth_raw.get('name') or '',
+        'email': current_user.get('email') or oauth_raw.get('email') or '',
+        'employee_number': current_user.get('employee_number') or oauth_raw.get('employeeNumber') or oauth_raw.get('employee_number') or '',
+        'user_id': current_user.get('user_id') or oauth_raw.get('sub') or oauth_raw.get('id') or oauth_raw.get('user_id') or '',
+        'auth_type': current_user.get('auth_type') or '',
+        'roles': current_user.get('roles') or [],
+    }
     oauth_log_path_obj = get_oauth_debug_log_path()
     oauth_log_exists = oauth_log_path_obj.exists()
     oauth_log_size = oauth_log_path_obj.stat().st_size if oauth_log_exists else 0
@@ -2411,6 +2420,7 @@ def settings_auth_debug_page():
         page_desc='查看当前登录用户信息，以及 SSO / OAuth 返回的原始字段，便于配置权限匹配。',
         branding=get_branding(),
         current_user_pretty=json.dumps(current_user, ensure_ascii=False, indent=2),
+        oauth_debug_summary=oauth_debug_summary,
         oauth_raw_pretty=json.dumps(oauth_raw, ensure_ascii=False, indent=2),
         active_logins=list_recent_active_logins(24),
         oauth_log_path=str(oauth_log_path_obj),
