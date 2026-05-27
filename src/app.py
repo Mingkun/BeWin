@@ -353,8 +353,14 @@ def get_permission_presets():
     return permission_config_service.get_permission_presets()
 
 
-def match_permission_rule(username='', email=''):
-    return permission_config_service.match_permission_rule(BASE_DIR, username=username, email=email)
+def match_permission_rule(source='sso', username='', email='', employee_number=''):
+    return permission_config_service.match_permission_rule(
+        BASE_DIR,
+        source=source,
+        username=username,
+        email=email,
+        employee_number=employee_number,
+    )
 
 
 def ensure_backup_dir():
