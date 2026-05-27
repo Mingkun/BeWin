@@ -13,4 +13,5 @@ services:
     volumes:
       - ./data:/app/data
       - ./docs:/app/docs
+      - ./logs:/app/logs
     restart: unless-stopped

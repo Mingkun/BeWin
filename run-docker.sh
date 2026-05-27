@@ -8,7 +8,7 @@ IMAGE_NAME="releaseplan:latest"
 CONTAINER_NAME="releaseplan"
 PROXY_URL="${PROXY_URL:-}"
 
-mkdir -p data
+mkdir -p data logs
 
 BUILD_ARGS=()
 RUN_PROXY_ARGS=()
@@ -34,6 +34,7 @@ docker run -d \
   -e RELEASEPLAN_SAML_SETTINGS="/app/saml_settings.json" \
   -v "$BASE_DIR/data:/app/data" \
   -v "$BASE_DIR/docs:/app/docs" \
+  -v "$BASE_DIR/logs:/app/logs" \
   --restart unless-stopped \
   "$IMAGE_NAME"
 
