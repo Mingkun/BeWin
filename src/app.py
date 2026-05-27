@@ -36,7 +36,6 @@ DB_PATH = BASE_DIR / "data" / "releaseplan.db"
 SERVICE_RESOURCE_CSV_PATH = BASE_DIR / "docs" / "service_resource_investment.csv"
 REQUIREMENTS_LOG_PATH = BASE_DIR / "data" / "requirements_requests.md"
 MILESTONE_MEDIA_DIR = BASE_DIR / "picture" / "milestone_condolence"
-LEGACY_MILESTONE_MEDIA_DIR = BASE_DIR / "static" / "uploads" / "milestone_condolence"
 MILESTONE_COLUMNS = [
     "1/31", "2/28", "3/31", "4/30", "5/31", "6/30",
     "7/31", "8/31", "9/30", "10/31", "11/30", "12/31"
@@ -252,9 +251,6 @@ def milestone_image_url(image_path):
     if not path:
         return ''
     if path.startswith('picture/milestone_condolence/'):
-        filename = path.split('/', 2)[-1]
-        return url_for('milestone_condolence_image', filename=filename)
-    if path.startswith('uploads/milestone_condolence/'):
         filename = path.split('/', 2)[-1]
         return url_for('milestone_condolence_image', filename=filename)
     return url_for('static', filename=path)
@@ -2041,11 +2037,8 @@ def milestone_condolence_image(filename):
     if not safe_name:
         return Response('图片不存在', status=404)
     current_path = MILESTONE_MEDIA_DIR / safe_name
-    legacy_path = LEGACY_MILESTONE_MEDIA_DIR / safe_name
     if current_path.exists():
         return send_from_directory(MILESTONE_MEDIA_DIR, safe_name)
-    if legacy_path.exists():
-        return send_from_directory(LEGACY_MILESTONE_MEDIA_DIR, safe_name)
     return Response('图片不存在', status=404)
 
 
