@@ -27,7 +27,7 @@ PERMISSION_PRESETS = [
         'label': '系统管理员',
         'group': 'system',
         'description': '可进入系统页，管理权限和备份，不负责业务数据维护。',
-        'role': 'guest',
+        'role': 'admin',
         'features': {
             'view_system': True,
             'manage_permissions': True,
@@ -41,11 +41,11 @@ PERMISSION_PRESETS = [
         },
     },
     {
-        'key': 'readonly_guest',
-        'label': '只读访客',
+        'key': 'readonly_user',
+        'label': '只读用户',
         'group': 'business',
         'description': '只能查看页面，不可进入系统页，也不能提交和修改数据。',
-        'role': 'guest',
+        'role': 'user',
         'features': {
             'view_system': False,
             'manage_permissions': False,
@@ -63,7 +63,7 @@ PERMISSION_PRESETS = [
         'label': '需求提交人',
         'group': 'business',
         'description': '可提交需求，但不能改需求状态，也不能维护项目和系统配置。',
-        'role': 'guest',
+        'role': 'user',
         'features': {
             'view_system': False,
             'manage_permissions': False,
@@ -81,7 +81,7 @@ PERMISSION_PRESETS = [
         'label': '需求管理员',
         'group': 'business',
         'description': '可提交需求并修改需求状态，但不改项目、云服务和系统配置。',
-        'role': 'guest',
+        'role': 'user',
         'features': {
             'view_system': False,
             'manage_permissions': False,
@@ -99,7 +99,7 @@ PERMISSION_PRESETS = [
         'label': '项目维护人',
         'group': 'business',
         'description': '可维护项目、关键特性和导入导出。',
-        'role': 'guest',
+        'role': 'user',
         'features': {
             'view_system': False,
             'manage_permissions': False,
@@ -117,7 +117,7 @@ PERMISSION_PRESETS = [
         'label': '云服务维护人',
         'group': 'business',
         'description': '可维护云服务资源和导入导出。',
-        'role': 'guest',
+        'role': 'user',
         'features': {
             'view_system': False,
             'manage_permissions': False,
@@ -156,7 +156,13 @@ def save_permission_rules(base_dir, items):
 
 def normalize_permission_role(role_text):
     role = (role_text or '').strip().lower()
-    return 'admin' if role == 'admin' else 'guest'
+    return 'admin' if role == 'admin' else 'user'
+
+
+def role_from_features(features):
+    normalized = features if isinstance(features, dict) else {}
+    admin_feature_keys = {'view_system', 'manage_permissions', 'manage_backup'}
+    return 'admin' if any(bool(normalized.get(key)) for key in admin_feature_keys) else 'user'
 
 
 def default_feature_flags(role):
@@ -190,14 +196,15 @@ def normalize_feature_flags(raw, role):
 def get_permission_presets():
     presets = []
     for item in PERMISSION_PRESETS:
-        role = normalize_permission_role(item.get('role'))
+        features = normalize_feature_flags(item.get('features'), item.get('role'))
+        role = role_from_features(features)
         presets.append({
             'key': item.get('key'),
             'label': item.get('label'),
             'group': item.get('group') or 'business',
             'description': item.get('description') or '',
             'role': role,
-            'features': normalize_feature_flags(item.get('features'), role),
+            'features': features,
         })
     return presets
 
@@ -238,9 +245,10 @@ def match_permission_rule(base_dir, source='sso', username='', email='', employe
         if rule_source == 'sso' and rule_type == 'employee_number' and employee_number and employee_number in rule_values:
             matched = True
         if matched:
-            role = normalize_permission_role(item.get('role'))
+            features = normalize_feature_flags(item.get('features'), item.get('role'))
+            role = role_from_features(features)
             return {
                 'role': role,
-                'features': normalize_feature_flags(item.get('features'), role),
+                'features': features,
             }
     return None

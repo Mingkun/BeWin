@@ -44,7 +44,7 @@
     <form method="post" class="card system-page-card ios-settings-form system-settings-form" id="permission-settings-form">
       <div class="settings-group">
         <div class="settings-section-title">权限规则</div>
-        <div class="settings-section-desc">权限规则区分本地用户和 SSO 用户。本地用户支持按用户名、邮箱匹配，SSO 用户支持按邮箱、工号匹配。工号匹配 SSO 原始字段中的 employeeNumber。匹配值支持填写多个值，使用分号 ; 分隔。</div>
+        <div class="settings-section-desc">权限规则区分本地用户和 SSO 用户。本地用户支持按用户名、邮箱匹配，SSO 用户支持按邮箱、工号匹配。工号匹配 SSO 原始字段中的 employeeNumber。系统会根据你勾选的权限自动推导角色。匹配值支持填写多个值，使用分号 ; 分隔。</div>
 
         <div class="permission-hint-card">
           <strong>建议用法</strong><br>
@@ -85,16 +85,6 @@
                     <select id="permission-editor-source">
                       <option value="local">本地用户</option>
                       <option value="sso">SSO用户</option>
-                    </select>
-                    <span class="ios-chevron">›</span>
-                  </div>
-                </label>
-                <label class="ios-field ios-select-field">
-                  <span class="ios-field-label">角色</span>
-                  <div class="ios-select-wrap">
-                    <select id="permission-editor-role">
-                      <option value="admin">管理员</option>
-                      <option value="guest">只读</option>
                     </select>
                     <span class="ios-chevron">›</span>
                   </div>
@@ -150,7 +140,6 @@
             <input type="hidden" name="permission_source[]">
             <input type="hidden" name="permission_type[]">
             <input type="hidden" name="permission_value[]">
-            <input type="hidden" name="permission_role[]">
             {% for key in feature_keys %}
             <input type="hidden" data-hidden-feature="{{ key }}" data-hidden-feature-name="permission_feature_{{ key }}" value="off">
             {% endfor %}
@@ -179,7 +168,6 @@
       const permissionEditorSource = document.getElementById('permission-editor-source');
       const permissionEditorType = document.getElementById('permission-editor-type');
       const permissionEditorValue = document.getElementById('permission-editor-value');
-      const permissionEditorRole = document.getElementById('permission-editor-role');
       const permissionModalSave = document.getElementById('permission-rule-modal-save');
       const permissionModalCancel = document.getElementById('permission-rule-modal-cancel');
       const permissionModalClose = document.getElementById('permission-rule-modal-close');
@@ -207,15 +195,14 @@
         permissionEditorType.value = validValues.includes(selectedValue) ? selectedValue : options[0].value;
         if (permissionEditorHelp) {
           permissionEditorHelp.innerHTML = source === 'local'
-            ? '当前是 <strong>本地用户</strong> 规则，可按 <strong>用户名</strong> 或 <strong>邮箱</strong> 匹配。建议优先使用用户名。'
-            : '当前是 <strong>SSO用户</strong> 规则，可按 <strong>邮箱</strong> 或 <strong>工号</strong> 匹配，其中工号对应原始字段 <code>employeeNumber</code>。';
+            ? '当前是 <strong>本地用户</strong> 规则，可按 <strong>用户名</strong> 或 <strong>邮箱</strong> 匹配。建议优先使用用户名。若勾选了系统权限，自动角色会变成 <strong>admin</strong>，否则为 <strong>user</strong>。'
+            : '当前是 <strong>SSO用户</strong> 规则，可按 <strong>邮箱</strong> 或 <strong>工号</strong> 匹配，其中工号对应原始字段 <code>employeeNumber</code>。若勾选了系统权限，自动角色会变成 <strong>admin</strong>，否则为 <strong>user</strong>。';
         }
       }
 
       function applyPresetToEditor(presetKey) {
         const preset = presetMap[presetKey];
         if (!preset) return;
-        if (permissionEditorRole) permissionEditorRole.value = preset.role;
         Object.entries(preset.features || {}).forEach(([key, enabled]) => {
           const checkbox = document.getElementById(`permission-editor-feature-${key}`);
           if (checkbox) checkbox.checked = !!enabled;
@@ -232,7 +219,7 @@
           source: (permissionEditorSource.value || 'sso').trim(),
           type: (permissionEditorType.value || 'email').trim(),
           value: (permissionEditorValue.value || '').trim(),
-          role: (permissionEditorRole.value || 'guest').trim(),
+          role: featureKeys.some((key) => ['view_system', 'manage_permissions', 'manage_backup'].includes(key) && features[key]) ? 'admin' : 'user',
           features,
         };
       }
@@ -243,7 +230,6 @@
         permissionEditorSource.value = source;
         refreshTypeOptions(source, (rule && rule.type) || 'email');
         permissionEditorValue.value = (rule && rule.value) || '';
-        permissionEditorRole.value = (rule && rule.role) || 'guest';
         const features = (rule && rule.features) || {};
         featureKeys.forEach((key) => {
           const checkbox = document.getElementById(`permission-editor-feature-${key}`);
@@ -257,7 +243,7 @@
           fillEditor(permissionRulesState[index]);
           permissionModalSubtitle.textContent = '编辑权限规则';
         } else {
-          fillEditor({ source: 'sso', type: 'email', value: '', role: 'guest', features: {} });
+          fillEditor({ source: 'sso', type: 'email', value: '', role: 'user', features: {} });
           permissionModalSubtitle.textContent = '新增权限规则';
         }
         permissionModal.style.display = 'block';
@@ -277,7 +263,6 @@
           hiddenInputs[0].value = rule.source || 'sso';
           hiddenInputs[1].value = rule.type || ((rule.source || 'sso') === 'local' ? 'username' : 'email');
           hiddenInputs[2].value = rule.value || '';
-          hiddenInputs[3].value = rule.role || 'guest';
           featureKeys.forEach((key) => {
             const input = row.querySelector(`[data-hidden-feature="${key}"]`);
             if (input) {
@@ -318,7 +303,7 @@
           const body = rows.length ? rows.map(({ item, index }) => {
             const enabledKeys = featureKeys.filter((key) => item.features && item.features[key]);
             const typeLabel = item.type === 'employee_number' ? '工号' : (item.type === 'email' ? '邮箱' : '用户名');
-            const roleLabel = item.role === 'admin' ? '管理员' : '只读';
+            const roleLabel = item.role === 'admin' ? '管理员' : '用户';
             const safeValue = String(item.value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const summaryTags = enabledKeys.slice(0, 4).map((key) => `<span class="permission-summary-tag">${key}</span>`).join('');
             const summaryMore = enabledKeys.length > 4 ? `<span class="permission-summary-tag">+${enabledKeys.length - 4}</span>` : '';
@@ -358,7 +343,7 @@
                   <tr style="background:#f7f8fa; border-bottom:1px solid var(--ios-light-gray); font-size:12px; color:var(--ios-text-secondary); font-weight:600;">
                     <th style="padding:10px 12px; text-align:left; width:16%;">匹配类型</th>
                     <th style="padding:10px 12px; text-align:left; width:38%;">匹配值</th>
-                    <th style="padding:10px 12px; text-align:left; width:14%;">角色</th>
+                    <th style="padding:10px 12px; text-align:left; width:14%;">自动角色</th>
                     <th style="padding:10px 12px; text-align:left; width:20%;">权限摘要</th>
                     <th style="padding:10px 12px; text-align:center; width:12%;">操作</th>
                   </tr>

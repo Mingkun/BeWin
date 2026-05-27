@@ -567,12 +567,12 @@ def get_current_user_roles():
 def get_current_user_features(user=None):
     user = user if user is not None else get_current_user()
     if not isinstance(user, dict):
-        return default_feature_flags('guest')
+        return default_feature_flags('user')
     features = user.get('features') or {}
     roles = user.get('roles') or []
     if isinstance(roles, str):
         roles = [roles]
-    role = 'admin' if 'admin' in [str(role).strip().lower() for role in roles] else 'guest'
+    role = 'admin' if 'admin' in [str(role).strip().lower() for role in roles] else 'user'
     return normalize_feature_flags(features, role)
 
 
@@ -610,7 +610,7 @@ def build_auth_context():
         'user_roles': role_labels,
         'user_features': get_current_user_features(user),
         'login_source_label': 'SSO' if auth_type == 'oauth2' else '本地' if auth_type == 'local' else '',
-        'role_label': '管理员' if 'admin' in role_labels else '只读' if 'guest' in role_labels else '',
+        'role_label': '管理员' if 'admin' in role_labels else '用户' if 'user' in role_labels else '',
     }
 
 
@@ -1999,7 +1999,7 @@ def local_login_form():
             return redirect(next_url)
         if verify_local_guest(username, password):
             matched_rule = match_permission_rule(source='local', username=username, email='')
-            role = (matched_rule or {}).get('role') or 'guest'
+            role = (matched_rule or {}).get('role') or 'user'
             session['local_user'] = {
                 'user_id': username,
                 'name': username,
@@ -2358,18 +2358,16 @@ def settings_permissions_page():
     if request.method == 'POST':
         rule_types = request.form.getlist('permission_type[]')
         rule_values = request.form.getlist('permission_value[]')
-        rule_roles = request.form.getlist('permission_role[]')
         rules = []
-        total = max(len(rule_types), len(rule_values), len(rule_roles))
+        total = max(len(rule_types), len(rule_values))
         rule_sources = request.form.getlist('permission_source[]')
         for idx in range(total):
             rule_source = permission_config_service.normalize_permission_source(rule_sources[idx] if idx < len(rule_sources) else 'sso')
             rule_type = permission_config_service.normalize_permission_type(rule_source, rule_types[idx] if idx < len(rule_types) else '')
             rule_value = (rule_values[idx] if idx < len(rule_values) else '').strip()
-            rule_role = normalize_permission_role(rule_roles[idx] if idx < len(rule_roles) else 'guest')
             if not rule_value:
                 continue
-            features = default_feature_flags(rule_role)
+            features = default_feature_flags('user')
             for key in FEATURE_KEYS:
                 feature_value = (request.form.get(f'permission_feature_{key}[{idx}]') or 'off').strip().lower()
                 features[key] = feature_value == 'on'
@@ -2377,8 +2375,8 @@ def settings_permissions_page():
                 'source': rule_source,
                 'type': rule_type,
                 'value': rule_value,
-                'role': rule_role,
-                'features': normalize_feature_flags(features, rule_role),
+                'role': permission_config_service.role_from_features(features),
+                'features': normalize_feature_flags(features, permission_config_service.role_from_features(features)),
             })
         save_permission_rules(rules)
         flash('权限配置已保存并立即生效')
