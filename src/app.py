@@ -2362,13 +2362,15 @@ def settings_permissions_page():
     if request.method == 'POST':
         rule_types = request.form.getlist('permission_type[]')
         rule_values = request.form.getlist('permission_value[]')
+        rule_descriptions = request.form.getlist('permission_description[]')
         rules = []
-        total = max(len(rule_types), len(rule_values))
+        total = max(len(rule_types), len(rule_values), len(rule_descriptions))
         rule_sources = request.form.getlist('permission_source[]')
         for idx in range(total):
             rule_source = permission_config_service.normalize_permission_source(rule_sources[idx] if idx < len(rule_sources) else 'sso')
             rule_type = permission_config_service.normalize_permission_type(rule_source, rule_types[idx] if idx < len(rule_types) else '')
             rule_value = (rule_values[idx] if idx < len(rule_values) else '').strip()
+            rule_description = (rule_descriptions[idx] if idx < len(rule_descriptions) else '').strip()
             if not rule_value:
                 continue
             features = default_feature_flags('user')
@@ -2378,6 +2380,7 @@ def settings_permissions_page():
             rules.append({
                 'source': rule_source,
                 'type': rule_type,
+                'description': rule_description,
                 'value': rule_value,
                 'role': permission_config_service.role_from_features(features),
                 'features': normalize_feature_flags(features, permission_config_service.role_from_features(features)),

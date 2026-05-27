@@ -97,6 +97,10 @@
                   </div>
                 </label>
                 <label class="ios-field" style="grid-column: span 3;">
+                  <span class="ios-field-label">描述</span>
+                  <input type="text" id="permission-editor-description" value="" placeholder="例如：系统默认管理员 / 张三 SSO 账号 / 本地测试用户">
+                </label>
+                <label class="ios-field" style="grid-column: span 3;">
                   <span class="ios-field-label">匹配值</span>
                   <input type="text" id="permission-editor-value" value="" placeholder="例如：admin;zhangsan / someone@company.com / 10001;10002">
                 </label>
@@ -139,6 +143,7 @@
           <div class="permission-hidden-row">
             <input type="hidden" name="permission_source[]">
             <input type="hidden" name="permission_type[]">
+            <input type="hidden" name="permission_description[]">
             <input type="hidden" name="permission_value[]">
             {% for key in feature_keys %}
             <input type="hidden" data-hidden-feature="{{ key }}" data-hidden-feature-name="permission_feature_{{ key }}" value="off">
@@ -167,6 +172,7 @@
       const permissionEditorPreset = document.getElementById('permission-editor-preset');
       const permissionEditorSource = document.getElementById('permission-editor-source');
       const permissionEditorType = document.getElementById('permission-editor-type');
+      const permissionEditorDescription = document.getElementById('permission-editor-description');
       const permissionEditorValue = document.getElementById('permission-editor-value');
       const permissionModalSave = document.getElementById('permission-rule-modal-save');
       const permissionModalCancel = document.getElementById('permission-rule-modal-cancel');
@@ -218,6 +224,7 @@
         return {
           source: (permissionEditorSource.value || 'sso').trim(),
           type: (permissionEditorType.value || 'email').trim(),
+          description: (permissionEditorDescription.value || '').trim(),
           value: (permissionEditorValue.value || '').trim(),
           role: featureKeys.some((key) => ['view_system', 'manage_permissions', 'manage_backup'].includes(key) && features[key]) ? 'admin' : 'user',
           features,
@@ -229,6 +236,7 @@
         const source = (rule && rule.source) || 'sso';
         permissionEditorSource.value = source;
         refreshTypeOptions(source, (rule && rule.type) || 'email');
+        permissionEditorDescription.value = (rule && rule.description) || '';
         permissionEditorValue.value = (rule && rule.value) || '';
         const features = (rule && rule.features) || {};
         featureKeys.forEach((key) => {
@@ -243,7 +251,7 @@
           fillEditor(permissionRulesState[index]);
           permissionModalSubtitle.textContent = '编辑权限规则';
         } else {
-          fillEditor({ source: 'sso', type: 'email', value: '', role: 'user', features: {} });
+          fillEditor({ source: 'sso', type: 'email', description: '', value: '', role: 'user', features: {} });
           permissionModalSubtitle.textContent = '新增权限规则';
         }
         permissionModal.style.display = 'block';
@@ -262,7 +270,8 @@
           const hiddenInputs = row.querySelectorAll('input[type="hidden"]');
           hiddenInputs[0].value = rule.source || 'sso';
           hiddenInputs[1].value = rule.type || ((rule.source || 'sso') === 'local' ? 'username' : 'email');
-          hiddenInputs[2].value = rule.value || '';
+          hiddenInputs[2].value = rule.description || '';
+          hiddenInputs[3].value = rule.value || '';
           featureKeys.forEach((key) => {
             const input = row.querySelector(`[data-hidden-feature="${key}"]`);
             if (input) {
@@ -304,11 +313,13 @@
             const enabledKeys = featureKeys.filter((key) => item.features && item.features[key]);
             const typeLabel = item.type === 'employee_number' ? '工号' : (item.type === 'email' ? '邮箱' : '用户名');
             const roleLabel = item.role === 'admin' ? '管理员' : '用户';
+            const safeDescription = String(item.description || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const safeValue = String(item.value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const summaryTags = enabledKeys.slice(0, 4).map((key) => `<span class="permission-summary-tag">${key}</span>`).join('');
             const summaryMore = enabledKeys.length > 4 ? `<span class="permission-summary-tag">+${enabledKeys.length - 4}</span>` : '';
             return `
               <tr class="permission-rule-row-button" data-index="${index}" style="border-bottom:1px solid var(--ios-light-gray); cursor:pointer;">
+                <td style="padding:12px; font-size:13px; word-break:break-word;">${safeDescription || '-'}</td>
                 <td style="padding:12px; font-size:13px; word-break:break-word;">${typeLabel}</td>
                 <td style="padding:12px; font-size:13px; color:var(--ios-text-primary); word-break:break-word;">${safeValue}</td>
                 <td style="padding:12px; font-size:13px; word-break:break-word;">${roleLabel}</td>
@@ -327,7 +338,7 @@
                 </td>
               </tr>
             `;
-          }).join('') : '<tr><td colspan="5" style="padding:12px; color:var(--ios-text-secondary); font-size:13px; text-align:center;">暂无规则</td></tr>';
+          }).join('') : '<tr><td colspan="6" style="padding:12px; color:var(--ios-text-secondary); font-size:13px; text-align:center;">暂无规则</td></tr>';
 
           return `
             <div class="permission-group-card">
@@ -341,11 +352,12 @@
               <table style="width:100%; border-collapse:collapse; table-layout:fixed; background:#fff;">
                 <thead>
                   <tr style="background:#f7f8fa; border-bottom:1px solid var(--ios-light-gray); font-size:12px; color:var(--ios-text-secondary); font-weight:600;">
-                    <th style="padding:10px 12px; text-align:left; width:16%;">匹配类型</th>
-                    <th style="padding:10px 12px; text-align:left; width:38%;">匹配值</th>
-                    <th style="padding:10px 12px; text-align:left; width:14%;">自动角色</th>
-                    <th style="padding:10px 12px; text-align:left; width:20%;">权限摘要</th>
-                    <th style="padding:10px 12px; text-align:center; width:12%;">操作</th>
+                    <th style="padding:10px 12px; text-align:left; width:20%;">描述</th>
+                    <th style="padding:10px 12px; text-align:left; width:14%;">匹配类型</th>
+                    <th style="padding:10px 12px; text-align:left; width:28%;">匹配值</th>
+                    <th style="padding:10px 12px; text-align:left; width:12%;">自动角色</th>
+                    <th style="padding:10px 12px; text-align:left; width:16%;">权限摘要</th>
+                    <th style="padding:10px 12px; text-align:center; width:10%;">操作</th>
                   </tr>
                 </thead>
                 <tbody>${body}</tbody>
