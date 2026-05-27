@@ -1991,14 +1991,12 @@ def local_login_form():
         password = request.form.get('password') or ''
         next_url = normalize_next_url(request.form.get('next') or request.args.get('next') or '/')
         if verify_local_admin(username, password):
-            matched_rule = match_permission_rule(source='local', username=username, email='')
-            role = (matched_rule or {}).get('role') or 'admin'
             session['local_user'] = {
                 'user_id': username,
                 'name': username,
                 'email': '',
-                'roles': [role],
-                'features': normalize_feature_flags((matched_rule or {}).get('features'), role),
+                'roles': ['admin'],
+                'features': default_feature_flags('admin'),
                 'auth_type': 'local',
             }
             record_login_audit(session['local_user'])
