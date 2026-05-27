@@ -44,13 +44,14 @@
     <form method="post" class="card system-page-card ios-settings-form system-settings-form" id="permission-settings-form">
       <div class="settings-group">
         <div class="settings-section-title">权限规则</div>
-        <div class="settings-section-desc">权限规则区分本地用户和 SSO 用户。本地用户支持按用户名、邮箱匹配，SSO 用户支持按邮箱、工号匹配。工号匹配 SSO 原始字段中的 employeeNumber。系统会根据你勾选的权限自动推导角色。匹配值支持填写多个值，使用分号 ; 分隔。</div>
+        <div class="settings-section-desc">权限规则区分本地用户和 SSO 用户。本地用户支持按用户名、邮箱匹配，SSO 用户支持按邮箱、工号匹配。工号匹配 SSO 原始字段中的 employeeNumber。系统会根据你勾选的权限自动推导角色。匹配值支持填写多个值，支持使用空格、分号 <code>;</code>、斜杠 <code>/</code> 分隔。</div>
 
         <div class="permission-hint-card">
           <strong>建议用法</strong><br>
           1. 本地用户优先按“用户名”配，邮箱只用于特殊情况。<br>
           2. SSO 用户优先按“邮箱”或“工号”配，其中工号对应 <code>employeeNumber</code>。<br>
-          3. 可先套用预设，再微调下面的权限开关。
+          3. 多个匹配值可用空格、<code>;</code>、<code>/</code> 分隔。<br>
+          4. 可先套用预设，再微调下面的权限开关。
         </div>
 
         <div id="permission-rule-list"></div>
@@ -102,7 +103,7 @@
                 </label>
                 <label class="ios-field" style="grid-column: span 3;">
                   <span class="ios-field-label">匹配值</span>
-                  <input type="text" id="permission-editor-value" value="" placeholder="例如：admin;zhangsan / someone@company.com / 10001;10002">
+                  <input type="text" id="permission-editor-value" value="" placeholder="例如：admin zhangsan / someone@company.com / 10001;10002">
                 </label>
               </div>
 

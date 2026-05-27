@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 FEATURE_KEYS = [
@@ -223,6 +224,13 @@ def normalize_permission_type(source, rule_type):
     return 'username' if source == 'local' else 'email'
 
 
+def split_permission_values(raw_rule_value):
+    raw = str(raw_rule_value or '').strip()
+    if not raw:
+        return []
+    return [part.strip().lower() for part in re.split(r'[;\/\s]+', raw) if part.strip()]
+
+
 def match_permission_rule(base_dir, source='sso', username='', email='', employee_number=''):
     source = normalize_permission_source(source)
     username = (username or '').strip().lower()
@@ -234,7 +242,7 @@ def match_permission_rule(base_dir, source='sso', username='', email='', employe
             continue
         rule_type = normalize_permission_type(rule_source, item.get('type'))
         raw_rule_value = (item.get('value') or '').strip()
-        rule_values = [part.strip().lower() for part in raw_rule_value.split(';') if part.strip()]
+        rule_values = split_permission_values(raw_rule_value)
         if not rule_values:
             continue
         matched = False
