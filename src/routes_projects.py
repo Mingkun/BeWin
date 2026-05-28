@@ -26,6 +26,7 @@ from src.app import (
     normalize_project_row,
     project_row_to_db_tuple,
     require_feature,
+    save_feature_csv_content,
 )
 
 
@@ -246,6 +247,20 @@ def admin_projects_export_csv():
     response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
     response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('项目数据_导出数据.csv')}"
     return response
+
+
+@app.route('/admin/features/import-csv', methods=['POST'])
+@login_required
+def admin_features_import_csv():
+    denied = require_feature('import_export_data', '当前账号不能导入关键特性数据')
+    if denied:
+        return denied
+    file = request.files.get('csv_file')
+    if file and file.filename:
+        raw = file.read()
+        content = raw.decode('utf-8-sig') if isinstance(raw, bytes) else raw
+        save_feature_csv_content(content, replace=True)
+    return redirect(url_for('roadmap'))
 
 
 @app.route('/admin/features/export-csv')

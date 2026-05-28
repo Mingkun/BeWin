@@ -1014,35 +1014,35 @@ def init_db():
 
 def normalize_project_row(row):
     return {
-        "立项状态": (row.get("立项状态") or "").strip(),
-        "管控灶": (row.get("管控灶") or "").strip(),
-        "投资主体": (row.get("投资主体") or "").strip(),
-        "项目编码": (row.get("项目编码") or "").strip(),
-        "项目名称": (row.get("项目名称") or "").strip(),
-        "项目描述": (row.get("项目描述") or "").strip(),
-        "项目大类": (row.get("项目大类") or "").strip(),
-        "项目子类": (row.get("项目子类") or "").strip(),
-        "项目复杂度": (row.get("项目复杂度") or "").strip(),
+        "立项状态": (row.get("立项状态") or row.get("project_status") or "").strip(),
+        "管控灶": (row.get("管控灶") or row.get("control_gate") or "").strip(),
+        "投资主体": (row.get("投资主体") or row.get("investment_subject") or "").strip(),
+        "项目编码": (row.get("项目编码") or row.get("project_code") or "").strip(),
+        "项目名称": (row.get("项目名称") or row.get("project_name") or "").strip(),
+        "项目描述": (row.get("项目描述") or row.get("project_description") or "").strip(),
+        "项目大类": (row.get("项目大类") or row.get("project_category") or "").strip(),
+        "项目子类": (row.get("项目子类") or row.get("project_subcategory") or "").strip(),
+        "项目复杂度": (row.get("项目复杂度") or row.get("project_complexity") or "").strip(),
         "项目角色": (row.get("项目角色") or row.get("project_role") or "").strip(),
-        "项目经理": (row.get("项目经理") or "").strip(),
-        "计划启动日期": (row.get("计划启动日期") or "").strip(),
-        "计划结束日期": (row.get("计划结束日期") or "").strip(),
-        "工作量（人月）": (row.get("工作量（人月）") or row.get("工作量(人月)") or row.get("工作量") or "").strip(),
-        "研发费用预算（w）": (row.get("研发费用预算（w）") or row.get("研发费用预算(w)") or "").strip(),
-        "人力预算（自有）": (row.get("人力预算（自有）") or "").strip(),
-        "人力预算（OD）": (row.get("人力预算（OD）") or "").strip(),
-        "人力预算（TM）": (row.get("人力预算（TM）") or "").strip(),
+        "项目经理": (row.get("项目经理") or row.get("project_manager") or "").strip(),
+        "计划启动日期": (row.get("计划启动日期") or row.get("planned_start_date") or "").strip(),
+        "计划结束日期": (row.get("计划结束日期") or row.get("planned_end_date") or "").strip(),
+        "工作量（人月）": (row.get("工作量（人月）") or row.get("工作量(人月)") or row.get("工作量") or row.get("workload_person_month") or "").strip(),
+        "研发费用预算（w）": (row.get("研发费用预算（w）") or row.get("研发费用预算(w)") or row.get("rd_budget_w") or "").strip(),
+        "人力预算（自有）": (row.get("人力预算（自有）") or row.get("headcount_budget_self_owned") or "").strip(),
+        "人力预算（OD）": (row.get("人力预算（OD）") or row.get("headcount_budget_od") or "").strip(),
+        "人力预算（TM）": (row.get("人力预算（TM）") or row.get("headcount_budget_tm") or "").strip(),
     }
 
 
 def normalize_feature_row(row):
     normalized = {
-        "项目名称": (row.get("项目名称") or "").strip(),
-        "五层部门": (row.get("五层部门") or "").strip(),
-        "重点工作": (row.get("重点工作") or "").strip(),
-        "关键特性": (row.get("关键特性") or "").strip(),
-        "L4服务或服务组": (row.get("L4服务或服务组") or "").strip(),
-        "服务交付PM": (row.get("服务交付PM") or "").strip(),
+        "项目名称": (row.get("项目名称") or row.get("project_name") or "").strip(),
+        "五层部门": (row.get("五层部门") or row.get("five_level_department") or "").strip(),
+        "重点工作": (row.get("重点工作") or row.get("focus_work") or "").strip(),
+        "关键特性": (row.get("关键特性") or row.get("feature_name") or "").strip(),
+        "L4服务或服务组": (row.get("L4服务或服务组") or row.get("service_group") or "").strip(),
+        "服务交付PM": (row.get("服务交付PM") or row.get("delivery_pm") or "").strip(),
     }
     for month in MILESTONE_COLUMNS:
         normalized[month] = (row.get(month) or "").strip()
