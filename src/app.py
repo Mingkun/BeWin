@@ -252,7 +252,10 @@ def milestone_image_url(image_path):
         return ''
     if path.startswith('data/milestone_condolence/'):
         filename = path.split('/', 2)[-1]
-        return url_for('milestone_condolence_image', filename=filename)
+        return url_for('milestone_condolence_image_route', filename=filename)
+    if path.startswith('picture/milestone_condolence/'):
+        filename = path.split('/', 2)[-1]
+        return url_for('milestone_condolence_image_route', filename=filename)
     return url_for('static', filename=path)
 
 

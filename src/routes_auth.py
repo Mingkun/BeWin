@@ -1,3 +1,5 @@
+import json
+
 from flask import render_template, request, redirect, session, url_for
 
 from src.app import (
@@ -102,22 +104,25 @@ def settings_auth_debug_page():
     if oauth_log_mtime:
         from datetime import datetime
         oauth_log_mtime_text = datetime.fromtimestamp(oauth_log_mtime).strftime('%Y-%m-%d %H:%M:%S')
+    oauth_debug_summary = {
+        'display_name': current_user.get('name') or '',
+        'username': current_user.get('username') or oauth_raw.get('preferred_username') or oauth_raw.get('login') or oauth_raw.get('name') or '',
+        'email': current_user.get('email') or oauth_raw.get('email') or '',
+        'employee_number': oauth_raw.get('employeeNumber') or oauth_raw.get('employee_number') or '',
+        'user_id': current_user.get('user_id') or '',
+        'auth_type': current_user.get('auth_type') or '',
+        'roles': current_user.get('roles') or [],
+    }
     return render_template(
         'settings_auth_debug.html',
         branding=get_branding(),
-        current_user=current_user,
+        page_title='系统调试',
+        page_desc='查看当前登录会话、OAuth 调试日志和最近活跃登录记录。',
         current_roles=get_current_user_roles(),
         current_features=get_current_user_features(),
-        oauth_raw=oauth_raw,
-        oauth_debug={
-            'display_name': current_user.get('name') or '',
-            'username': current_user.get('username') or oauth_raw.get('preferred_username') or oauth_raw.get('login') or oauth_raw.get('name') or '',
-            'email': current_user.get('email') or oauth_raw.get('email') or '',
-            'employee_number': oauth_raw.get('employeeNumber') or oauth_raw.get('employee_number') or '',
-            'user_id': current_user.get('user_id') or '',
-            'auth_type': current_user.get('auth_type') or '',
-            'roles': current_user.get('roles') or [],
-        },
+        oauth_debug_summary=oauth_debug_summary,
+        current_user_pretty=json.dumps(current_user, ensure_ascii=False, indent=2),
+        oauth_raw_pretty=json.dumps(oauth_raw, ensure_ascii=False, indent=2),
         active_logins=list_recent_active_logins(24),
         oauth_log_path=str(oauth_log_path_obj),
         oauth_log_default_path=str(DEFAULT_OAUTH_DEBUG_LOG_PATH),

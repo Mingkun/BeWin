@@ -2,6 +2,7 @@ from flask import Response, flash, redirect, render_template, request, send_from
 from werkzeug.utils import secure_filename
 
 from src.app import (
+    BASE_DIR,
     MILESTONE_MEDIA_DIR,
     app,
     build_auth_context,
@@ -26,6 +27,10 @@ def milestone_condolence_image_route(filename):
     current_path = MILESTONE_MEDIA_DIR / safe_name
     if current_path.exists():
         return send_from_directory(MILESTONE_MEDIA_DIR, safe_name)
+    legacy_dir = BASE_DIR / 'picture' / 'milestone_condolence'
+    legacy_path = legacy_dir / safe_name
+    if legacy_path.exists():
+        return send_from_directory(legacy_dir, safe_name)
     return Response('图片不存在', status=404)
 
 
@@ -64,7 +69,7 @@ def admin_milestone_condolence_new():
         with get_conn() as conn:
             conn.execute(
                 """
-                INSERT INTO milestone_condolence (
+                INSERT INTO milestone_condolence_items (
                     five_level_department, month_index, activity_date, participant_names, breakthrough_text, condolence_region, image_path, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
@@ -98,7 +103,7 @@ def admin_milestone_condolence_edit(item_id):
         current = conn.execute(
             """
             SELECT id, five_level_department, month_index, activity_date, participant_names, breakthrough_text, condolence_region, image_path
-            FROM milestone_condolence
+            FROM milestone_condolence_items
             WHERE id = ?
             """,
             [item_id],
@@ -123,7 +128,7 @@ def admin_milestone_condolence_edit(item_id):
             month_index = int(form_data['month_index'] or '0')
             conn.execute(
                 """
-                UPDATE milestone_condolence
+                UPDATE milestone_condolence_items
                 SET five_level_department = ?,
                     month_index = ?,
                     activity_date = ?,
@@ -160,7 +165,7 @@ def admin_milestone_condolence_delete(item_id):
         return denied
     from src.app import get_conn
     with get_conn() as conn:
-        conn.execute('DELETE FROM milestone_condolence WHERE id = ?', [item_id])
+        conn.execute('DELETE FROM milestone_condolence_items WHERE id = ?', [item_id])
         conn.commit()
     flash('已删除关键突破&战地激励')
     return redirect(url_for('milestone_condolence_page'))

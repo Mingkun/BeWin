@@ -14,6 +14,7 @@ from src.app import (
     get_backup_config,
     get_backup_dir,
     get_branding,
+    get_home_cards,
     get_current_user_features,
     get_latest_download_package_info,
     list_backup_history,
@@ -46,11 +47,21 @@ def settings_general_page():
             'RELEASEPLAN_HOME_TITLE': (request.form.get('home_title') or '').strip(),
             'RELEASEPLAN_THEME': (request.form.get('theme') or '').strip(),
         }
+        for index in range(1, 7):
+            updates[f'RELEASEPLAN_CARD_{index}_TITLE'] = (request.form.get(f'card_{index}_title') or '').strip()
+            updates[f'RELEASEPLAN_CARD_{index}_ORDER'] = (request.form.get(f'card_{index}_order') or '').strip()
         save_env_settings(updates)
         os.environ.update({k: v for k, v in updates.items() if v})
         flash('设置已保存')
         return redirect(url_for('settings_general_page'))
-    return render_template('settings_general.html', branding=branding, **build_auth_context())
+    return render_template(
+        'settings_general.html',
+        branding=branding,
+        page_title='系统设置',
+        page_desc='调整首页文案、浏览器标题、主题和首页卡片排序。',
+        home_cards=get_home_cards(),
+        **build_auth_context(),
+    )
 
 
 @app.route('/settings/permissions', methods=['GET', 'POST'])
@@ -66,7 +77,7 @@ def settings_permissions_page():
         rule_values = request.form.getlist('permission_value[]')
         rules = []
         total = max(len(rule_sources), len(rule_types), len(rule_descriptions), len(rule_values))
-        feature_keys = [item['key'] for item in permission_config_service.feature_definitions()]
+        feature_keys = permission_config_service.FEATURE_KEYS
         for idx in range(total):
             rule_source = (rule_sources[idx] if idx < len(rule_sources) else 'sso').strip()
             rule_type = (rule_types[idx] if idx < len(rule_types) else '').strip()
@@ -90,9 +101,11 @@ def settings_permissions_page():
     return render_template(
         'settings_permissions.html',
         branding=get_branding(),
+        page_title='权限配置',
+        page_desc='配置本地用户和 SSO 用户的访问权限。',
         permission_rules=load_permission_rules(),
         permission_presets=permission_config_service.get_permission_presets(),
-        permission_feature_defs=permission_config_service.feature_definitions(),
+        feature_keys=permission_config_service.FEATURE_KEYS,
         **build_auth_context(),
     )
 
@@ -106,7 +119,7 @@ def settings_backups_page():
     ensure_backup_dir()
     if request.method == 'POST':
         action = (request.form.get('action') or '').strip()
-        if action == 'save-settings':
+        if action in {'save-settings', 'save_settings'}:
             auto_backup_enabled = (request.form.get('auto_backup_enabled') or '').strip().lower() in {'1', 'true', 'on', 'yes'}
             auto_backup_time = (request.form.get('auto_backup_time') or '').strip()
             updates = {
@@ -123,18 +136,18 @@ def settings_backups_page():
             except Exception as exc:
                 flash(f'保存备份设置失败：{exc}')
             return redirect(url_for('settings_backups_page'))
-        if action == 'backup-now':
+        if action in {'backup-now', 'run_backup_now'}:
             archive_path = build_backup_archive('manual')
             record_backup_history(archive_path, 'manual')
             flash('备份已生成')
             return redirect(url_for('settings_backups_page'))
-        if action == 'restore-backup':
-            filename = (request.form.get('filename') or '').strip()
+        if action in {'restore-backup', 'restore_backup'}:
+            filename = (request.form.get('filename') or request.form.get('backup_filename') or '').strip()
             restore_backup_archive(filename)
             flash('备份已恢复')
             return redirect(url_for('settings_backups_page'))
-        if action == 'delete-backup':
-            filename = (request.form.get('filename') or '').strip()
+        if action in {'delete-backup', 'delete_backup'}:
+            filename = (request.form.get('filename') or request.form.get('backup_filename') or '').strip()
             delete_backup_archive(filename)
             flash('备份已删除')
             return redirect(url_for('settings_backups_page'))
@@ -152,11 +165,13 @@ def settings_backups_page():
     return render_template(
         'settings_backups.html',
         branding=get_branding(),
+        page_title='备份管理',
+        page_desc='管理自动备份、手动备份、安装包下载和备份恢复。',
         backup_dir=str(get_backup_dir()),
         backup_config=get_backup_config(),
         backup_history=list_backup_history(),
         backup_manifest=load_backup_manifest(),
-        latest_packages=get_latest_download_package_info(),
+        download_packages=get_latest_download_package_info(),
         milestone_board=build_milestone_board(load_milestone_condolence_items()),
         base_dir=str(BASE_DIR),
         **build_auth_context(),
