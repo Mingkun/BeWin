@@ -37,7 +37,7 @@ def admin_project_new():
         return denied
     form_data = form_to_project_data(request.form)
     if request.method == 'POST':
-        row = normalize_project_row(form_data)
+        data = form_to_project_data(request.form)
         sql_columns = [
             "project_status", "control_gate", "investment_subject", "project_code", "project_name", "project_description",
             "project_category", "project_subcategory", "project_complexity", "project_role", "project_manager", "planned_start_date", "planned_end_date",
@@ -67,7 +67,7 @@ def admin_project_edit(project_id):
         return redirect(url_for('index'))
     form_data = form_to_project_data(request.form) if request.method == 'POST' else current
     if request.method == 'POST':
-        row = normalize_project_row(form_data)
+        data = form_to_project_data(request.form)
         set_clause = [
             "project_status = ?",
             "control_gate = ?",
