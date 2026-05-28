@@ -10,6 +10,7 @@ from src.app import (
     build_service_resource_summary,
     filter_resource_people_admin,
     filter_service_resources,
+    form_to_department_data,
     form_to_resource_person_data,
     form_to_service_resource_data,
     get_branding,
@@ -18,6 +19,7 @@ from src.app import (
     get_service_resource_filter_options,
     import_resource_people_csv_file,
     import_service_resource_csv_file,
+    load_department,
     load_departments,
     load_project_options,
     load_resource_people,
@@ -49,6 +51,83 @@ def admin_service_resources():
         service_keyword=service_keyword,
         **build_auth_context(),
     )
+
+
+@app.route('/admin/departments')
+@login_required
+def admin_departments():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    rows = load_departments()
+    edit_id = (request.args.get('edit_id') or '').strip()
+    return render_template('department_list.html', records=rows, edit_id=edit_id, **build_auth_context())
+
+
+@app.route('/admin/departments/new', methods=['GET', 'POST'])
+@login_required
+def admin_department_new():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    if request.method == 'POST':
+        data = form_to_department_data(request.form)
+        with get_conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO departments (
+                    level_1_department, level_2_department
+                ) VALUES (?, ?)
+                """,
+                (
+                    data['level_1_department'], data['level_2_department'],
+                ),
+            )
+            conn.commit()
+        return redirect(url_for('admin_departments'))
+    return render_template('department_form.html', record={}, mode='new', **build_auth_context())
+
+
+@app.route('/admin/departments/<int:department_id>/edit', methods=['GET', 'POST'])
+@login_required
+def admin_department_edit(department_id):
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    record = load_department(department_id)
+    if not record:
+        return redirect(url_for('admin_departments'))
+    if request.method == 'POST':
+        data = form_to_department_data(request.form)
+        with get_conn() as conn:
+            conn.execute(
+                """
+                UPDATE departments
+                SET level_1_department = ?,
+                    level_2_department = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (
+                    data['level_1_department'], data['level_2_department'],
+                    department_id,
+                ),
+            )
+            conn.commit()
+        return redirect(url_for('admin_departments'))
+    return render_template('department_form.html', record=record, mode='edit', **build_auth_context())
+
+
+@app.route('/admin/departments/<int:department_id>/delete', methods=['POST'])
+@login_required
+def admin_department_delete(department_id):
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    with get_conn() as conn:
+        conn.execute("DELETE FROM departments WHERE id = ?", (department_id,))
+        conn.commit()
+    return redirect(url_for('admin_departments'))
 
 
 @app.route('/admin/resource-people')

@@ -38,7 +38,6 @@ def milestone_condolence_page():
         month_options=milestone_month_options(),
         board=build_milestone_board(load_milestone_condolence_items()),
         milestone_image_url=milestone_image_url,
-        user_features=build_auth_context().get('user_features', permission_config_service.default_feature_flags('user')),
         **build_auth_context(),
     )
 
