@@ -19,7 +19,6 @@ from src.app import (
     oauth_enabled,
     record_login_audit,
     require_feature,
-    settings_auth_debug_page as _old_settings_auth_debug_page,
     verify_local_admin,
     verify_local_user,
     default_feature_flags,

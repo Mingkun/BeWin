@@ -3,7 +3,6 @@ from werkzeug.utils import secure_filename
 
 from src.app import (
     MILESTONE_MEDIA_DIR,
-    admin_milestone_condolence_delete as _old_admin_milestone_condolence_delete,
     app,
     build_auth_context,
     build_milestone_board,

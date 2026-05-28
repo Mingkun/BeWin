@@ -1,4 +1,4 @@
-from flask import flash, redirect, render_template, request, url_for, Response
+from flask import Response, redirect, render_template, request, url_for
 from urllib.parse import quote
 import csv
 from io import StringIO
@@ -12,7 +12,6 @@ from src.app import (
     filter_service_resources,
     form_to_resource_person_data,
     form_to_service_resource_data,
-    format_number,
     get_branding,
     get_conn,
     get_resource_people_admin_filter_options,
@@ -20,22 +19,20 @@ from src.app import (
     import_resource_people_csv_file,
     import_service_resource_csv_file,
     load_departments,
+    load_project_options,
     load_resource_people,
     load_resource_person,
     load_service_resource,
     load_service_resources,
     login_required,
-    normalize_service_resource_row,
     require_feature,
-    RESOURCE_PEOPLE_COLUMNS,
-    SERVICE_RESOURCE_COLUMNS,
 )
 
 
 @app.route('/admin/service-resources')
 @login_required
 def admin_service_resources():
-    denied = require_feature('manage_resources', '当前账号不能管理服务资源')
+    denied = require_feature('manage_service_resources', '当前账号不能管理云服务数据')
     if denied:
         return denied
     rows = load_service_resources()
@@ -45,7 +42,7 @@ def admin_service_resources():
     return render_template(
         'service_resource_list.html',
         branding=get_branding(),
-        rows=filtered_rows,
+        records=filtered_rows,
         summary=build_service_resource_summary(filtered_rows),
         filter_options=get_service_resource_filter_options(rows),
         department_keyword=department_keyword,
@@ -57,34 +54,27 @@ def admin_service_resources():
 @app.route('/admin/resource-people')
 @login_required
 def admin_resource_people():
-    denied = require_feature('manage_resources', '当前账号不能管理人员资源')
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
     if denied:
         return denied
     rows = load_resource_people()
+    department_options = load_departments()
+    project_options = load_project_options()
     keyword = (request.args.get('keyword') or '').strip()
     project_name = (request.args.get('project_name') or '').strip()
     department_name = (request.args.get('department_name') or '').strip()
     role_name = (request.args.get('role_name') or '').strip()
     status = (request.args.get('status') or '').strip()
-    filtered_rows = filter_resource_people_admin(
-        rows,
-        keyword=keyword,
-        project_name=project_name,
-        department_name=department_name,
-        role_name=role_name,
-        status=status,
-    )
+    edit_id = (request.args.get('edit_id') or '').strip()
+    filtered_rows = filter_resource_people_admin(rows, keyword=keyword, project_name=project_name, department_name=department_name, role_name=role_name, status=status)
     return render_template(
         'resource_person_list.html',
-        branding=get_branding(),
-        rows=filtered_rows,
-        summary=build_resource_people_summary(filtered_rows),
+        records=filtered_rows,
         filter_options=get_resource_people_admin_filter_options(rows),
-        keyword=keyword,
-        project_name=project_name,
-        department_name=department_name,
-        role_name=role_name,
-        status=status,
+        filters={'keyword': keyword, 'project_name': project_name, 'department_name': department_name, 'role_name': role_name, 'status': status},
+        edit_id=edit_id,
+        department_options=department_options,
+        project_options=project_options,
         **build_auth_context(),
     )
 
@@ -92,205 +82,279 @@ def admin_resource_people():
 @app.route('/admin/resource-people/new', methods=['GET', 'POST'])
 @login_required
 def admin_resource_person_new():
-    denied = require_feature('manage_resources', '当前账号不能管理人员资源')
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
     if denied:
         return denied
-    form_data = form_to_resource_person_data(request.form)
+    department_options = load_departments()
+    project_options = load_project_options()
     if request.method == 'POST':
+        data = form_to_resource_person_data(request.form)
         with get_conn() as conn:
             conn.execute(
                 """
                 INSERT INTO resource_people (
-                    person_name, person_type, project_name, five_level_department, role_name, service_group, status,
-                    workload_percent, start_date, end_date, remarks, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    employee_id, employee_name, person_type, department_id, project_id,
+                    allocation_ratio, role_name, status, remarks
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    form_data['person_name'], form_data['person_type'], form_data['project_name'], form_data['five_level_department'],
-                    form_data['role_name'], form_data['service_group'], form_data['status'], form_data['workload_percent'],
-                    form_data['start_date'], form_data['end_date'], form_data['remarks'],
+                    data['employee_id'], data['employee_name'], data['person_type'], data['department_id'], data['project_id'],
+                    data['allocation_ratio'], data['role_name'], data['status'], data['remarks'],
                 ),
             )
             conn.commit()
-        flash('已新增人员资源')
         return redirect(url_for('admin_resource_people'))
-    return render_template('resource_person_form.html', branding=get_branding(), mode='new', form_data=form_data, departments=load_departments(), **build_auth_context())
+    return render_template('resource_person_form.html', record={}, mode='new', department_options=department_options, project_options=project_options, **build_auth_context())
 
 
 @app.route('/admin/resource-people/<int:record_id>/edit', methods=['GET', 'POST'])
 @login_required
 def admin_resource_person_edit(record_id):
-    denied = require_feature('manage_resources', '当前账号不能管理人员资源')
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
     if denied:
         return denied
-    current = load_resource_person(record_id)
-    if not current:
-        flash('记录不存在')
+    record = load_resource_person(record_id)
+    if not record:
         return redirect(url_for('admin_resource_people'))
-    form_data = form_to_resource_person_data(request.form) if request.method == 'POST' else current
+    department_options = load_departments()
+    project_options = load_project_options()
     if request.method == 'POST':
+        data = form_to_resource_person_data(request.form)
         with get_conn() as conn:
             conn.execute(
                 """
                 UPDATE resource_people
-                SET person_name = ?, person_type = ?, project_name = ?, five_level_department = ?, role_name = ?,
-                    service_group = ?, status = ?, workload_percent = ?, start_date = ?, end_date = ?, remarks = ?,
+                SET employee_id = ?,
+                    employee_name = ?,
+                    person_type = ?,
+                    department_id = ?,
+                    project_id = ?,
+                    allocation_ratio = ?,
+                    role_name = ?,
+                    status = ?,
+                    remarks = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """,
                 (
-                    form_data['person_name'], form_data['person_type'], form_data['project_name'], form_data['five_level_department'],
-                    form_data['role_name'], form_data['service_group'], form_data['status'], form_data['workload_percent'],
-                    form_data['start_date'], form_data['end_date'], form_data['remarks'], record_id,
+                    data['employee_id'], data['employee_name'], data['person_type'], data['department_id'], data['project_id'],
+                    data['allocation_ratio'], data['role_name'], data['status'], data['remarks'], record_id,
                 ),
             )
             conn.commit()
-        flash('已更新人员资源')
         return redirect(url_for('admin_resource_people'))
-    return render_template('resource_person_form.html', branding=get_branding(), mode='edit', form_data=form_data, departments=load_departments(), **build_auth_context())
+    return render_template('resource_person_form.html', record=record, mode='edit', department_options=department_options, project_options=project_options, **build_auth_context())
 
 
 @app.route('/admin/resource-people/<int:record_id>/delete', methods=['POST'])
 @login_required
 def admin_resource_person_delete(record_id):
-    denied = require_feature('manage_resources', '当前账号不能管理人员资源')
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
     if denied:
         return denied
     with get_conn() as conn:
-        conn.execute('DELETE FROM resource_people WHERE id = ?', [record_id])
+        conn.execute("DELETE FROM resource_people WHERE id = ?", (record_id,))
         conn.commit()
-    flash('已删除人员资源')
     return redirect(url_for('admin_resource_people'))
 
 
 @app.route('/admin/service-resources/new', methods=['GET', 'POST'])
 @login_required
 def admin_service_resource_new():
-    denied = require_feature('manage_resources', '当前账号不能管理服务资源')
+    denied = require_feature('manage_service_resources', '当前账号不能管理云服务数据')
     if denied:
         return denied
-    form_data = form_to_service_resource_data(request.form)
     if request.method == 'POST':
+        data = form_to_service_resource_data(request.form)
         with get_conn() as conn:
             conn.execute(
                 """
                 INSERT INTO service_resource_investment (
-                    five_level_department, l4_cloud_service, function_description,
-                    summary_self_owned, summary_od, summary_tm,
-                    hc_self_owned, hc_od, hc_tm,
-                    hcs_self_owned, hcs_od, hcs_tm, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    five_level_department,
+                    l4_cloud_service,
+                    function_description,
+                    summary_self_owned,
+                    summary_od,
+                    summary_tm,
+                    hc_self_owned,
+                    hc_od,
+                    hc_tm,
+                    hcs_self_owned,
+                    hcs_od,
+                    hcs_tm
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    form_data['five_level_department'], form_data['l4_cloud_service'], form_data['function_description'],
-                    form_data['summary_self_owned'], form_data['summary_od'], form_data['summary_tm'],
-                    form_data['hc_self_owned'], form_data['hc_od'], form_data['hc_tm'],
-                    form_data['hcs_self_owned'], form_data['hcs_od'], form_data['hcs_tm'],
+                    data['five_level_department'], data['l4_cloud_service'], data['function_description'],
+                    data['summary_self_owned'], data['summary_od'], data['summary_tm'],
+                    data['hc_self_owned'], data['hc_od'], data['hc_tm'],
+                    data['hcs_self_owned'], data['hcs_od'], data['hcs_tm'],
                 ),
             )
             conn.commit()
-        flash('已新增服务资源')
         return redirect(url_for('admin_service_resources'))
-    return render_template('service_resource_form.html', branding=get_branding(), mode='new', form_data=form_data, departments=load_departments(), **build_auth_context())
+    return render_template('service_resource_form.html', record={}, mode='new', **build_auth_context())
 
 
 @app.route('/admin/service-resources/<int:record_id>/edit', methods=['GET', 'POST'])
 @login_required
 def admin_service_resource_edit(record_id):
-    denied = require_feature('manage_resources', '当前账号不能管理服务资源')
+    denied = require_feature('manage_service_resources', '当前账号不能管理云服务数据')
     if denied:
         return denied
-    current = load_service_resource(record_id)
-    if not current:
-        flash('记录不存在')
-        return redirect(url_for('admin_service_resources'))
-    form_data = form_to_service_resource_data(request.form) if request.method == 'POST' else current
+    record = load_service_resource(record_id)
+    return_to = request.args.get('return_to') or '/views/cloud-service-view'
+    if not record:
+        return redirect(return_to)
     if request.method == 'POST':
+        data = form_to_service_resource_data(request.form)
         with get_conn() as conn:
             conn.execute(
                 """
                 UPDATE service_resource_investment
-                SET five_level_department = ?, l4_cloud_service = ?, function_description = ?,
-                    summary_self_owned = ?, summary_od = ?, summary_tm = ?,
-                    hc_self_owned = ?, hc_od = ?, hc_tm = ?,
-                    hcs_self_owned = ?, hcs_od = ?, hcs_tm = ?, updated_at = CURRENT_TIMESTAMP
+                SET five_level_department = ?,
+                    l4_cloud_service = ?,
+                    function_description = ?,
+                    summary_self_owned = ?,
+                    summary_od = ?,
+                    summary_tm = ?,
+                    hc_self_owned = ?,
+                    hc_od = ?,
+                    hc_tm = ?,
+                    hcs_self_owned = ?,
+                    hcs_od = ?,
+                    hcs_tm = ?,
+                    updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """,
                 (
-                    form_data['five_level_department'], form_data['l4_cloud_service'], form_data['function_description'],
-                    form_data['summary_self_owned'], form_data['summary_od'], form_data['summary_tm'],
-                    form_data['hc_self_owned'], form_data['hc_od'], form_data['hc_tm'],
-                    form_data['hcs_self_owned'], form_data['hcs_od'], form_data['hcs_tm'], record_id,
+                    data['five_level_department'], data['l4_cloud_service'], data['function_description'],
+                    data['summary_self_owned'], data['summary_od'], data['summary_tm'],
+                    data['hc_self_owned'], data['hc_od'], data['hc_tm'],
+                    data['hcs_self_owned'], data['hcs_od'], data['hcs_tm'], record_id,
                 ),
             )
             conn.commit()
-        flash('已更新服务资源')
-        return redirect(url_for('admin_service_resources'))
-    return render_template('service_resource_form.html', branding=get_branding(), mode='edit', form_data=form_data, departments=load_departments(), **build_auth_context())
+        return redirect(return_to)
+    return render_template('service_resource_form.html', record=record, mode='edit', return_to=return_to, **build_auth_context())
 
 
 @app.route('/admin/service-resources/<int:record_id>/delete', methods=['POST'])
 @login_required
 def admin_service_resource_delete(record_id):
-    denied = require_feature('manage_resources', '当前账号不能管理服务资源')
+    denied = require_feature('manage_service_resources', '当前账号不能管理云服务数据')
     if denied:
         return denied
+    return_to = request.form.get('return_to') or request.args.get('return_to') or url_for('view_placeholder', view_key='cloud-service-view')
     with get_conn() as conn:
-        conn.execute('DELETE FROM service_resource_investment WHERE id = ?', [record_id])
+        conn.execute("DELETE FROM service_resource_investment WHERE id = ?", (record_id,))
         conn.commit()
-    flash('已删除服务资源')
-    return redirect(url_for('admin_service_resources'))
+    return redirect(return_to)
 
 
 @app.route('/admin/resource-people/import-csv', methods=['POST'])
 @login_required
 def admin_resource_people_import_csv():
-    denied = require_feature('manage_resources', '当前账号不能管理人员资源')
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
     if denied:
         return denied
-    file = request.files.get('file')
-    import_resource_people_csv_file(file, replace=True)
-    flash('人员资源 CSV 导入完成')
+    file = request.files.get('csv_file')
+    if file and file.filename:
+        import_resource_people_csv_file(file, replace=True)
     return redirect(url_for('admin_resource_people'))
 
 
 @app.route('/admin/service-resources/import-csv', methods=['POST'])
 @login_required
 def admin_service_resources_import_csv():
-    denied = require_feature('manage_resources', '当前账号不能管理服务资源')
+    denied = require_feature('import_export_data', '当前账号不能导入云服务数据')
     if denied:
         return denied
-    file = request.files.get('file')
-    import_service_resource_csv_file(file, replace=True)
-    flash('服务资源 CSV 导入完成')
-    return redirect(url_for('admin_service_resources'))
+    file = request.files.get('csv_file')
+    if file and file.filename:
+        import_service_resource_csv_file(file, replace=True)
+    return redirect(url_for('view_placeholder', view_key='cloud-service-view'))
 
 
 @app.route('/admin/resource-people/template-csv')
 @login_required
 def admin_resource_people_template_csv():
-    denied = require_feature('manage_resources', '当前账号不能管理人员资源')
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
     if denied:
         return denied
     sio = StringIO()
-    writer = csv.DictWriter(sio, fieldnames=RESOURCE_PEOPLE_COLUMNS)
-    writer.writeheader()
-    content = sio.getvalue()
+    writer = csv.writer(sio)
+    writer.writerow(['工号', '姓名', '人员类型', '最小部门', '所属项目', '投入比例', '角色', '状态', '备注'])
+    content = '\ufeff' + sio.getvalue()
     response = Response(content, mimetype='text/csv; charset=utf-8')
     response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('人员资源导入模板.csv')}"
+    return response
+
+
+@app.route('/admin/resource-people/export-csv')
+@login_required
+def admin_resource_people_export_csv():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    rows = load_resource_people()
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['工号', '姓名', '人员类型', '最小部门', '所属项目', '投入比例', '角色', '状态', '备注'])
+    for row in rows:
+        writer.writerow([
+            row.get('employee_id') or '',
+            row.get('employee_name') or '',
+            row.get('person_type') or '',
+            row.get('department_full_name') or '',
+            row.get('project_name') or '',
+            row.get('allocation_ratio') or '',
+            row.get('role_name') or '',
+            row.get('status') or '',
+            row.get('remarks') or '',
+        ])
+    response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('人员资源库_导出数据.csv')}"
     return response
 
 
 @app.route('/admin/service-resources/template-csv')
 @login_required
 def admin_service_resources_template_csv():
-    denied = require_feature('manage_resources', '当前账号不能管理服务资源')
+    denied = require_feature('import_export_data', '当前账号不能导入云服务数据')
     if denied:
         return denied
     sio = StringIO()
-    writer = csv.DictWriter(sio, fieldnames=SERVICE_RESOURCE_COLUMNS)
-    writer.writeheader()
-    content = sio.getvalue()
+    writer = csv.writer(sio)
+    writer.writerow(['五层部门', 'L4云服务', '功能和用途简介', 'HC（自有）', 'HC（OD）', 'HC（TM）', 'HCS（自有）', 'HCS（OD）', 'HCS（TM）', '汇总（自有）', '汇总（OD）', '汇总（TM）'])
+    content = '\ufeff' + sio.getvalue()
     response = Response(content, mimetype='text/csv; charset=utf-8')
     response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('服务资源导入模板.csv')}"
+    return response
+
+
+@app.route('/admin/service-resources/export-csv')
+@login_required
+def admin_service_resources_export_csv():
+    rows = load_service_resources()
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['五层部门', 'L4云服务', '功能和用途简介', 'HC（自有）', 'HC（OD）', 'HC（TM）', 'HCS（自有）', 'HCS（OD）', 'HCS（TM）', '汇总（自有）', '汇总（OD）', '汇总（TM）'])
+    for row in rows:
+        writer.writerow([
+            row.get('five_level_department', ''),
+            row.get('l4_cloud_service', ''),
+            row.get('function_description', ''),
+            row.get('hc_self_owned', ''),
+            row.get('hc_od', ''),
+            row.get('hc_tm', ''),
+            row.get('hcs_self_owned', ''),
+            row.get('hcs_od', ''),
+            row.get('hcs_tm', ''),
+            row.get('summary_self_owned', ''),
+            row.get('summary_od', ''),
+            row.get('summary_tm', ''),
+        ])
+    response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('service_resource_investment_export.csv')}"
     return response
