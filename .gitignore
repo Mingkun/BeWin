@@ -23,6 +23,14 @@ data/*.db-*
 data/*.db.bak*
 data/*.sqlite.bak*
 data/*.sqlite3.bak*
+data/permission_rules.json
+data/requirements_requests.md
+data/milestone_condolence/
+picture/milestone_condolence/
+
+# Runtime backup artifacts
+backups/backup_manifest.json
+backups/releaseplan-backup-*.zip
 
 # Generated release/download archives
 static/downloads/*.tar.gz
