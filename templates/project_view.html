@@ -107,6 +107,9 @@
                 </div>
                 {% endif %}
                 <div class="project-gantt-info-head">
+                  {% if project.project_role in ['lead', '主导'] %}
+                  <span class="project-lead-badge">主导</span>
+                  {% endif %}
                   <div class="project-gantt-name">{{ project.project_name }}</div>
                 </div>
                 <div class="project-gantt-tags">
@@ -171,9 +174,6 @@
             {% for project in projects %}
               <tr>
                 <td data-sort-value="{{ project.project_name or '未命名项目' }}">
-                  {% if project.project_role in ['lead', '主导'] %}
-                  <span class="project-lead-badge">主导</span>
-                  {% endif %}
                   {{ project.project_name or '未命名项目' }}
                 </td>
                 <td>{{ project.project_code or '未填写' }}</td>
