@@ -37,6 +37,13 @@
           <label>具体日期
             <input type="date" name="activity_date" value="{{ form_data.activity_date or '' }}">
           </label>
+          <label>所属月份
+            <select name="month_index">
+              {% for month_index, month_label in months %}
+              <option value="{{ month_index }}" {% if (form_data.month_index|string) == (month_index|string) %}selected{% endif %}>{{ month_label }}</option>
+              {% endfor %}
+            </select>
+          </label>
           <label>活动参与人
             <textarea name="participant_names" rows="2">{{ form_data.participant_names or '' }}</textarea>
           </label>

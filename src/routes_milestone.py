@@ -18,6 +18,38 @@ from src.app import (
 )
 
 
+def _text_value(value):
+    return str(value or '').strip()
+
+
+def _form_or_current(name, current=None):
+    if name in request.form:
+        return _text_value(request.form.get(name))
+    if current is None:
+        return ''
+    return _text_value(current.get(name))
+
+
+def _parse_month_index(form_data):
+    raw_month = _text_value(form_data.get('month_index'))
+    if raw_month:
+        try:
+            month_index = int(raw_month)
+            if 1 <= month_index <= 12:
+                return month_index
+        except ValueError:
+            pass
+    activity_date = _text_value(form_data.get('activity_date'))
+    if len(activity_date) >= 7:
+        try:
+            month_index = int(activity_date[5:7])
+            if 1 <= month_index <= 12:
+                return month_index
+        except ValueError:
+            pass
+    return 0
+
+
 @app.route('/picture/milestone_condolence/<path:filename>')
 @login_required
 def milestone_condolence_image_route(filename):
@@ -56,16 +88,16 @@ def admin_milestone_condolence_new():
     from src.app import get_conn, get_milestone_departments
     items = load_milestone_condolence_items()
     form_data = {
-        'five_level_department': (request.form.get('five_level_department') or '').strip(),
-        'month_index': (request.form.get('month_index') or '').strip(),
-        'activity_date': (request.form.get('activity_date') or '').strip(),
-        'participant_names': (request.form.get('participant_names') or '').strip(),
-        'breakthrough_text': (request.form.get('breakthrough_text') or '').strip(),
-        'condolence_region': (request.form.get('condolence_region') or '').strip(),
+        'five_level_department': _form_or_current('five_level_department'),
+        'month_index': _form_or_current('month_index'),
+        'activity_date': _form_or_current('activity_date'),
+        'participant_names': _form_or_current('participant_names'),
+        'breakthrough_text': _form_or_current('breakthrough_text'),
+        'condolence_region': _form_or_current('condolence_region'),
     }
     if request.method == 'POST':
         image_path = save_milestone_condolence_image(request.files.get('image_file'))
-        month_index = int(form_data['month_index'] or '0')
+        month_index = _parse_month_index(form_data)
         with get_conn() as conn:
             conn.execute(
                 """
@@ -114,18 +146,18 @@ def admin_milestone_condolence_edit(item_id):
         current = dict(current)
         if request.method == 'POST':
             form_data = {
-                'five_level_department': (request.form.get('five_level_department') or current.get('five_level_department') or '').strip(),
-                'month_index': (request.form.get('month_index') or current.get('month_index') or '').strip(),
-                'activity_date': (request.form.get('activity_date') or current.get('activity_date') or '').strip(),
-                'participant_names': (request.form.get('participant_names') or current.get('participant_names') or '').strip(),
-                'breakthrough_text': (request.form.get('breakthrough_text') or current.get('breakthrough_text') or '').strip(),
-                'condolence_region': (request.form.get('condolence_region') or current.get('condolence_region') or '').strip(),
+                'five_level_department': _form_or_current('five_level_department', current),
+                'month_index': _form_or_current('month_index', current),
+                'activity_date': _form_or_current('activity_date', current),
+                'participant_names': _form_or_current('participant_names', current),
+                'breakthrough_text': _form_or_current('breakthrough_text', current),
+                'condolence_region': _form_or_current('condolence_region', current),
             }
             image_path = current.get('image_path') or ''
             new_image_path = save_milestone_condolence_image(request.files.get('image_file'))
             if new_image_path:
                 image_path = new_image_path
-            month_index = int(form_data['month_index'] or '0')
+            month_index = _parse_month_index(form_data)
             conn.execute(
                 """
                 UPDATE milestone_condolence_items
