@@ -18,7 +18,11 @@
         <a class="button secondary" href="{{ url_for('admin_resource_people') }}">人员资源库</a>
       </div>
     </header>
-    {% if records %}
+
+    <div class="toolbar-actions" style="justify-content:flex-end; margin-bottom:12px;">
+      <button class="button" type="button" id="show-new-department-row">新增</button>
+    </div>
+
     <div class="table-wrap card">
       <table class="data-table">
         <thead>
@@ -29,21 +33,20 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <form method="post" action="{{ url_for('admin_department_new') }}">
-              <td>新增</td>
-              <td>
-                <div class="form-grid form-grid-2" style="gap:8px; min-width:320px;">
-                  <input type="text" name="level_1_department" placeholder="一级部门" required>
-                  <input type="text" name="level_2_department" placeholder="二级部门">
-                </div>
-              </td>
-              <td>
-                <div class="inline-actions">
-                  <button class="button tiny" type="submit">新增</button>
-                </div>
-              </td>
-            </form>
+          <tr id="new-department-row" hidden>
+            <td>新增</td>
+            <td>
+              <div class="form-grid form-grid-2" style="gap:8px; min-width:320px;">
+                <input form="new-department-form" type="text" name="level_1_department" placeholder="一级部门" required>
+                <input form="new-department-form" type="text" name="level_2_department" placeholder="二级部门">
+              </div>
+            </td>
+            <td>
+              <div class="inline-actions">
+                <button class="button tiny" form="new-department-form" type="submit">保存</button>
+                <button class="button tiny secondary" type="button" id="cancel-new-department-row">取消</button>
+              </div>
+            </td>
           </tr>
           {% for record in records %}
           {% if edit_id and edit_id|int == record.id %}
@@ -86,15 +89,42 @@
           </tr>
           {% endif %}
           {% endfor %}
+          {% if not records %}
+          <tr id="department-empty-row">
+            <td colspan="3">当前还没有部门数据。</td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
-    {% else %}
-    <div class="empty">当前还没有部门数据。</div>
-    {% endif %}
+    <form method="post" action="{{ url_for('admin_department_new') }}" id="new-department-form"></form>
   </div>
   <script>
     (function () {
+      const showNewButton = document.getElementById('show-new-department-row');
+      const newRow = document.getElementById('new-department-row');
+      const cancelNewButton = document.getElementById('cancel-new-department-row');
+      const emptyRow = document.getElementById('department-empty-row');
+      if (showNewButton && newRow) {
+        showNewButton.addEventListener('click', () => {
+          newRow.hidden = false;
+          showNewButton.hidden = true;
+          if (emptyRow) emptyRow.hidden = true;
+          const firstInput = newRow.querySelector('input[name="level_1_department"]');
+          if (firstInput) firstInput.focus();
+        });
+      }
+      if (cancelNewButton && newRow && showNewButton) {
+        cancelNewButton.addEventListener('click', () => {
+          newRow.hidden = true;
+          showNewButton.hidden = false;
+          newRow.querySelectorAll('input').forEach((input) => {
+            input.value = '';
+          });
+          if (emptyRow) emptyRow.hidden = false;
+        });
+      }
+
       document.querySelectorAll('.inline-delete-form').forEach((form) => {
         const trigger = form.querySelector('.delete-trigger');
         const popover = form.querySelector('.delete-popover');
