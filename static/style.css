@@ -884,6 +884,8 @@ body.theme-ios-dark .backup-popover-text {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
+  min-width: 44px;
   padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid #93c5fd;
@@ -891,6 +893,9 @@ body.theme-ios-dark .backup-popover-text {
   color: #1d4ed8;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
   cursor: pointer;
 }
 
