@@ -170,10 +170,15 @@
           <tbody>
             {% for project in projects %}
               <tr>
-                <td>{{ project.project_name or '未命名项目' }}</td>
+                <td data-sort-value="{{ project.project_name or '未命名项目' }}">
+                  {% if project.project_role in ['lead', '主导'] %}
+                  <span class="project-lead-badge">主导</span>
+                  {% endif %}
+                  {{ project.project_name or '未命名项目' }}
+                </td>
                 <td>{{ project.project_code or '未填写' }}</td>
                 <td>{{ project.project_manager or '未填写' }}</td>
-                <td>{% if project.project_role == 'lead' %}主导{% elif project.project_role == 'participant' %}参与{% else %}未填写{% endif %}</td>
+                <td>{% if project.project_role in ['lead', '主导'] %}主导{% elif project.project_role in ['participant', '参与'] %}参与{% else %}未填写{% endif %}</td>
                 <td>{{ project.project_status or '未填写' }}</td>
                 <td>{{ project.control_gate or '未填写' }}</td>
                 <td>{{ project.investment_subject or '未填写' }}</td>
@@ -461,8 +466,10 @@
             header.dataset.order = next;
 
             rows.sort((rowA, rowB) => {
-              const valueA = parseValue(rowA.children[index]?.innerText, sortType);
-              const valueB = parseValue(rowB.children[index]?.innerText, sortType);
+              const cellA = rowA.children[index];
+              const cellB = rowB.children[index];
+              const valueA = parseValue(cellA?.dataset.sortValue || cellA?.innerText, sortType);
+              const valueB = parseValue(cellB?.dataset.sortValue || cellB?.innerText, sortType);
               if (valueA === null && valueB === null) return 0;
               if (valueA === null) return 1;
               if (valueB === null) return -1;

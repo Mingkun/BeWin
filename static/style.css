@@ -1337,6 +1337,22 @@ body.theme-ios-dark .backup-popover-text {
   min-width: 1400px;
 }
 
+.project-lead-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+
 .sortable-col {
   cursor: pointer;
 }
