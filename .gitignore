@@ -14,3 +14,16 @@ dist/
 build/
 coverage/
 *.log
+
+# Runtime data and local database files
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/*.db-*
+data/*.db.bak*
+data/*.sqlite.bak*
+data/*.sqlite3.bak*
+
+# Generated release/download archives
+static/downloads/*.tar.gz
+static/downloads/*.zip
