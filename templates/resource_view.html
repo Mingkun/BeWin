@@ -99,8 +99,7 @@
             <input type="text" name="keyword" value="{{ filters.keyword or '' }}" placeholder="输入工号或姓名关键词">
           </label>
         </div>
-        <div class="form-actions" style="margin-top:12px;">
-          <button class="button" type="submit">查询</button>
+        <div class="form-actions resource-filter-actions" style="margin-top:12px;">
           <a class="button secondary" href="{{ url_for('view_placeholder', view_key='project-budget-resource') }}">重置</a>
         </div>
       </form>
@@ -146,6 +145,22 @@
   <script>
     (function () {
       const filterForm = document.querySelector('.filter-form');
+      if (filterForm) {
+        let keywordTimer = null;
+        filterForm.querySelectorAll('select').forEach((select) => {
+          select.addEventListener('change', () => {
+            filterForm.requestSubmit();
+          });
+        });
+        filterForm.querySelectorAll('input[type="text"]').forEach((input) => {
+          input.addEventListener('input', () => {
+            window.clearTimeout(keywordTimer);
+            keywordTimer = window.setTimeout(() => {
+              filterForm.requestSubmit();
+            }, 450);
+          });
+        });
+      }
 
       function enableSummarySort(tableId) {
         const table = document.getElementById(tableId);
