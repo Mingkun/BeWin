@@ -108,18 +108,21 @@
 
     {% if records %}
     <div class="table-wrap card" style="margin-top:16px;">
-      <table class="data-table" id="resource-records-table">
+      <table class="data-table resizable-resource-table" id="resource-records-table">
+        <colgroup>
+          <col><col><col><col><col><col><col><col><col>
+        </colgroup>
         <thead>
           <tr>
-            <th data-sort-type="text">工号</th>
-            <th data-sort-type="text">姓名</th>
-            <th data-sort-type="text">人员类型</th>
-            <th data-sort-type="text">最小部门</th>
-            <th data-sort-type="text">所属项目</th>
-            <th data-sort-type="number">投入比例</th>
-            <th data-sort-type="text">角色</th>
-            <th data-sort-type="text">状态</th>
-            <th data-sort-type="text">备注</th>
+            <th data-sort-type="text">工号<div class="col-resizer"></div></th>
+            <th data-sort-type="text">姓名<div class="col-resizer"></div></th>
+            <th data-sort-type="text">人员类型<div class="col-resizer"></div></th>
+            <th data-sort-type="text">最小部门<div class="col-resizer"></div></th>
+            <th data-sort-type="text">所属项目<div class="col-resizer"></div></th>
+            <th data-sort-type="number">投入比例<div class="col-resizer"></div></th>
+            <th data-sort-type="text">角色<div class="col-resizer"></div></th>
+            <th data-sort-type="text">状态<div class="col-resizer"></div></th>
+            <th data-sort-type="text">备注<div class="col-resizer"></div></th>
           </tr>
         </thead>
         <tbody>
@@ -153,7 +156,8 @@
         headers.forEach((header, index) => {
           header.style.cursor = 'pointer';
           let asc = true;
-          header.addEventListener('click', () => {
+          header.addEventListener('click', (event) => {
+            if (event.target.closest('.col-resizer')) return;
             const type = header.dataset.sortType || 'text';
             const rows = Array.from(tbody.querySelectorAll('tr'));
             rows.sort((a, b) => {
@@ -171,9 +175,59 @@
         });
       }
 
+      function enableColumnResize(tableId, storageKey) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const cols = Array.from(table.querySelectorAll('colgroup col'));
+        const headers = Array.from(table.querySelectorAll('thead th'));
+
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+          saved.forEach((width, index) => {
+            if (cols[index] && width) cols[index].style.width = width;
+          });
+        } catch (error) {
+          console.warn('load resource widths failed', error);
+        }
+
+        function saveWidths() {
+          localStorage.setItem(storageKey, JSON.stringify(cols.map((col) => col.style.width || '')));
+        }
+
+        headers.forEach((header, index) => {
+          const resizer = header.querySelector('.col-resizer');
+          if (!resizer || !cols[index]) return;
+          let startX = 0;
+          let startWidth = 0;
+
+          function onMouseMove(event) {
+            const width = Math.max(72, startWidth + event.clientX - startX);
+            cols[index].style.width = width + 'px';
+          }
+
+          function onMouseUp() {
+            document.body.classList.remove('is-resizing-columns');
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            saveWidths();
+          }
+
+          resizer.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            startX = event.clientX;
+            startWidth = header.getBoundingClientRect().width;
+            document.body.classList.add('is-resizing-columns');
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+          });
+        });
+      }
+
       enableSummarySort('department-summary-table');
       enableSummarySort('project-summary-table');
       enableSummarySort('resource-records-table');
+      enableColumnResize('resource-records-table', 'releaseplan.resourceView.columnWidths.v1');
     })();
   </script>
 </body>

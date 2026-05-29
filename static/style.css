@@ -1337,6 +1337,10 @@ body.theme-ios-dark .backup-popover-text {
   min-width: 1400px;
 }
 
+.resizable-resource-table {
+  min-width: 1120px;
+}
+
 .project-lead-badge {
   display: inline-flex;
   align-items: center;
@@ -1363,6 +1367,15 @@ body.theme-ios-dark .backup-popover-text {
   right: -3px;
   width: 8px;
   height: 100%;
+  cursor: col-resize;
+  user-select: none;
+}
+
+.col-resizer:hover {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.is-resizing-columns {
   cursor: col-resize;
   user-select: none;
 }
