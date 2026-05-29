@@ -3,13 +3,33 @@ set -euo pipefail
 
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 OUT_DIR="$BASE_DIR/dist"
-NEXT_VERSION="$(python3 "$BASE_DIR/scripts/next_release_version.py")"
-LITE_NAME="releaseplan-portable-lite-v${NEXT_VERSION}"
-FULL_NAME="releaseplan-portable-full-v${NEXT_VERSION}"
+
+resolve_version() {
+  if [[ "${1:-}" != "" ]]; then
+    printf '%s\n' "${1#v}"
+    return
+  fi
+
+  local exact_tag
+  exact_tag="$(git -C "$BASE_DIR" describe --exact-match --tags --match 'v[0-9]*.[0-9]*' 2>/dev/null || true)"
+  if [[ "$exact_tag" != "" ]]; then
+    printf '%s\n' "${exact_tag#v}"
+    return
+  fi
+
+  python3 "$BASE_DIR/scripts/next_release_version.py"
+}
+
+PACKAGE_VERSION="$(resolve_version "${1:-}")"
+LITE_NAME="releaseplan-portable-lite-v${PACKAGE_VERSION}"
+FULL_NAME="releaseplan-portable-full-v${PACKAGE_VERSION}"
+UPDATE_NAME="releaseplan-update-v${PACKAGE_VERSION}"
 LITE_DIR="$OUT_DIR/$LITE_NAME"
 FULL_DIR="$OUT_DIR/$FULL_NAME"
+UPDATE_DIR="$OUT_DIR/$UPDATE_NAME"
 LITE_ARCHIVE="$OUT_DIR/${LITE_NAME}.tar.gz"
 FULL_ARCHIVE="$OUT_DIR/${FULL_NAME}.tar.gz"
+UPDATE_ARCHIVE="$OUT_DIR/${UPDATE_NAME}.tar.gz"
 
 prepare_package_dir() {
   local target_dir="$1"
@@ -52,6 +72,7 @@ EOF
 
 prepare_package_dir "$LITE_DIR"
 prepare_package_dir "$FULL_DIR"
+prepare_package_dir "$UPDATE_DIR"
 
 if command -v python3 >/dev/null 2>&1; then
   mkdir -p "$FULL_DIR/vendor"
@@ -61,6 +82,8 @@ fi
 cd "$OUT_DIR"
 tar -czf "$LITE_ARCHIVE" "$LITE_NAME"
 tar -czf "$FULL_ARCHIVE" "$FULL_NAME"
+tar -czf "$UPDATE_ARCHIVE" "$UPDATE_NAME"
 
 echo "$LITE_ARCHIVE"
 echo "$FULL_ARCHIVE"
+echo "$UPDATE_ARCHIVE"
