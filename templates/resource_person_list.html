@@ -46,11 +46,19 @@
             {% endfor %}
           </select>
         </label>
-        <label>最小部门
-          <select name="department_name">
+        <label>上层部门
+          <select name="upper_department">
             <option value="">全部</option>
-            {% for item in filter_options.departments %}
-            <option value="{{ item }}" {% if filters.department_name == item %}selected{% endif %}>{{ item }}</option>
+            {% for item in filter_options.upper_departments %}
+            <option value="{{ item }}" {% if filters.upper_department == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>最小部门
+          <select name="smallest_department">
+            <option value="">全部</option>
+            {% for item in filter_options.smallest_departments %}
+            <option value="{{ item }}" {% if filters.smallest_department == item %}selected{% endif %}>{{ item }}</option>
             {% endfor %}
           </select>
         </label>
@@ -85,6 +93,7 @@
             <th>工号</th>
             <th>姓名</th>
             <th>人员类型</th>
+            <th>上层部门</th>
             <th>最小部门</th>
             <th>所属项目</th>
             <th>投入比例</th>
@@ -112,11 +121,12 @@
                   <option value="博士后" {% if record.person_type == '博士后' %}selected{% endif %}>博士后</option>
                 </select>
               </td>
+              <td>{{ record.upper_department_name or '' }}</td>
               <td>
                 <select name="department_id" style="max-width:180px;">
                   <option value="">为空</option>
                   {% for item in department_options %}
-                  <option value="{{ item.id }}" {% if record.department_id == item.id %}selected{% endif %}>{{ item.department_full_name }}</option>
+                  <option value="{{ item.id }}" {% if record.department_id == item.id %}selected{% endif %}>{{ item.level_2_department or item.level_1_department or item.department_full_name }}</option>
                   {% endfor %}
                 </select>
               </td>
@@ -158,7 +168,7 @@
               <td>
                 <div class="inline-actions">
                   <button class="button tiny" type="submit">保存</button>
-                  <a class="button tiny secondary" href="{{ url_for('admin_resource_people', keyword=filters.keyword, project_name=filters.project_name, department_name=filters.department_name, role_name=filters.role_name, status=filters.status) }}">取消</a>
+                  <a class="button tiny secondary" href="{{ url_for('admin_resource_people', keyword=filters.keyword, project_name=filters.project_name, upper_department=filters.upper_department, smallest_department=filters.smallest_department, role_name=filters.role_name, status=filters.status) }}">取消</a>
                 </div>
               </td>
             </form>
@@ -168,7 +178,8 @@
             <td>{{ record.employee_id or '' }}</td>
             <td>{{ record.employee_name or '' }}</td>
             <td>{{ record.person_type or '' }}</td>
-            <td>{{ record.level_2_department or record.level_1_department or '' }}</td>
+            <td>{{ record.upper_department_name or '' }}</td>
+            <td>{{ record.smallest_department_name or '' }}</td>
             <td>{{ record.project_name or '' }}</td>
             <td>{{ record.allocation_ratio or '' }}</td>
             <td>{{ record.role_name or '' }}</td>
@@ -176,7 +187,7 @@
             <td>{{ record.remarks or '' }}</td>
             <td>
               <div class="inline-actions">
-                <a class="icon-action" href="{{ url_for('admin_resource_people', keyword=filters.keyword, project_name=filters.project_name, department_name=filters.department_name, role_name=filters.role_name, status=filters.status, edit_id=record.id) }}" title="编辑">✏️</a>
+                <a class="icon-action" href="{{ url_for('admin_resource_people', keyword=filters.keyword, project_name=filters.project_name, upper_department=filters.upper_department, smallest_department=filters.smallest_department, role_name=filters.role_name, status=filters.status, edit_id=record.id) }}" title="编辑">✏️</a>
                 <form method="post" action="{{ url_for('admin_resource_person_delete', record_id=record.id) }}" class="inline-delete-form">
                   <button class="icon-action danger delete-trigger" type="button" title="删除">🗑</button>
                   <div class="delete-popover" hidden>

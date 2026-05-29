@@ -1314,11 +1314,12 @@ def load_resource_people():
         result = []
         for row in rows:
             item = dict(row)
-            item['department_full_name'] = ' / '.join([
-                (item.get('level_1_department') or '').strip(),
-                (item.get('level_2_department') or '').strip(),
-            ])
-            item['department_full_name'] = ' / '.join([part for part in item['department_full_name'].split(' / ') if part])
+            upper_department = (item.get('level_1_department') or '').strip()
+            level_2_department = (item.get('level_2_department') or '').strip()
+            smallest_department = level_2_department or upper_department
+            item['upper_department_name'] = upper_department
+            item['smallest_department_name'] = smallest_department
+            item['department_full_name'] = ' / '.join([part for part in [upper_department, level_2_department] if part])
             result.append(item)
         return result
 
@@ -1327,15 +1328,19 @@ def get_resource_people_admin_filter_options(rows):
     return {
         'projects': sorted({(row.get('project_name') or '').strip() for row in rows if (row.get('project_name') or '').strip()}),
         'departments': sorted({(row.get('department_full_name') or '').strip() for row in rows if (row.get('department_full_name') or '').strip()}),
+        'upper_departments': sorted({(row.get('upper_department_name') or '').strip() for row in rows if (row.get('upper_department_name') or '').strip()}),
+        'smallest_departments': sorted({(row.get('smallest_department_name') or '').strip() for row in rows if (row.get('smallest_department_name') or '').strip()}),
         'roles': sorted({(row.get('role_name') or '').strip() for row in rows if (row.get('role_name') or '').strip()}),
         'statuses': sorted({(row.get('status') or '').strip() for row in rows if (row.get('status') or '').strip()}),
     }
 
 
-def filter_resource_people_admin(rows, keyword='', project_name='', department_name='', role_name='', status=''):
+def filter_resource_people_admin(rows, keyword='', project_name='', department_name='', upper_department='', smallest_department='', role_name='', status=''):
     keyword = (keyword or '').strip().lower()
     project_name = (project_name or '').strip().lower()
     department_name = (department_name or '').strip().lower()
+    upper_department = (upper_department or '').strip().lower()
+    smallest_department = (smallest_department or '').strip().lower()
     role_name = (role_name or '').strip().lower()
     status = (status or '').strip().lower()
 
@@ -1343,9 +1348,11 @@ def filter_resource_people_admin(rows, keyword='', project_name='', department_n
         keyword_ok = (not keyword) or keyword in (row.get('employee_id') or '').strip().lower() or keyword in (row.get('employee_name') or '').strip().lower()
         project_ok = (not project_name) or (row.get('project_name') or '').strip().lower() == project_name
         department_ok = (not department_name) or (row.get('department_full_name') or '').strip().lower() == department_name
+        upper_department_ok = (not upper_department) or (row.get('upper_department_name') or '').strip().lower() == upper_department
+        smallest_department_ok = (not smallest_department) or (row.get('smallest_department_name') or '').strip().lower() == smallest_department
         role_ok = (not role_name) or (row.get('role_name') or '').strip().lower() == role_name
         status_ok = (not status) or (row.get('status') or '').strip().lower() == status
-        return keyword_ok and project_ok and department_ok and role_ok and status_ok
+        return keyword_ok and project_ok and department_ok and upper_department_ok and smallest_department_ok and role_ok and status_ok
 
     return [row for row in rows if matched(row)]
 
@@ -1355,13 +1362,33 @@ def load_resource_person(record_id):
     with get_conn() as conn:
         row = conn.execute(
             """
-            SELECT id, employee_id, employee_name, person_type, department_id, project_id, allocation_ratio, role_name, status, remarks
-            FROM resource_people
-            WHERE id = ?
+            SELECT
+                rp.id,
+                rp.employee_id,
+                rp.employee_name,
+                rp.person_type,
+                rp.department_id,
+                rp.project_id,
+                rp.allocation_ratio,
+                rp.role_name,
+                rp.status,
+                rp.remarks,
+                d.level_1_department,
+                d.level_2_department
+            FROM resource_people rp
+            LEFT JOIN departments d ON d.id = rp.department_id
+            WHERE rp.id = ?
             """,
             (record_id,),
         ).fetchone()
-        return dict(row) if row else None
+        if not row:
+            return None
+        item = dict(row)
+        upper_department = (item.get('level_1_department') or '').strip()
+        smallest_department = (item.get('level_2_department') or '').strip() or upper_department
+        item['upper_department_name'] = upper_department
+        item['smallest_department_name'] = smallest_department
+        return item
 
 
 def form_to_resource_person_data(form):
@@ -1880,17 +1907,48 @@ def import_resource_people_csv_file(file_storage, replace=True):
     department_options = load_departments()
     project_options = load_project_options()
     department_map = {((item.get('department_full_name') or '').strip()): item.get('id') for item in department_options}
+    department_pair_map = {
+        (
+            (item.get('level_1_department') or '').strip(),
+            (item.get('level_2_department') or '').strip() or (item.get('level_1_department') or '').strip(),
+        ): item.get('id')
+        for item in department_options
+    }
+    department_leaf_counts = {}
+    for item in department_options:
+        leaf_name = ((item.get('level_2_department') or '').strip() or (item.get('level_1_department') or '').strip())
+        if leaf_name:
+            department_leaf_counts[leaf_name] = department_leaf_counts.get(leaf_name, 0) + 1
+    department_leaf_map = {
+        ((item.get('level_2_department') or '').strip() or (item.get('level_1_department') or '').strip()): item.get('id')
+        for item in department_options
+        if department_leaf_counts.get(((item.get('level_2_department') or '').strip() or (item.get('level_1_department') or '').strip())) == 1
+    }
     project_map = {((item.get('project_name') or '').strip()): item.get('id') for item in project_options}
 
     normalized_rows = []
     for row in rows:
-        department_name = (row.get('最小部门') or '').strip()
+        upper_department_name = (row.get('上层部门') or row.get('一级部门') or '').strip()
+        smallest_department_name = (row.get('最小部门') or row.get('二级部门') or '').strip()
+        legacy_department_name = (row.get('部门') or '').strip()
+        department_name = ' / '.join([part for part in [upper_department_name, smallest_department_name] if part])
+        department_id = None
+        if upper_department_name or smallest_department_name:
+            department_id = department_pair_map.get((upper_department_name, smallest_department_name))
+            if department_id is None and upper_department_name and not smallest_department_name:
+                department_id = department_pair_map.get((upper_department_name, upper_department_name))
+            if department_id is None:
+                department_id = department_map.get(department_name)
+            if department_id is None and not upper_department_name:
+                department_id = department_map.get(smallest_department_name) or department_leaf_map.get(smallest_department_name)
+        elif legacy_department_name:
+            department_id = department_map.get(legacy_department_name) or department_leaf_map.get(legacy_department_name)
         project_name = (row.get('所属项目') or '').strip()
         normalized_rows.append({
             'employee_id': (row.get('工号') or '').strip(),
             'employee_name': (row.get('姓名') or '').strip(),
             'person_type': (row.get('人员类型') or '').strip(),
-            'department_id': department_map.get(department_name) if department_name else None,
+            'department_id': department_id,
             'project_id': project_map.get(project_name) if project_name else None,
             'allocation_ratio': (row.get('投入比例') or '').strip(),
             'role_name': (row.get('角色') or '').strip(),

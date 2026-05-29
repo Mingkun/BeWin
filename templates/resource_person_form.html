@@ -11,7 +11,7 @@
     <header class="toolbar">
       <div>
         <h1>{% if mode == 'edit' %}编辑人员{% else %}新增人员{% endif %}</h1>
-        <p>所属项目从项目视图已有项目中选择，部门从部门库中选择，均允许为空。</p>
+        <p>所属项目从项目视图已有项目中选择，部门从二级部门库中选择，均允许为空。</p>
       </div>
       <div class="toolbar-actions">
         <a class="button home-button" href="{{ url_for('index') }}">首页</a>
@@ -34,11 +34,11 @@
             <option value="博士后" {% if record.person_type == '博士后' %}selected{% endif %}>博士后</option>
           </select>
         </label>
-        <label>最小部门
+        <label>二级部门库
           <select name="department_id">
             <option value="">为空</option>
             {% for item in department_options %}
-            <option value="{{ item.id }}" {% if record.department_id == item.id %}selected{% endif %}>{{ item.department_full_name }}</option>
+            <option value="{{ item.id }}" {% if record.department_id == item.id %}selected{% endif %}>{{ item.level_1_department }}{% if item.level_2_department %} / {{ item.level_2_department }}{% endif %}</option>
             {% endfor %}
           </select>
         </label>

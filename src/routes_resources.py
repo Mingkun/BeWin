@@ -142,15 +142,34 @@ def admin_resource_people():
     keyword = (request.args.get('keyword') or '').strip()
     project_name = (request.args.get('project_name') or '').strip()
     department_name = (request.args.get('department_name') or '').strip()
+    upper_department = (request.args.get('upper_department') or '').strip()
+    smallest_department = (request.args.get('smallest_department') or '').strip()
     role_name = (request.args.get('role_name') or '').strip()
     status = (request.args.get('status') or '').strip()
     edit_id = (request.args.get('edit_id') or '').strip()
-    filtered_rows = filter_resource_people_admin(rows, keyword=keyword, project_name=project_name, department_name=department_name, role_name=role_name, status=status)
+    filtered_rows = filter_resource_people_admin(
+        rows,
+        keyword=keyword,
+        project_name=project_name,
+        department_name=department_name,
+        upper_department=upper_department,
+        smallest_department=smallest_department,
+        role_name=role_name,
+        status=status,
+    )
     return render_template(
         'resource_person_list.html',
         records=filtered_rows,
         filter_options=get_resource_people_admin_filter_options(rows),
-        filters={'keyword': keyword, 'project_name': project_name, 'department_name': department_name, 'role_name': role_name, 'status': status},
+        filters={
+            'keyword': keyword,
+            'project_name': project_name,
+            'department_name': department_name,
+            'upper_department': upper_department,
+            'smallest_department': smallest_department,
+            'role_name': role_name,
+            'status': status,
+        },
         edit_id=edit_id,
         department_options=department_options,
         project_options=project_options,
@@ -363,7 +382,7 @@ def admin_resource_people_template_csv():
         return denied
     sio = StringIO()
     writer = csv.writer(sio)
-    writer.writerow(['工号', '姓名', '人员类型', '最小部门', '所属项目', '投入比例', '角色', '状态', '备注'])
+    writer.writerow(['工号', '姓名', '人员类型', '上层部门', '最小部门', '所属项目', '投入比例', '角色', '状态', '备注'])
     content = '\ufeff' + sio.getvalue()
     response = Response(content, mimetype='text/csv; charset=utf-8')
     response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('人员资源导入模板.csv')}"
@@ -379,13 +398,14 @@ def admin_resource_people_export_csv():
     rows = load_resource_people()
     output = StringIO()
     writer = csv.writer(output)
-    writer.writerow(['工号', '姓名', '人员类型', '最小部门', '所属项目', '投入比例', '角色', '状态', '备注'])
+    writer.writerow(['工号', '姓名', '人员类型', '上层部门', '最小部门', '所属项目', '投入比例', '角色', '状态', '备注'])
     for row in rows:
         writer.writerow([
             row.get('employee_id') or '',
             row.get('employee_name') or '',
             row.get('person_type') or '',
-            row.get('department_full_name') or '',
+            row.get('upper_department_name') or '',
+            row.get('smallest_department_name') or '',
             row.get('project_name') or '',
             row.get('allocation_ratio') or '',
             row.get('role_name') or '',
