@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>投资视图</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <div>
+        <h1>投资视图</h1>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+        <a class="button secondary" href="{{ url_for('view_placeholder', view_key='department-pipeline-load') }}">项目视图</a>
+        {% if current_user %}
+          <span class="logout-wrap">
+            <span class="user-chip" aria-label="当前登录用户" title="当前登录用户"></span>
+            <span class="logout-popover">
+              <span class="logout-user-name">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+              <a class="button secondary" href="{{ url_for('logout') }}">退出登录</a>
+            </span>
+          </span>
+        {% else %}
+          <a class="button secondary" href="{{ url_for('login_entry', next=request.path) }}">登录</a>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="summary-strip">
+      <div class="summary-metric">
+        <span class="summary-label">投资金额</span>
+        <strong>{{ summary.investment_amount }}</strong>
+      </div>
+      <div class="summary-metric">
+        <span class="summary-label">投资总人月数</span>
+        <strong>{{ summary.person_months }}</strong>
+      </div>
+      <div class="summary-metric">
+        <span class="summary-label">自有</span>
+        <strong>{{ summary.self_owned }}</strong>
+      </div>
+      <div class="summary-metric">
+        <span class="summary-label">OD</span>
+        <strong>{{ summary.od }}</strong>
+      </div>
+      <div class="summary-metric">
+        <span class="summary-label">TM</span>
+        <strong>{{ summary.tm }}</strong>
+      </div>
+    </div>
+
+    {% if records %}
+      <div class="table-wrap card">
+        <table class="data-table clean-project-table investment-table" id="investment-table">
+          <thead>
+            <tr>
+              <th data-sort-type="text">投资主体</th>
+              <th data-sort-type="text">管控灶</th>
+              <th data-sort-type="text">被投资项目</th>
+              <th data-sort-type="number">投资金额</th>
+              <th data-sort-type="number">投资总人月数</th>
+              <th data-sort-type="number">投入人数（自有）</th>
+              <th data-sort-type="number">投入人数（OD）</th>
+              <th data-sort-type="number">投入人数（TM）</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+            <tr>
+              <td>{{ record.investment_subject }}</td>
+              <td>{{ record.control_gate }}</td>
+              <td>{{ record.project_name }}</td>
+              <td data-sort-value="{{ record.investment_amount_value }}">{{ record.investment_amount }}</td>
+              <td data-sort-value="{{ record.person_months_value }}">{{ record.person_months }}</td>
+              <td data-sort-value="{{ record.self_owned_value }}">{{ record.self_owned }}</td>
+              <td data-sort-value="{{ record.od_value }}">{{ record.od }}</td>
+              <td data-sort-value="{{ record.tm_value }}">{{ record.tm }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">当前还没有投资数据。你可以先在项目视图新增项目。</div>
+    {% endif %}
+  </div>
+  <script>
+    (function () {
+      const table = document.getElementById('investment-table');
+      if (!table) return;
+      const tbody = table.querySelector('tbody');
+      const headers = Array.from(table.querySelectorAll('th'));
+
+      function parseValue(cell, type) {
+        const raw = (cell?.dataset.sortValue || cell?.innerText || '').trim();
+        if (type === 'number') {
+          const numeric = Number(raw);
+          return Number.isNaN(numeric) ? 0 : numeric;
+        }
+        return raw;
+      }
+
+      headers.forEach((header, index) => {
+        header.classList.add('sortable-col');
+        header.addEventListener('click', () => {
+          const sortType = header.dataset.sortType || 'text';
+          const next = header.dataset.order === 'asc' ? 'desc' : 'asc';
+          headers.forEach((item) => delete item.dataset.order);
+          header.dataset.order = next;
+          const rows = Array.from(tbody.querySelectorAll('tr'));
+          rows.sort((rowA, rowB) => {
+            const valueA = parseValue(rowA.children[index], sortType);
+            const valueB = parseValue(rowB.children[index], sortType);
+            if (sortType === 'number') {
+              return next === 'asc' ? valueA - valueB : valueB - valueA;
+            }
+            return next === 'asc'
+              ? String(valueA).localeCompare(String(valueB), 'zh-Hans-CN')
+              : String(valueB).localeCompare(String(valueA), 'zh-Hans-CN');
+          });
+          rows.forEach((row) => tbody.appendChild(row));
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

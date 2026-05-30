@@ -12,6 +12,7 @@ from src.app import (
     build_service_resource_summary,
     filter_resource_people,
     filter_service_resources,
+    format_number,
     get_branding,
     get_conn,
     get_resource_people_filter_options,
@@ -22,6 +23,7 @@ from src.app import (
     login_required,
     parse_workload_value,
     require_feature,
+    to_number,
 )
 
 
@@ -89,6 +91,45 @@ def requirement_status_update(requirement_id):
     return redirect(url_for('requirements_page'))
 
 
+def build_investment_rows(project_rows):
+    rows = []
+    totals = {
+        'investment_amount': 0.0,
+        'person_months': 0.0,
+        'self_owned': 0.0,
+        'od': 0.0,
+        'tm': 0.0,
+    }
+    for row in project_rows:
+        investment_amount = to_number(row.get('rd_budget_w'))
+        person_months = to_number(row.get('workload_person_month'))
+        self_owned = to_number(row.get('headcount_budget_self_owned'))
+        od = to_number(row.get('headcount_budget_od'))
+        tm = to_number(row.get('headcount_budget_tm'))
+        totals['investment_amount'] += investment_amount
+        totals['person_months'] += person_months
+        totals['self_owned'] += self_owned
+        totals['od'] += od
+        totals['tm'] += tm
+        rows.append({
+            'investment_subject': (row.get('investment_subject') or '').strip() or '未填写',
+            'control_gate': (row.get('control_gate') or '').strip() or '未填写',
+            'project_name': (row.get('project_name') or '').strip() or '未命名项目',
+            'investment_amount': format_number(investment_amount),
+            'person_months': format_number(person_months),
+            'self_owned': format_number(self_owned),
+            'od': format_number(od),
+            'tm': format_number(tm),
+            'investment_amount_value': investment_amount,
+            'person_months_value': person_months,
+            'self_owned_value': self_owned,
+            'od_value': od,
+            'tm_value': tm,
+        })
+    rows.sort(key=lambda item: (item['investment_subject'], item['control_gate'], item['project_name']))
+    return rows, {key: format_number(value) for key, value in totals.items()}
+
+
 @app.route('/views/<view_key>')
 @login_required
 def view_placeholder(view_key):
@@ -147,6 +188,15 @@ def view_placeholder(view_key):
             summary=build_service_resource_summary(filtered_rows),
             filters={'department': department_keyword, 'service': service_keyword},
             filter_options=get_service_resource_filter_options(rows),
+            **build_auth_context(),
+        )
+
+    if view_key == 'department-budget-resource':
+        investment_rows, investment_summary = build_investment_rows(load_projects())
+        return render_template(
+            'investment_view.html',
+            records=investment_rows,
+            summary=investment_summary,
             **build_auth_context(),
         )
 

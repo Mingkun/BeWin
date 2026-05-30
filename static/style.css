@@ -1341,6 +1341,38 @@ body.theme-ios-dark .backup-popover-text {
   min-width: 1120px;
 }
 
+.investment-table {
+  min-width: 980px;
+}
+
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-metric {
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.summary-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.summary-metric strong {
+  color: #0f172a;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
 .project-lead-badge {
   display: inline-flex;
   align-items: center;
