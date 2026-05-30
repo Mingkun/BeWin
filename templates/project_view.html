@@ -145,11 +145,10 @@
       <div class="table-wrap card">
         <table class="data-table clean-project-table" id="project-data-table">
           <colgroup>
-            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
+            <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
           </colgroup>
           <thead>
             <tr>
-              <th data-sort="none" rowspan="2">操作<div class="col-resizer"></div></th>
               <th data-sort="text" rowspan="2">项目名称<div class="col-resizer"></div></th>
               <th data-sort="text" rowspan="2">项目编码<div class="col-resizer"></div></th>
               <th data-sort="text" rowspan="2">项目经理<div class="col-resizer"></div></th>
@@ -173,67 +172,25 @@
           </thead>
           <tbody>
             {% for project in projects %}
-              {% set is_inline_edit = user_features.manage_projects and edit_project_id and edit_project_id|int == project.id %}
               <tr>
-                {% if is_inline_edit %}
-                  <td class="actions-col">
-                    <form method="post" action="{{ url_for('admin_project_edit', project_id=project.id) }}" class="project-inline-edit-form" id="project-inline-edit-{{ project.id }}">
-                      <input type="hidden" name="project_category" value="{{ project.project_category or '' }}">
-                      <input type="hidden" name="project_subcategory" value="{{ project.project_subcategory or '' }}">
-                      <input type="hidden" name="project_complexity" value="{{ project.project_complexity or '' }}">
-                    </form>
-                    <div class="inline-actions">
-                      <button class="button tiny" form="project-inline-edit-{{ project.id }}" type="submit">保存</button>
-                      <a class="button tiny secondary" href="{{ url_for('view_placeholder', view_key='department-pipeline-load') }}">取消</a>
-                    </div>
-                  </td>
-                  <td data-sort-value="{{ project.project_name or '未命名项目' }}"><textarea form="project-inline-edit-{{ project.id }}" name="project_name" rows="2" class="project-inline-field project-inline-textarea">{{ project.project_name or '' }}</textarea></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="text" name="project_code" value="{{ project.project_code or '' }}" class="project-inline-field"></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="text" name="project_manager" value="{{ project.project_manager or '' }}" class="project-inline-field"></td>
-                  <td>
-                    <select form="project-inline-edit-{{ project.id }}" name="project_role" class="project-inline-field">
-                      <option value="" {% if not project.project_role %}selected{% endif %}>未填写</option>
-                      <option value="主项目" {% if project.project_role in ['lead', '主导', '主项目'] %}selected{% endif %}>主导</option>
-                      <option value="参与" {% if project.project_role in ['participant', '参与'] %}selected{% endif %}>参与</option>
-                    </select>
-                  </td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="text" name="project_status" value="{{ project.project_status or '' }}" class="project-inline-field"></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="text" name="control_gate" value="{{ project.control_gate or '' }}" class="project-inline-field"></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="text" name="investment_subject" value="{{ project.investment_subject or '' }}" class="project-inline-field"></td>
-                  <td class="project-desc-cell" title="{{ project.project_description or '未填写' }}"><textarea form="project-inline-edit-{{ project.id }}" name="project_description" rows="2" class="project-inline-field project-inline-textarea">{{ project.project_description or '' }}</textarea></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="date" name="planned_start_date" value="{{ project.planned_start_date or '' }}" class="project-inline-field project-inline-date"></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="date" name="planned_end_date" value="{{ project.planned_end_date or '' }}" class="project-inline-field project-inline-date"></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="text" name="workload_person_month" value="{{ project.workload_person_month or '' }}" class="project-inline-field project-inline-number"></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="text" name="rd_budget_w" value="{{ project.rd_budget_w or '' }}" class="project-inline-field project-inline-number"></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="text" name="headcount_budget_self_owned" value="{{ project.headcount_budget_self_owned or '' }}" class="project-inline-field project-inline-number"></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="text" name="headcount_budget_od" value="{{ project.headcount_budget_od or '' }}" class="project-inline-field project-inline-number"></td>
-                  <td><input form="project-inline-edit-{{ project.id }}" type="text" name="headcount_budget_tm" value="{{ project.headcount_budget_tm or '' }}" class="project-inline-field project-inline-number"></td>
-                  <td title="公式：自有 + OD + 0.8*TM">{{ '%.2f'|format((project.headcount_budget_self_owned|float) + (project.headcount_budget_od|float) + 0.8 * (project.headcount_budget_tm|float)) }}</td>
-                {% else %}
-                  <td class="actions-col">
-                    {% if user_features.manage_projects %}
-                    <a class="icon-action" href="{{ url_for('view_placeholder', view_key='department-pipeline-load', edit_project_id=project.id) }}" title="编辑" aria-label="编辑">✏️</a>
-                    {% endif %}
-                  </td>
-                  <td data-sort-value="{{ project.project_name or '未命名项目' }}">
-                    {{ project.project_name or '未命名项目' }}
-                  </td>
-                  <td>{{ project.project_code or '未填写' }}</td>
-                  <td>{{ project.project_manager or '未填写' }}</td>
-                  <td>{% if project.project_role in ['lead', '主导', '主项目'] %}主导{% elif project.project_role in ['participant', '参与'] %}参与{% else %}未填写{% endif %}</td>
-                  <td>{{ project.project_status or '未填写' }}</td>
-                  <td>{{ project.control_gate or '未填写' }}</td>
-                  <td>{{ project.investment_subject or '未填写' }}</td>
-                  <td class="project-desc-cell" title="{{ project.project_description or '未填写' }}">{{ project.project_description or '未填写' }}</td>
-                  <td>{{ project.planned_start_date or '未填写' }}</td>
-                  <td>{{ project.planned_end_date or '未填写' }}</td>
-                  <td>{{ project.workload_person_month or '未填写' }}</td>
-                  <td>{{ project.rd_budget_w or '未填写' }}</td>
-                  <td>{{ project.headcount_budget_self_owned or '未填写' }}</td>
-                  <td>{{ project.headcount_budget_od or '未填写' }}</td>
-                  <td>{{ project.headcount_budget_tm or '未填写' }}</td>
-                  <td title="公式：自有 + OD + 0.8*TM">{{ '%.2f'|format((project.headcount_budget_self_owned|float) + (project.headcount_budget_od|float) + 0.8 * (project.headcount_budget_tm|float)) }}</td>
-                {% endif %}
+                <td data-sort-value="{{ project.project_name or '未命名项目' }}">
+                  {{ project.project_name or '未命名项目' }}
+                </td>
+                <td>{{ project.project_code or '未填写' }}</td>
+                <td>{{ project.project_manager or '未填写' }}</td>
+                <td>{% if project.project_role in ['lead', '主导', '主项目'] %}主导{% elif project.project_role in ['participant', '参与'] %}参与{% else %}未填写{% endif %}</td>
+                <td>{{ project.project_status or '未填写' }}</td>
+                <td>{{ project.control_gate or '未填写' }}</td>
+                <td>{{ project.investment_subject or '未填写' }}</td>
+                <td class="project-desc-cell" title="{{ project.project_description or '未填写' }}">{{ project.project_description or '未填写' }}</td>
+                <td>{{ project.planned_start_date or '未填写' }}</td>
+                <td>{{ project.planned_end_date or '未填写' }}</td>
+                <td>{{ project.workload_person_month or '未填写' }}</td>
+                <td>{{ project.rd_budget_w or '未填写' }}</td>
+                <td>{{ project.headcount_budget_self_owned or '未填写' }}</td>
+                <td>{{ project.headcount_budget_od or '未填写' }}</td>
+                <td>{{ project.headcount_budget_tm or '未填写' }}</td>
+                <td title="公式：自有 + OD + 0.8*TM">{{ '%.2f'|format((project.headcount_budget_self_owned|float) + (project.headcount_budget_od|float) + 0.8 * (project.headcount_budget_tm|float)) }}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -457,7 +414,7 @@
       const table = document.getElementById('project-data-table');
       if (!table) return;
 
-      const storageKey = 'releaseplan.projectTable.columnWidths.v3';
+      const storageKey = 'releaseplan.projectTable.columnWidths.v2';
       const cols = Array.from(table.querySelectorAll('colgroup col'));
       const headers = Array.from(table.querySelectorAll('thead th'));
       const tbody = table.querySelector('tbody');

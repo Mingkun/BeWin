@@ -168,7 +168,6 @@ def view_placeholder(view_key):
             quarters=QUARTERS,
             display_year=display_year,
             today_marker_percent=today_marker_percent,
-            edit_project_id=(request.args.get('edit_project_id') or '').strip(),
             **build_auth_context(),
         )
 
