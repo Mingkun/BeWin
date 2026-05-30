@@ -1345,6 +1345,67 @@ body.theme-ios-dark .backup-popover-text {
   min-width: 980px;
 }
 
+.investment-sankey-card {
+  margin-bottom: 16px;
+}
+
+.investment-sankey-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.investment-sankey-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.investment-sankey-header p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.investment-sankey-header span {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: right;
+}
+
+.investment-sankey-wrap {
+  overflow-x: auto;
+}
+
+.investment-sankey {
+  display: block;
+  width: 100%;
+  min-width: 920px;
+  height: 360px;
+}
+
+.investment-sankey-axis {
+  fill: #475569;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.investment-sankey-node-label {
+  fill: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.investment-sankey-value {
+  fill: #64748b;
+  font-size: 11px;
+  pointer-events: none;
+}
+
 .summary-strip {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

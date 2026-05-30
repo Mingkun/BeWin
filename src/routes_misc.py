@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from flask import flash, redirect, render_template, request, url_for
 
 from src.app import (
@@ -131,6 +133,66 @@ def build_investment_rows(project_rows):
     return rows, {key: format_number(value) for key, value in totals.items()}
 
 
+def build_investment_sankey(records):
+    node_totals = defaultdict(float)
+    link_totals = defaultdict(float)
+    for row in records:
+        subject = (row.get('investment_subject') or '').strip() or '未填写'
+        gate = (row.get('control_gate') or '').strip() or '未填写'
+        project_name = (row.get('invested_project') or '').strip() or '未命名项目'
+        value = to_number(row.get('investment_amount'))
+        if value <= 0:
+            value = to_number(row.get('total_person_months'))
+        if value <= 0:
+            value = (
+                to_number(row.get('headcount_self_owned'))
+                + to_number(row.get('headcount_od'))
+                + to_number(row.get('headcount_tm'))
+            )
+        if value <= 0:
+            value = 1.0
+
+        subject_id = f"subject:{subject}"
+        gate_id = f"gate:{gate}"
+        project_id = f"project:{project_name}"
+        node_totals[(0, subject_id, subject)] += value
+        node_totals[(1, gate_id, gate)] += value
+        node_totals[(2, project_id, project_name)] += value
+        link_totals[(subject_id, gate_id)] += value
+        link_totals[(gate_id, project_id)] += value
+
+    levels = []
+    for level in range(3):
+        level_nodes = [
+            {
+                'id': node_id,
+                'label': label,
+                'value': value,
+                'display_value': format_number(value),
+            }
+            for (node_level, node_id, label), value in node_totals.items()
+            if node_level == level
+        ]
+        level_nodes.sort(key=lambda item: (-item['value'], item['label']))
+        levels.append(level_nodes)
+
+    links = [
+        {
+            'source': source,
+            'target': target,
+            'value': value,
+            'display_value': format_number(value),
+        }
+        for (source, target), value in link_totals.items()
+    ]
+    links.sort(key=lambda item: -item['value'])
+    return {
+        'levels': levels,
+        'links': links,
+        'has_data': any(levels),
+    }
+
+
 @app.route('/views/<view_key>')
 @login_required
 def view_placeholder(view_key):
@@ -193,11 +255,13 @@ def view_placeholder(view_key):
         )
 
     if view_key == 'department-budget-resource':
-        investment_rows, investment_summary = build_investment_rows(load_investment_records())
+        investment_records = load_investment_records()
+        investment_rows, investment_summary = build_investment_rows(investment_records)
         return render_template(
             'investment_view.html',
             records=investment_rows,
             summary=investment_summary,
+            sankey=build_investment_sankey(investment_records),
             **build_auth_context(),
         )
 

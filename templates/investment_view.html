@@ -52,6 +52,21 @@
       </div>
     </div>
 
+    {% if sankey and sankey.has_data %}
+      <section class="card investment-sankey-card">
+        <div class="investment-sankey-header">
+          <div>
+            <h2>投资流向</h2>
+            <p>投资主体 → 管控灶 → 被投资项目</p>
+          </div>
+          <span>线宽按投资金额展示，无金额时按人月/人数兜底</span>
+        </div>
+        <div class="investment-sankey-wrap">
+          <svg id="investment-sankey" class="investment-sankey" role="img" aria-label="投资主体、管控灶和被投资项目关系图"></svg>
+        </div>
+      </section>
+    {% endif %}
+
     {% if records %}
       <div class="table-wrap card">
         <table class="data-table clean-project-table investment-table" id="investment-table">
@@ -91,6 +106,113 @@
     {% endif %}
   </div>
   <script>
+    (function () {
+      const data = {{ sankey | tojson if sankey else '{}' }};
+      const svg = document.getElementById('investment-sankey');
+      if (!svg || !data.has_data) return;
+
+      const width = 1120;
+      const height = 360;
+      const nodeWidth = 150;
+      const nodeHeight = 30;
+      const topPadding = 48;
+      const xPositions = [42, 485, 928];
+      const colors = ['#2563eb', '#059669', '#f59e0b'];
+      const linkColors = ['rgba(37, 99, 235, 0.26)', 'rgba(5, 150, 105, 0.26)'];
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.innerHTML = '';
+
+      function createSvg(tag, attrs) {
+        const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        Object.entries(attrs || {}).forEach(([key, value]) => node.setAttribute(key, value));
+        return node;
+      }
+
+      function truncate(text, max) {
+        const value = String(text || '');
+        return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+      }
+
+      const nodeMap = new Map();
+      data.levels.forEach((nodes, levelIndex) => {
+        const available = height - topPadding - 28;
+        const count = Math.max(nodes.length, 1);
+        const gap = count > 1 ? Math.max(12, Math.min(34, (available - count * nodeHeight) / (count - 1))) : 0;
+        const blockHeight = count * nodeHeight + Math.max(0, count - 1) * gap;
+        const startY = topPadding + Math.max(0, (available - blockHeight) / 2);
+        nodes.forEach((node, index) => {
+          const x = xPositions[levelIndex];
+          const y = startY + index * (nodeHeight + gap);
+          nodeMap.set(node.id, { ...node, x, y, levelIndex });
+        });
+      });
+
+      const maxLinkValue = Math.max(...data.links.map((link) => Number(link.value) || 0), 1);
+      data.links.slice().reverse().forEach((link) => {
+        const source = nodeMap.get(link.source);
+        const target = nodeMap.get(link.target);
+        if (!source || !target) return;
+        const x1 = source.x + nodeWidth;
+        const y1 = source.y + nodeHeight / 2;
+        const x2 = target.x;
+        const y2 = target.y + nodeHeight / 2;
+        const strokeWidth = 2 + (Number(link.value) || 0) / maxLinkValue * 18;
+        const path = createSvg('path', {
+          d: `M ${x1} ${y1} C ${x1 + 120} ${y1}, ${x2 - 120} ${y2}, ${x2} ${y2}`,
+          fill: 'none',
+          stroke: linkColors[source.levelIndex] || 'rgba(100, 116, 139, 0.24)',
+          'stroke-width': strokeWidth,
+          'stroke-linecap': 'round',
+        });
+        const title = createSvg('title');
+        title.textContent = `${source.label} → ${target.label}: ${link.display_value}`;
+        path.appendChild(title);
+        svg.appendChild(path);
+      });
+
+      const labels = ['投资主体', '管控灶', '被投资项目'];
+      labels.forEach((label, index) => {
+        const text = createSvg('text', {
+          x: xPositions[index],
+          y: 24,
+          class: 'investment-sankey-axis',
+        });
+        text.textContent = label;
+        svg.appendChild(text);
+      });
+
+      Array.from(nodeMap.values()).forEach((node) => {
+        const group = createSvg('g');
+        const rect = createSvg('rect', {
+          x: node.x,
+          y: node.y,
+          width: nodeWidth,
+          height: nodeHeight,
+          rx: 6,
+          fill: colors[node.levelIndex],
+        });
+        const title = createSvg('title');
+        title.textContent = `${node.label}: ${node.display_value}`;
+        rect.appendChild(title);
+        const label = createSvg('text', {
+          x: node.x + 10,
+          y: node.y + 19,
+          class: 'investment-sankey-node-label',
+        });
+        label.textContent = truncate(node.label, 12);
+        const value = createSvg('text', {
+          x: node.x + nodeWidth + 8,
+          y: node.y + 19,
+          class: 'investment-sankey-value',
+        });
+        value.textContent = node.display_value;
+        group.appendChild(rect);
+        group.appendChild(label);
+        group.appendChild(value);
+        svg.appendChild(group);
+      });
+    })();
+
     (function () {
       const table = document.getElementById('investment-table');
       if (!table) return;
