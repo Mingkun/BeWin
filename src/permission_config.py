@@ -322,11 +322,37 @@ def split_permission_values(raw_rule_value):
     return [part.strip().lower() for part in re.split(r'[;\/\s]+', raw) if part.strip()]
 
 
+def merge_permission_matches(matches):
+    if not matches:
+        return None
+    merged_features = {key: False for key in FEATURE_KEYS}
+    matched_roles = []
+    for item in matches:
+        role = role_from_features(item.get('features'), item.get('role'))
+        matched_roles.append(role)
+        features = normalize_feature_flags(item.get('features'), role)
+        for key in FEATURE_KEYS:
+            merged_features[key] = bool(merged_features.get(key)) or bool(features.get(key))
+
+    if any(bool(merged_features.get(key)) for key in {'view_system', 'manage_permissions', 'manage_backup'}):
+        merged_role = 'admin'
+    elif any(role != 'guest' for role in matched_roles):
+        merged_role = 'user'
+    else:
+        merged_role = 'guest'
+    return {
+        'role': merged_role,
+        'features': normalize_feature_flags(merged_features, merged_role),
+        'matched_count': len(matches),
+    }
+
+
 def match_permission_rule(base_dir, source='sso', username='', email='', employee_number=''):
     source = normalize_permission_source(source)
     username = (username or '').strip().lower()
     email = (email or '').strip().lower()
     employee_number = str(employee_number or '').strip().lower()
+    matches = []
     for item in load_permission_rules(base_dir):
         rule_source = normalize_permission_source(item.get('source'))
         if rule_source != source:
@@ -344,10 +370,5 @@ def match_permission_rule(base_dir, source='sso', username='', email='', employe
         if rule_source == 'sso' and rule_type == 'employee_number' and employee_number and employee_number in rule_values:
             matched = True
         if matched:
-            features = normalize_feature_flags(item.get('features'), item.get('role'))
-            role = role_from_features(features, item.get('role'))
-            return {
-                'role': role,
-                'features': features,
-            }
-    return None
+            matches.append(item)
+    return merge_permission_matches(matches)
