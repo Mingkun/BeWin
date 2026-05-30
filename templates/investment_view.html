@@ -112,14 +112,19 @@
       if (!svg || !data.has_data) return;
 
       const width = 1120;
-      const height = 360;
       const nodeWidth = 150;
       const nodeHeight = 30;
+      const minGap = 18;
       const topPadding = 48;
+      const bottomPadding = 28;
       const xPositions = [42, 485, 928];
       const colors = ['#2563eb', '#059669', '#f59e0b'];
       const linkColors = ['rgba(37, 99, 235, 0.26)', 'rgba(5, 150, 105, 0.26)'];
+      const maxNodeCount = Math.max(...data.levels.map((nodes) => nodes.length), 1);
+      const chartBodyHeight = maxNodeCount * nodeHeight + Math.max(0, maxNodeCount - 1) * minGap;
+      const height = Math.max(360, topPadding + chartBodyHeight + bottomPadding);
       svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.style.height = `${height}px`;
       svg.innerHTML = '';
 
       function createSvg(tag, attrs) {
@@ -135,9 +140,9 @@
 
       const nodeMap = new Map();
       data.levels.forEach((nodes, levelIndex) => {
-        const available = height - topPadding - 28;
+        const available = height - topPadding - bottomPadding;
         const count = Math.max(nodes.length, 1);
-        const gap = count > 1 ? Math.max(12, Math.min(34, (available - count * nodeHeight) / (count - 1))) : 0;
+        const gap = count > 1 ? Math.max(minGap, (available - count * nodeHeight) / (count - 1)) : 0;
         const blockHeight = count * nodeHeight + Math.max(0, count - 1) * gap;
         const startY = topPadding + Math.max(0, (available - blockHeight) / 2);
         nodes.forEach((node, index) => {

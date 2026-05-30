@@ -1384,7 +1384,8 @@ body.theme-ios-dark .backup-popover-text {
   display: block;
   width: 100%;
   min-width: 920px;
-  height: 360px;
+  min-height: 360px;
+  height: auto;
 }
 
 .investment-sankey-axis {
