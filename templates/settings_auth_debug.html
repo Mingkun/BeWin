@@ -18,6 +18,7 @@
       </div>
     </header>
 
+    {% if can_view_system_debug %}
     <div class="card system-page-card" style="padding:16px; margin-bottom:16px;">
       <div style="font-size:16px; font-weight:700; margin-bottom:10px;">OAuth 调试日志状态</div>
       <div style="font-size:13px; line-height:1.9; color:#334155;">
@@ -28,6 +29,7 @@
         最后修改：<strong>{{ oauth_log_mtime or '-' }}</strong>
       </div>
     </div>
+    {% endif %}
 
     <div class="card system-page-card" style="padding:16px; margin-bottom:16px;">
       <div style="font-size:16px; font-weight:700; margin-bottom:10px;">当前会话用户</div>
@@ -40,9 +42,12 @@
         登录方式：<strong>{{ oauth_debug_summary.auth_type or '-' }}</strong><br>
         角色：<strong>{{ oauth_debug_summary.roles | join(', ') if oauth_debug_summary.roles else '-' }}</strong>
       </div>
+      {% if can_view_system_debug %}
       <pre style="white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.6; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; overflow:auto;">{{ current_user_pretty }}</pre>
+      {% endif %}
     </div>
 
+    {% if can_view_system_debug %}
     <div class="card system-page-card" style="padding:16px; margin-bottom:16px;">
       <div style="font-size:16px; font-weight:700; margin-bottom:10px;">最近活跃登录用户（24小时）</div>
       {% if active_logins %}
@@ -81,6 +86,7 @@
       <div style="font-size:16px; font-weight:700; margin-bottom:10px;">SSO / OAuth 原始用户信息</div>
       <pre style="white-space:pre-wrap; word-break:break-word; font-size:12px; line-height:1.6; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; overflow:auto;">{{ oauth_raw_pretty }}</pre>
     </div>
+    {% endif %}
   </div>
 </body>
 </html>

@@ -6,6 +6,7 @@ from src.app import (
     app,
     auth_mode,
     build_auth_context,
+    can_access,
     get_branding,
     get_current_user,
     get_current_user_features,
@@ -20,7 +21,6 @@ from src.app import (
     normalize_next_url,
     oauth_enabled,
     record_login_audit,
-    require_feature,
     verify_local_admin,
     verify_local_user,
     default_feature_flags,
@@ -91,10 +91,8 @@ def logout():
 @app.route('/settings/auth-debug')
 @login_required
 def settings_auth_debug_page():
-    denied = require_feature('view_system', '当前账号不能访问系统页')
-    if denied:
-        return denied
     current_user = get_current_user() or {}
+    can_view_system_debug = can_access('view_system')
     oauth_raw = current_user.get('raw') if isinstance(current_user.get('raw'), dict) else {}
     oauth_log_path_obj = get_oauth_debug_log_path()
     oauth_log_exists = oauth_log_path_obj.exists()
@@ -117,13 +115,14 @@ def settings_auth_debug_page():
         'settings_auth_debug.html',
         branding=get_branding(),
         page_title='系统调试',
-        page_desc='查看当前登录会话、OAuth 调试日志和最近活跃登录记录。',
+        page_desc='查看当前登录会话。系统管理员可查看 OAuth 调试日志和最近活跃登录记录。',
+        can_view_system_debug=can_view_system_debug,
         current_roles=get_current_user_roles(),
         current_features=get_current_user_features(),
         oauth_debug_summary=oauth_debug_summary,
-        current_user_pretty=json.dumps(current_user, ensure_ascii=False, indent=2),
-        oauth_raw_pretty=json.dumps(oauth_raw, ensure_ascii=False, indent=2),
-        active_logins=list_recent_active_logins(24),
+        current_user_pretty=json.dumps(current_user, ensure_ascii=False, indent=2) if can_view_system_debug else '',
+        oauth_raw_pretty=json.dumps(oauth_raw, ensure_ascii=False, indent=2) if can_view_system_debug else '',
+        active_logins=list_recent_active_logins(24) if can_view_system_debug else [],
         oauth_log_path=str(oauth_log_path_obj),
         oauth_log_default_path=str(DEFAULT_OAUTH_DEBUG_LOG_PATH),
         oauth_log_exists=oauth_log_exists,
