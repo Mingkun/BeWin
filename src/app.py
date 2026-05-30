@@ -1532,6 +1532,7 @@ def build_project_gantt(project_rows, display_year):
         gantt_projects.append({
             "id": row.get("id"),
             "project_name": (row.get("project_name") or "").strip() or "未命名项目",
+            "project_role": (row.get("project_role") or "").strip(),
             "project_manager": (row.get("project_manager") or "").strip(),
             "workload_person_month": (row.get("workload_person_month") or "").strip(),
             "planned_start_date": start_value or '未填写',

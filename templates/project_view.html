@@ -107,7 +107,7 @@
                 </div>
                 {% endif %}
                 <div class="project-gantt-info-head">
-                  {% if project.project_role in ['lead', '主导'] %}
+                  {% if project.project_role in ['lead', '主导', '主项目'] %}
                   <span class="project-lead-badge">主导</span>
                   {% endif %}
                   <div class="project-gantt-name">{{ project.project_name }}</div>
@@ -178,7 +178,7 @@
                 </td>
                 <td>{{ project.project_code or '未填写' }}</td>
                 <td>{{ project.project_manager or '未填写' }}</td>
-                <td>{% if project.project_role in ['lead', '主导'] %}主导{% elif project.project_role in ['participant', '参与'] %}参与{% else %}未填写{% endif %}</td>
+                <td>{% if project.project_role in ['lead', '主导', '主项目'] %}主导{% elif project.project_role in ['participant', '参与'] %}参与{% else %}未填写{% endif %}</td>
                 <td>{{ project.project_status or '未填写' }}</td>
                 <td>{{ project.control_gate or '未填写' }}</td>
                 <td>{{ project.investment_subject or '未填写' }}</td>
