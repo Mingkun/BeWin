@@ -53,6 +53,9 @@ def _parse_month_index(form_data):
 @app.route('/picture/milestone_condolence/<path:filename>')
 @login_required
 def milestone_condolence_image_route(filename):
+    denied = require_feature('view_milestone', '当前账号不能查看关键突破&战地激励')
+    if denied:
+        return denied
     safe_name = secure_filename(filename)
     if not safe_name:
         return Response('图片不存在', status=404)
@@ -69,6 +72,9 @@ def milestone_condolence_image_route(filename):
 @app.route('/milestone-condolence')
 @login_required
 def milestone_condolence_page():
+    denied = require_feature('view_milestone', '当前账号不能查看关键突破&战地激励')
+    if denied:
+        return denied
     return render_template(
         'milestone_condolence.html',
         branding=get_branding(),

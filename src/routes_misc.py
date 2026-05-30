@@ -28,6 +28,9 @@ from src.app import (
 @app.route('/requirements', methods=['GET', 'POST'])
 @login_required
 def requirements_page():
+    denied = require_feature('view_requirements', '当前账号不能查看需求')
+    if denied:
+        return denied
     denied = require_feature('submit_requirement', '当前账号不能提交需求') if request.method == 'POST' else None
     if denied:
         return denied
@@ -93,35 +96,45 @@ def view_placeholder(view_key):
         'milestone-condolence': {
             'title': '关键突破&战地激励',
             'description': '查看关键突破与战地激励相关内容。',
+            'feature': 'view_milestone',
         },
         'department-budget-resource': {
             'title': '投资视图',
             'description': '查看投资维度的整体情况、投入分布与汇总信息。',
+            'feature': 'view_investment',
         },
         'department-pipeline-load': {
             'title': '项目视图',
             'description': '查看项目维度的整体情况、排期分布与重点内容。',
+            'feature': 'view_projects',
         },
         'project-budget-resource': {
             'title': '资源视图',
             'description': '查看项目维度的预算与资源分布信息。',
+            'feature': 'view_resource_people',
         },
         'cloud-service-view': {
             'title': '云服务视图',
             'description': '按云服务粒度查看资源投入情况。',
+            'feature': 'view_service_resources',
         },
         'roadmap': next(({
             'title': spec['default_title'],
             'description': spec['desc'],
+            'feature': 'view_features',
         } for spec in HOME_CARD_SPECS if spec['key'] == 'roadmap'), {
             'title': '关键特性视图',
             'description': '查看所规划关键特性的路标信息。',
+            'feature': 'view_features',
         }),
     }
     view_config = view_map.get(view_key)
     if not view_config:
         flash('页面不存在')
         return redirect(url_for('index'))
+    denied = require_feature(view_config.get('feature'), f"当前账号不能查看{view_config.get('title')}")
+    if denied:
+        return denied
 
     if view_key == 'cloud-service-view':
         department_keyword = (request.args.get('department') or '').strip()

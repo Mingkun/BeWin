@@ -102,6 +102,15 @@ HOME_CARD_SPECS = [
     },
 ]
 
+HOME_CARD_VIEW_FEATURES = {
+    "milestone-condolence": "view_milestone",
+    "department-pipeline-load": "view_projects",
+    "roadmap": "view_features",
+    "cloud-service-view": "view_service_resources",
+    "department-budget-resource": "view_investment",
+    "project-budget-resource": "view_resource_people",
+}
+
 
 def _build_default_home_cards():
     cards = []
@@ -167,9 +176,10 @@ def get_home_cards():
 
 def get_visible_home_cards(user=None):
     cards = get_home_cards()
-    if is_guest_user(user):
-        return [card for card in cards if card.get('key') == 'milestone-condolence']
-    return cards
+    return [
+        card for card in cards
+        if can_access(HOME_CARD_VIEW_FEATURES.get(card.get('key'), ''), user)
+    ]
 
 
 def milestone_month_options():

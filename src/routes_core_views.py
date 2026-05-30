@@ -15,6 +15,7 @@ from src.app import (
     load_projects,
     load_user_feature_orders,
     login_required,
+    require_feature,
 )
 
 
@@ -28,6 +29,9 @@ def index():
 @app.route('/roadmap')
 @login_required
 def roadmap():
+    denied = require_feature('view_features', '当前账号不能查看关键特性视图')
+    if denied:
+        return denied
     project_rows = load_projects()
     feature_rows = load_project_features()
     current_user = get_current_user() or {}
@@ -46,6 +50,9 @@ def roadmap():
 @app.route('/roadmap/feature-pin', methods=['POST'])
 @login_required
 def save_roadmap_feature_pin():
+    denied = require_feature('view_features', '当前账号不能查看关键特性视图')
+    if denied:
+        return {'ok': False}, 403
     payload = request.get_json(silent=True) or {}
     project_id = payload.get('project_id')
     feature_id = payload.get('feature_id')

@@ -13,7 +13,7 @@
         <h1>{{ branding.home_title }}</h1>
       </div>
       <div class="toolbar-actions home-toolbar-actions">
-        {% if user_features.submit_requirement or user_features.manage_requirement_status %}
+        {% if user_features.view_requirements %}
         <a class="button secondary home-round-button" href="{{ url_for('requirements_page') }}" title="点击这里给这个网站提交需求" aria-label="点击这里给这个网站提交需求"><span>💡</span></a>
         {% endif %}
         {% if user_features.view_system %}
