@@ -178,7 +178,12 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
     matched_rule = match_permission_rule(source='sso', username=username, email=email, employee_number=employee_number)
     if matched_rule:
         matched_role = str(matched_rule.get('role') or 'user').strip().lower()
-        final_roles = ['admin'] if matched_role == 'admin' else ['user']
+        if matched_role == 'admin':
+            final_roles = ['admin']
+        elif matched_role == 'guest':
+            final_roles = ['guest']
+        else:
+            final_roles = ['user']
     else:
         admin_roles = {
             role.strip().lower()
@@ -187,7 +192,12 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
         }
         user_roles = {
             role.strip().lower()
-            for role in (os.getenv('RELEASEPLAN_OAUTH_USER_ROLES') or os.getenv('RELEASEPLAN_OAUTH_GUEST_ROLES') or 'user,guest,viewer,readonly,releaseplan-user,releaseplan-guest').split(',')
+            for role in (os.getenv('RELEASEPLAN_OAUTH_USER_ROLES') or '').split(',')
+            if role.strip()
+        }
+        guest_roles = {
+            role.strip().lower()
+            for role in (os.getenv('RELEASEPLAN_OAUTH_GUEST_ROLES') or 'guest,viewer,readonly,releaseplan-guest').split(',')
             if role.strip()
         }
         admin_emails = {
@@ -197,7 +207,12 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
         }
         user_emails = {
             item.strip().lower()
-            for item in (os.getenv('RELEASEPLAN_OAUTH_USER_EMAILS') or os.getenv('RELEASEPLAN_OAUTH_GUEST_EMAILS') or '').split(',')
+            for item in (os.getenv('RELEASEPLAN_OAUTH_USER_EMAILS') or '').split(',')
+            if item.strip()
+        }
+        guest_emails = {
+            item.strip().lower()
+            for item in (os.getenv('RELEASEPLAN_OAUTH_GUEST_EMAILS') or '').split(',')
             if item.strip()
         }
         admin_usernames = {
@@ -207,7 +222,12 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
         }
         user_usernames = {
             item.strip().lower()
-            for item in (os.getenv('RELEASEPLAN_OAUTH_USER_USERNAMES') or os.getenv('RELEASEPLAN_OAUTH_GUEST_USERNAMES') or '').split(',')
+            for item in (os.getenv('RELEASEPLAN_OAUTH_USER_USERNAMES') or '').split(',')
+            if item.strip()
+        }
+        guest_usernames = {
+            item.strip().lower()
+            for item in (os.getenv('RELEASEPLAN_OAUTH_GUEST_USERNAMES') or '').split(',')
             if item.strip()
         }
 
@@ -215,9 +235,16 @@ def build_oauth_user(userinfo, *, match_permission_rule, default_feature_flags, 
             final_roles = ['admin']
         elif set(normalized_roles) & user_roles or (email and email in user_emails) or (username and username in user_usernames):
             final_roles = ['user']
+        elif set(normalized_roles) & guest_roles or (email and email in guest_emails) or (username and username in guest_usernames):
+            final_roles = ['guest']
         else:
-            default_role = (os.getenv('RELEASEPLAN_OAUTH_DEFAULT_ROLE') or 'user').strip().lower()
-            final_roles = ['admin'] if default_role == 'admin' else ['user']
+            default_role = (os.getenv('RELEASEPLAN_OAUTH_DEFAULT_ROLE') or 'guest').strip().lower()
+            if default_role == 'admin':
+                final_roles = ['admin']
+            elif default_role == 'user':
+                final_roles = ['user']
+            else:
+                final_roles = ['guest']
 
     features = default_feature_flags(final_roles[0] if final_roles else 'user')
     if matched_rule:

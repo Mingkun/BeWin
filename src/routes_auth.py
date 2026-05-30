@@ -22,6 +22,7 @@ from src.app import (
     oauth_enabled,
     record_login_audit,
     verify_local_admin,
+    verify_local_guest,
     verify_local_user,
     default_feature_flags,
 )
@@ -59,6 +60,17 @@ def local_login_form():
                 'email': '',
                 'roles': ['admin'],
                 'features': default_feature_flags('admin'),
+                'auth_type': 'local',
+            }
+            record_login_audit(session['local_user'])
+            return redirect(next_url)
+        if verify_local_guest(username, password):
+            session['local_user'] = {
+                'user_id': username,
+                'name': username,
+                'email': '',
+                'roles': ['guest'],
+                'features': default_feature_flags('guest'),
                 'auth_type': 'local',
             }
             record_login_audit(session['local_user'])

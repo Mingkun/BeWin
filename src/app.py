@@ -165,6 +165,13 @@ def get_home_cards():
     return ordered
 
 
+def get_visible_home_cards(user=None):
+    cards = get_home_cards()
+    if is_guest_user(user):
+        return [card for card in cards if card.get('key') == 'milestone-condolence']
+    return cards
+
+
 def milestone_month_options():
     return list(enumerate(MONTH_LABELS, start=1))
 
@@ -579,7 +586,8 @@ def get_current_user_features(user=None):
     roles = user.get('roles') or []
     if isinstance(roles, str):
         roles = [roles]
-    role = 'admin' if 'admin' in [str(role).strip().lower() for role in roles] else 'user'
+    normalized_roles = [str(role).strip().lower() for role in roles]
+    role = 'admin' if 'admin' in normalized_roles else 'guest' if 'guest' in normalized_roles else 'user'
     return normalize_feature_flags(features, role)
 
 
@@ -592,6 +600,17 @@ def is_admin_user(user=None):
         roles = [roles]
     normalized = {str(role).strip().lower() for role in roles if str(role).strip()}
     return 'admin' in normalized
+
+
+def is_guest_user(user=None):
+    user = user if user is not None else get_current_user()
+    if not isinstance(user, dict):
+        return False
+    roles = user.get('roles') or []
+    if isinstance(roles, str):
+        roles = [roles]
+    normalized = {str(role).strip().lower() for role in roles if str(role).strip()}
+    return 'guest' in normalized and 'admin' not in normalized and 'user' not in normalized
 
 
 def can_access(feature_key, user=None):
@@ -617,7 +636,7 @@ def build_auth_context():
         'user_roles': role_labels,
         'user_features': get_current_user_features(user),
         'login_source_label': 'SSO' if auth_type == 'oauth2' else '本地' if auth_type == 'local' else '',
-        'role_label': '管理员' if 'admin' in role_labels else '用户' if 'user' in role_labels else '',
+        'role_label': '管理员' if 'admin' in role_labels else 'Guest' if 'guest' in role_labels else '用户' if 'user' in role_labels else '',
     }
 
 
@@ -628,13 +647,15 @@ def verify_local_admin(username, password):
 
 
 def verify_local_user(username, password):
-    expected_username = (os.getenv('RELEASEPLAN_LOCAL_USER_USERNAME') or os.getenv('RELEASEPLAN_LOCAL_GUEST_USERNAME') or '').strip()
-    expected_password = (os.getenv('RELEASEPLAN_LOCAL_USER_PASSWORD') or os.getenv('RELEASEPLAN_LOCAL_GUEST_PASSWORD') or '').strip()
+    expected_username = (os.getenv('RELEASEPLAN_LOCAL_USER_USERNAME') or '').strip()
+    expected_password = (os.getenv('RELEASEPLAN_LOCAL_USER_PASSWORD') or '').strip()
     return username == expected_username and password == expected_password
 
 
 def verify_local_guest(username, password):
-    return verify_local_user(username, password)
+    expected_username = (os.getenv('RELEASEPLAN_LOCAL_GUEST_USERNAME') or '').strip()
+    expected_password = (os.getenv('RELEASEPLAN_LOCAL_GUEST_PASSWORD') or '').strip()
+    return username == expected_username and password == expected_password
 
 
 def get_request_client_ip():
@@ -726,6 +747,28 @@ def require_admin():
     if is_admin_user():
         return None
     flash('当前账号没有管理员权限')
+    return redirect(url_for('index'))
+
+
+GUEST_ALLOWED_ENDPOINTS = {
+    'index',
+    'milestone_condolence_page',
+    'milestone_condolence_image_route',
+    'requirements_page',
+    'settings_auth_debug_page',
+    'logout',
+    'static',
+}
+
+
+@app.before_request
+def restrict_guest_access():
+    if not is_guest_user():
+        return None
+    endpoint = request.endpoint or ''
+    if endpoint in GUEST_ALLOWED_ENDPOINTS or endpoint.startswith('login') or endpoint.startswith('oauth_'):
+        return None
+    flash('Guest 角色只能访问关键突破信息卡片、需求和当前登录用户信息')
     return redirect(url_for('index'))
 
 

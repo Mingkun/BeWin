@@ -14,6 +14,18 @@ FEATURE_KEYS = [
     'import_export_data',
 ]
 
+GUEST_FEATURES = {
+    'view_system': False,
+    'manage_permissions': False,
+    'manage_backup': False,
+    'submit_requirement': True,
+    'manage_requirement_status': False,
+    'manage_projects': False,
+    'manage_features': False,
+    'manage_service_resources': False,
+    'import_export_data': False,
+}
+
 PERMISSION_PRESETS = [
     {
         'key': 'super_admin',
@@ -40,6 +52,14 @@ PERMISSION_PRESETS = [
             'manage_service_resources': False,
             'import_export_data': False,
         },
+    },
+    {
+        'key': 'guest',
+        'label': 'Guest 访客',
+        'group': 'business',
+        'description': '只能查看关键突破信息卡片、提交/查看需求，并查看当前登录用户信息。',
+        'role': 'guest',
+        'features': GUEST_FEATURES,
     },
     {
         'key': 'readonly_user',
@@ -157,19 +177,27 @@ def save_permission_rules(base_dir, items):
 
 def normalize_permission_role(role_text):
     role = (role_text or '').strip().lower()
-    return 'admin' if role == 'admin' else 'user'
+    if role == 'admin':
+        return 'admin'
+    if role == 'guest':
+        return 'guest'
+    return 'user'
 
 
-def role_from_features(features):
+def role_from_features(features, role_text=None):
     normalized = features if isinstance(features, dict) else {}
     admin_feature_keys = {'view_system', 'manage_permissions', 'manage_backup'}
-    return 'admin' if any(bool(normalized.get(key)) for key in admin_feature_keys) else 'user'
+    if any(bool(normalized.get(key)) for key in admin_feature_keys):
+        return 'admin'
+    return 'guest' if normalize_permission_role(role_text) == 'guest' else 'user'
 
 
 def default_feature_flags(role):
     role = normalize_permission_role(role)
     if role == 'admin':
         return {key: True for key in FEATURE_KEYS}
+    if role == 'guest':
+        return GUEST_FEATURES.copy()
     return {
         'view_system': False,
         'manage_permissions': False,
@@ -198,7 +226,7 @@ def get_permission_presets():
     presets = []
     for item in PERMISSION_PRESETS:
         features = normalize_feature_flags(item.get('features'), item.get('role'))
-        role = role_from_features(features)
+        role = role_from_features(features, item.get('role'))
         presets.append({
             'key': item.get('key'),
             'label': item.get('label'),
@@ -254,7 +282,7 @@ def match_permission_rule(base_dir, source='sso', username='', email='', employe
             matched = True
         if matched:
             features = normalize_feature_flags(item.get('features'), item.get('role'))
-            role = role_from_features(features)
+            role = role_from_features(features, item.get('role'))
             return {
                 'role': role,
                 'features': features,

@@ -75,6 +75,7 @@ def settings_permissions_page():
         rule_types = request.form.getlist('permission_type[]')
         rule_descriptions = request.form.getlist('permission_description[]')
         rule_values = request.form.getlist('permission_value[]')
+        rule_roles = request.form.getlist('permission_role[]')
         rules = []
         total = max(len(rule_sources), len(rule_types), len(rule_descriptions), len(rule_values))
         feature_keys = permission_config_service.FEATURE_KEYS
@@ -84,13 +85,14 @@ def settings_permissions_page():
             rule_type = (rule_types[idx] if idx < len(rule_types) else '').strip()
             rule_description = (rule_descriptions[idx] if idx < len(rule_descriptions) else '').strip()
             rule_value = (rule_values[idx] if idx < len(rule_values) else '').strip()
+            rule_role = (rule_roles[idx] if idx < len(rule_roles) else '').strip()
             if not rule_value:
                 continue
             features = {
                 key: (request.form.get(f'permission_feature_{key}[{idx}]') or '').strip().lower() in truthy_values
                 for key in feature_keys
             }
-            role = permission_config_service.role_from_features(features)
+            role = permission_config_service.role_from_features(features, rule_role)
             rules.append({
                 'source': rule_source,
                 'type': rule_type,

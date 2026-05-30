@@ -146,6 +146,7 @@
             <input type="hidden" name="permission_type[]">
             <input type="hidden" name="permission_description[]">
             <input type="hidden" name="permission_value[]">
+            <input type="hidden" name="permission_role[]">
             {% for key in feature_keys %}
             <input type="hidden" data-hidden-feature="{{ key }}" data-hidden-feature-name="permission_feature_{{ key }}" value="off">
             {% endfor %}
@@ -181,6 +182,7 @@
       const permissionEditorHelp = document.getElementById('permission-editor-help');
       let permissionRulesState = {{ permission_rules | tojson }};
       let currentPermissionIndex = -1;
+      let permissionEditorPreferredRole = 'user';
 
       function getTypeOptionsBySource(source) {
         return source === 'local'
@@ -210,10 +212,17 @@
       function applyPresetToEditor(presetKey) {
         const preset = presetMap[presetKey];
         if (!preset) return;
+        permissionEditorPreferredRole = preset.role || 'user';
         Object.entries(preset.features || {}).forEach(([key, enabled]) => {
           const checkbox = document.getElementById(`permission-editor-feature-${key}`);
           if (checkbox) checkbox.checked = !!enabled;
         });
+      }
+
+      function inferPermissionRole(features, preferredRole) {
+        const hasSystemPermission = ['view_system', 'manage_permissions', 'manage_backup'].some((key) => features[key]);
+        if (hasSystemPermission) return 'admin';
+        return preferredRole === 'guest' ? 'guest' : 'user';
       }
 
       function getEditorRule() {
@@ -227,13 +236,14 @@
           type: (permissionEditorType.value || 'email').trim(),
           description: (permissionEditorDescription.value || '').trim(),
           value: (permissionEditorValue.value || '').trim(),
-          role: featureKeys.some((key) => ['view_system', 'manage_permissions', 'manage_backup'].includes(key) && features[key]) ? 'admin' : 'user',
+          role: inferPermissionRole(features, permissionEditorPreferredRole),
           features,
         };
       }
 
       function fillEditor(rule) {
         if (permissionEditorPreset) permissionEditorPreset.value = '';
+        permissionEditorPreferredRole = (rule && rule.role) || 'user';
         const source = (rule && rule.source) || 'sso';
         permissionEditorSource.value = source;
         refreshTypeOptions(source, (rule && rule.type) || 'email');
@@ -273,6 +283,7 @@
           hiddenInputs[1].value = rule.type || ((rule.source || 'sso') === 'local' ? 'username' : 'email');
           hiddenInputs[2].value = rule.description || '';
           hiddenInputs[3].value = rule.value || '';
+          hiddenInputs[4].value = rule.role || 'user';
           featureKeys.forEach((key) => {
             const input = row.querySelector(`[data-hidden-feature="${key}"]`);
             if (input) {
@@ -313,7 +324,7 @@
           const body = rows.length ? rows.map(({ item, index }) => {
             const enabledKeys = featureKeys.filter((key) => item.features && item.features[key]);
             const typeLabel = item.type === 'employee_number' ? '工号' : (item.type === 'email' ? '邮箱' : '用户名');
-            const roleLabel = item.role === 'admin' ? '管理员' : '用户';
+            const roleLabel = item.role === 'admin' ? '管理员' : (item.role === 'guest' ? 'Guest' : '用户');
             const safeDescription = String(item.description || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const safeValue = String(item.value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const summaryTags = enabledKeys.slice(0, 4).map((key) => `<span class="permission-summary-tag">${key}</span>`).join('');

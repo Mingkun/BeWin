@@ -9,7 +9,7 @@ from src.app import (
     build_project_roadmap,
     get_branding,
     get_current_user,
-    get_home_cards,
+    get_visible_home_cards,
     get_conn,
     load_project_features,
     load_projects,
@@ -21,7 +21,8 @@ from src.app import (
 @app.route('/')
 @login_required
 def index():
-    return render_template('home.html', branding=get_branding(), home_cards=get_home_cards(), **build_auth_context())
+    current_user = get_current_user()
+    return render_template('home.html', branding=get_branding(), home_cards=get_visible_home_cards(current_user), **build_auth_context())
 
 
 @app.route('/roadmap')
