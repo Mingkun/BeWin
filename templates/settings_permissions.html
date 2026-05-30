@@ -277,7 +277,7 @@
             const input = row.querySelector(`[data-hidden-feature="${key}"]`);
             if (input) {
               input.name = `${input.dataset.hiddenFeatureName}[${index}]`;
-              input.value = rule.features && rule.features[key] ? 'on' : 'off';
+              input.value = rule.features && rule.features[key] ? '1' : '0';
             }
           });
           permissionHiddenFields.appendChild(fragment);

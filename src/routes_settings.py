@@ -78,6 +78,7 @@ def settings_permissions_page():
         rules = []
         total = max(len(rule_sources), len(rule_types), len(rule_descriptions), len(rule_values))
         feature_keys = permission_config_service.FEATURE_KEYS
+        truthy_values = {'1', 'true', 'on', 'yes'}
         for idx in range(total):
             rule_source = (rule_sources[idx] if idx < len(rule_sources) else 'sso').strip()
             rule_type = (rule_types[idx] if idx < len(rule_types) else '').strip()
@@ -85,7 +86,10 @@ def settings_permissions_page():
             rule_value = (rule_values[idx] if idx < len(rule_values) else '').strip()
             if not rule_value:
                 continue
-            features = {key: request.form.get(f'permission_feature_{key}[{idx}]') == '1' for key in feature_keys}
+            features = {
+                key: (request.form.get(f'permission_feature_{key}[{idx}]') or '').strip().lower() in truthy_values
+                for key in feature_keys
+            }
             role = permission_config_service.role_from_features(features)
             rules.append({
                 'source': rule_source,
