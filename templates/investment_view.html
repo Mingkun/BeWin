@@ -57,14 +57,17 @@
         <table class="data-table clean-project-table investment-table" id="investment-table">
           <thead>
             <tr>
-              <th data-sort-type="text">投资主体</th>
-              <th data-sort-type="text">管控灶</th>
-              <th data-sort-type="text">被投资项目</th>
-              <th data-sort-type="number">投资金额</th>
-              <th data-sort-type="number">投资总人月数</th>
-              <th data-sort-type="number">投入人数（自有）</th>
-              <th data-sort-type="number">投入人数（OD）</th>
-              <th data-sort-type="number">投入人数（TM）</th>
+              <th data-sort-type="text" data-column-index="0" rowspan="2">投资主体</th>
+              <th data-sort-type="text" data-column-index="1" rowspan="2">管控灶</th>
+              <th data-sort-type="text" data-column-index="2" rowspan="2">被投资项目</th>
+              <th data-sort-type="number" data-column-index="3" rowspan="2">投资金额</th>
+              <th data-sort-type="number" data-column-index="4" rowspan="2">投资总人月数</th>
+              <th data-sort-type="none" colspan="3" class="investment-headcount-group">投入人数</th>
+            </tr>
+            <tr>
+              <th data-sort-type="number" data-column-index="5">自有</th>
+              <th data-sort-type="number" data-column-index="6">OD</th>
+              <th data-sort-type="number" data-column-index="7">TM</th>
             </tr>
           </thead>
           <tbody>
@@ -92,7 +95,7 @@
       const table = document.getElementById('investment-table');
       if (!table) return;
       const tbody = table.querySelector('tbody');
-      const headers = Array.from(table.querySelectorAll('th'));
+      const headers = Array.from(table.querySelectorAll('th[data-sort-type]'));
 
       function parseValue(cell, type) {
         const raw = (cell?.dataset.sortValue || cell?.innerText || '').trim();
@@ -104,6 +107,8 @@
       }
 
       headers.forEach((header, index) => {
+        if (header.dataset.sortType === 'none') return;
+        const columnIndex = Number(header.dataset.columnIndex || index);
         header.classList.add('sortable-col');
         header.addEventListener('click', () => {
           const sortType = header.dataset.sortType || 'text';
@@ -112,8 +117,8 @@
           header.dataset.order = next;
           const rows = Array.from(tbody.querySelectorAll('tr'));
           rows.sort((rowA, rowB) => {
-            const valueA = parseValue(rowA.children[index], sortType);
-            const valueB = parseValue(rowB.children[index], sortType);
+            const valueA = parseValue(rowA.children[columnIndex], sortType);
+            const valueB = parseValue(rowB.children[columnIndex], sortType);
             if (sortType === 'number') {
               return next === 'asc' ? valueA - valueB : valueB - valueA;
             }
