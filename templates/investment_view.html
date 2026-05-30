@@ -54,42 +54,25 @@
 
     {% if records %}
       <div class="table-wrap card">
-        {% set sort_offset = 1 if user_features.manage_projects else 0 %}
         <table class="data-table clean-project-table investment-table" id="investment-table">
           <thead>
             <tr>
-              {% if user_features.manage_projects %}
-                <th data-sort-type="none" rowspan="2" class="investment-action-col">操作</th>
-              {% endif %}
-              <th data-sort-type="text" data-column-index="{{ sort_offset + 0 }}" rowspan="2">投资主体</th>
-              <th data-sort-type="text" data-column-index="{{ sort_offset + 1 }}" rowspan="2">管控灶</th>
-              <th data-sort-type="text" data-column-index="{{ sort_offset + 2 }}" rowspan="2">被投资项目</th>
-              <th data-sort-type="number" data-column-index="{{ sort_offset + 3 }}" rowspan="2">投资金额</th>
-              <th data-sort-type="number" data-column-index="{{ sort_offset + 4 }}" rowspan="2">投资总人月数</th>
+              <th data-sort-type="text" data-column-index="0" rowspan="2">投资主体</th>
+              <th data-sort-type="text" data-column-index="1" rowspan="2">管控灶</th>
+              <th data-sort-type="text" data-column-index="2" rowspan="2">被投资项目</th>
+              <th data-sort-type="number" data-column-index="3" rowspan="2">投资金额</th>
+              <th data-sort-type="number" data-column-index="4" rowspan="2">投资总人月数</th>
               <th data-sort-type="none" colspan="3" class="investment-headcount-group">投入人数</th>
             </tr>
             <tr>
-              <th data-sort-type="number" data-column-index="{{ sort_offset + 5 }}">自有</th>
-              <th data-sort-type="number" data-column-index="{{ sort_offset + 6 }}">OD</th>
-              <th data-sort-type="number" data-column-index="{{ sort_offset + 7 }}">TM</th>
+              <th data-sort-type="number" data-column-index="5">自有</th>
+              <th data-sort-type="number" data-column-index="6">OD</th>
+              <th data-sort-type="number" data-column-index="7">TM</th>
             </tr>
           </thead>
           <tbody>
             {% for record in records %}
             <tr>
-              {% if user_features.manage_projects %}
-                <td class="investment-action-cell">
-                  <details class="row-action-menu">
-                    <summary aria-label="打开操作菜单">...</summary>
-                    <div class="row-action-popover">
-                      <a href="{{ url_for('admin_investment_edit', record_id=record.id) }}">修改</a>
-                      <form method="post" action="{{ url_for('admin_investment_delete', record_id=record.id) }}" onsubmit="return confirm('确定删除这条投资记录吗？');">
-                        <button type="submit">删除</button>
-                      </form>
-                    </div>
-                  </details>
-                </td>
-              {% endif %}
               <td>{{ record.investment_subject }}</td>
               <td>{{ record.control_gate }}</td>
               <td>{{ record.project_name }}</td>

@@ -15,7 +15,6 @@ from src.app import (
     format_number,
     get_branding,
     get_conn,
-    init_db,
     get_resource_people_filter_options,
     get_service_resource_filter_options,
     load_investment_records,
@@ -114,7 +113,6 @@ def build_investment_rows(project_rows):
         totals['od'] += od
         totals['tm'] += tm
         rows.append({
-            'id': row.get('id'),
             'investment_subject': (row.get('investment_subject') or '').strip() or '未填写',
             'control_gate': (row.get('control_gate') or '').strip() or '未填写',
             'project_name': (row.get('invested_project') or '').strip() or '未命名项目',
@@ -131,108 +129,6 @@ def build_investment_rows(project_rows):
         })
     rows.sort(key=lambda item: (item['investment_subject'], item['control_gate'], item['project_name']))
     return rows, {key: format_number(value) for key, value in totals.items()}
-
-
-def form_to_investment_data(form):
-    return {
-        'investment_subject': (form.get('investment_subject') or '').strip(),
-        'control_gate': (form.get('control_gate') or '').strip(),
-        'invested_project': (form.get('invested_project') or '').strip(),
-        'investment_amount': (form.get('investment_amount') or '').strip(),
-        'total_person_months': (form.get('total_person_months') or '').strip(),
-        'headcount_self_owned': (form.get('headcount_self_owned') or '').strip(),
-        'headcount_od': (form.get('headcount_od') or '').strip(),
-        'headcount_tm': (form.get('headcount_tm') or '').strip(),
-    }
-
-
-def load_investment_record(record_id):
-    init_db()
-    with get_conn() as conn:
-        row = conn.execute(
-            """
-            SELECT id, source_project_id, investment_subject, control_gate, invested_project,
-                   investment_amount, total_person_months, headcount_self_owned,
-                   headcount_od, headcount_tm
-            FROM investment_records
-            WHERE id = ? AND COALESCE(is_hidden, 0) = 0
-            """,
-            (record_id,),
-        ).fetchone()
-        return dict(row) if row else None
-
-
-@app.route('/admin/investments/<int:record_id>/edit', methods=['GET', 'POST'])
-@login_required
-def admin_investment_edit(record_id):
-    denied = require_feature('manage_projects', '当前账号不能管理投资数据')
-    if denied:
-        return denied
-    current = load_investment_record(record_id)
-    if not current:
-        flash('投资记录不存在')
-        return redirect(url_for('view_placeholder', view_key='department-budget-resource'))
-    form_data = form_to_investment_data(request.form) if request.method == 'POST' else current
-    if request.method == 'POST':
-        data = form_to_investment_data(request.form)
-        if not data['invested_project']:
-            flash('请输入被投资项目')
-            return render_template('investment_form.html', record=form_data, mode='edit', **build_auth_context())
-        with get_conn() as conn:
-            conn.execute(
-                """
-                UPDATE investment_records
-                SET investment_subject = ?,
-                    control_gate = ?,
-                    invested_project = ?,
-                    investment_amount = ?,
-                    total_person_months = ?,
-                    headcount_self_owned = ?,
-                    headcount_od = ?,
-                    headcount_tm = ?,
-                    is_manual_edited = 1,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-                """,
-                (
-                    data['investment_subject'],
-                    data['control_gate'],
-                    data['invested_project'],
-                    data['investment_amount'],
-                    data['total_person_months'],
-                    data['headcount_self_owned'],
-                    data['headcount_od'],
-                    data['headcount_tm'],
-                    record_id,
-                ),
-            )
-            conn.commit()
-        flash('投资记录已更新')
-        return redirect(url_for('view_placeholder', view_key='department-budget-resource'))
-    return render_template('investment_form.html', record=form_data, mode='edit', **build_auth_context())
-
-
-@app.route('/admin/investments/<int:record_id>/delete', methods=['POST'])
-@login_required
-def admin_investment_delete(record_id):
-    denied = require_feature('manage_projects', '当前账号不能管理投资数据')
-    if denied:
-        return denied
-    current = load_investment_record(record_id)
-    if not current:
-        flash('投资记录不存在')
-        return redirect(url_for('view_placeholder', view_key='department-budget-resource'))
-    with get_conn() as conn:
-        if current.get('source_project_id'):
-            conn.execute(
-                "UPDATE investment_records SET is_hidden = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                (record_id,),
-            )
-        else:
-            conn.execute("DELETE FROM investment_records WHERE id = ?", (record_id,))
-        conn.commit()
-    flash('投资记录已删除')
-    return redirect(url_for('view_placeholder', view_key='department-budget-resource'))
 
 
 @app.route('/views/<view_key>')
