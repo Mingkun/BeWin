@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>编辑投资记录</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page form-page">
+    <header class="toolbar">
+      <div>
+        <h1>编辑投资记录</h1>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('view_placeholder', view_key='department-budget-resource') }}">返回投资视图</a>
+        {% if current_user %}
+          <span class="logout-wrap">
+            <span class="user-chip" aria-label="当前登录用户" title="当前登录用户"></span>
+            <span class="logout-popover">
+              <span class="logout-user-name">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+              <a class="button secondary" href="{{ url_for('logout') }}">退出登录</a>
+            </span>
+          </span>
+        {% else %}
+          <a class="button secondary" href="{{ url_for('login_entry', next=request.path) }}">登录</a>
+        {% endif %}
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" class="card project-form">
+      <div class="form-grid">
+        <label>投资主体<textarea name="investment_subject" rows="2">{{ record.investment_subject or '' }}</textarea></label>
+        <label>管控灶<textarea name="control_gate" rows="2">{{ record.control_gate or '' }}</textarea></label>
+        <label>被投资项目<textarea name="invested_project" rows="2">{{ record.invested_project or '' }}</textarea></label>
+        <label>投资金额<textarea name="investment_amount" rows="2">{{ record.investment_amount or '' }}</textarea></label>
+        <label>投资总人月数<textarea name="total_person_months" rows="2">{{ record.total_person_months or '' }}</textarea></label>
+        <label>投入人数（自有）<textarea name="headcount_self_owned" rows="2">{{ record.headcount_self_owned or '' }}</textarea></label>
+        <label>投入人数（OD）<textarea name="headcount_od" rows="2">{{ record.headcount_od or '' }}</textarea></label>
+        <label>投入人数（TM）<textarea name="headcount_tm" rows="2">{{ record.headcount_tm or '' }}</textarea></label>
+      </div>
+
+      <div class="toolbar-actions">
+        <a class="button secondary" href="{{ url_for('view_placeholder', view_key='department-budget-resource') }}">取消</a>
+        <button class="button" type="submit">保存</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

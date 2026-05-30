@@ -971,6 +971,8 @@ def init_db():
                 headcount_self_owned TEXT,
                 headcount_od TEXT,
                 headcount_tm TEXT,
+                is_hidden INTEGER DEFAULT 0,
+                is_manual_edited INTEGER DEFAULT 0,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(source_project_id) REFERENCES projects(id) ON DELETE CASCADE
@@ -986,6 +988,10 @@ def init_db():
         for field in required_investment_columns:
             if field not in existing_investment_columns:
                 conn.execute(f"ALTER TABLE investment_records ADD COLUMN {field} TEXT")
+        if 'is_hidden' not in existing_investment_columns:
+            conn.execute("ALTER TABLE investment_records ADD COLUMN is_hidden INTEGER DEFAULT 0")
+        if 'is_manual_edited' not in existing_investment_columns:
+            conn.execute("ALTER TABLE investment_records ADD COLUMN is_manual_edited INTEGER DEFAULT 0")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_investment_records_source_project_id ON investment_records(source_project_id)")
         conn.execute(
             """
@@ -1290,8 +1296,10 @@ def sync_investment_records_from_projects():
                     total_person_months,
                     headcount_self_owned,
                     headcount_od,
-                    headcount_tm
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    headcount_tm,
+                    is_hidden,
+                    is_manual_edited
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(source_project_id) DO UPDATE SET
                     investment_subject = excluded.investment_subject,
                     control_gate = excluded.control_gate,
@@ -1302,6 +1310,8 @@ def sync_investment_records_from_projects():
                     headcount_od = excluded.headcount_od,
                     headcount_tm = excluded.headcount_tm,
                     updated_at = CURRENT_TIMESTAMP
+                WHERE COALESCE(investment_records.is_hidden, 0) = 0
+                  AND COALESCE(investment_records.is_manual_edited, 0) = 0
                 """,
                 (
                     row['id'],
@@ -1313,6 +1323,8 @@ def sync_investment_records_from_projects():
                     row['headcount_budget_self_owned'] or '',
                     row['headcount_budget_od'] or '',
                     row['headcount_budget_tm'] or '',
+                    0,
+                    0,
                 ),
             )
         conn.commit()
@@ -1337,6 +1349,7 @@ def load_investment_records():
                 headcount_od,
                 headcount_tm
             FROM investment_records
+            WHERE COALESCE(is_hidden, 0) = 0
             ORDER BY investment_subject ASC, control_gate ASC, invested_project ASC, id ASC
             """
         ).fetchall()
