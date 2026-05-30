@@ -17,6 +17,7 @@ from src.app import (
     get_conn,
     get_resource_people_filter_options,
     get_service_resource_filter_options,
+    load_investment_records,
     load_projects,
     load_resource_people,
     load_service_resources,
@@ -101,11 +102,11 @@ def build_investment_rows(project_rows):
         'tm': 0.0,
     }
     for row in project_rows:
-        investment_amount = to_number(row.get('rd_budget_w'))
-        person_months = to_number(row.get('workload_person_month'))
-        self_owned = to_number(row.get('headcount_budget_self_owned'))
-        od = to_number(row.get('headcount_budget_od'))
-        tm = to_number(row.get('headcount_budget_tm'))
+        investment_amount = to_number(row.get('investment_amount'))
+        person_months = to_number(row.get('total_person_months'))
+        self_owned = to_number(row.get('headcount_self_owned'))
+        od = to_number(row.get('headcount_od'))
+        tm = to_number(row.get('headcount_tm'))
         totals['investment_amount'] += investment_amount
         totals['person_months'] += person_months
         totals['self_owned'] += self_owned
@@ -114,7 +115,7 @@ def build_investment_rows(project_rows):
         rows.append({
             'investment_subject': (row.get('investment_subject') or '').strip() or '未填写',
             'control_gate': (row.get('control_gate') or '').strip() or '未填写',
-            'project_name': (row.get('project_name') or '').strip() or '未命名项目',
+            'project_name': (row.get('invested_project') or '').strip() or '未命名项目',
             'investment_amount': format_number(investment_amount),
             'person_months': format_number(person_months),
             'self_owned': format_number(self_owned),
@@ -192,7 +193,7 @@ def view_placeholder(view_key):
         )
 
     if view_key == 'department-budget-resource':
-        investment_rows, investment_summary = build_investment_rows(load_projects())
+        investment_rows, investment_summary = build_investment_rows(load_investment_records())
         return render_template(
             'investment_view.html',
             records=investment_rows,

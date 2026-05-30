@@ -960,6 +960,35 @@ def init_db():
         )
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS investment_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_project_id INTEGER UNIQUE,
+                investment_subject TEXT,
+                control_gate TEXT,
+                invested_project TEXT,
+                investment_amount TEXT,
+                total_person_months TEXT,
+                headcount_self_owned TEXT,
+                headcount_od TEXT,
+                headcount_tm TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(source_project_id) REFERENCES projects(id) ON DELETE CASCADE
+            )
+            """
+        )
+        existing_investment_columns = {row[1] for row in conn.execute("PRAGMA table_info(investment_records)").fetchall()}
+        required_investment_columns = [
+            'source_project_id', 'investment_subject', 'control_gate', 'invested_project',
+            'investment_amount', 'total_person_months', 'headcount_self_owned',
+            'headcount_od', 'headcount_tm',
+        ]
+        for field in required_investment_columns:
+            if field not in existing_investment_columns:
+                conn.execute(f"ALTER TABLE investment_records ADD COLUMN {field} TEXT")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_investment_records_source_project_id ON investment_records(source_project_id)")
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS departments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 level_1_department TEXT,
@@ -1217,6 +1246,98 @@ def load_projects():
                 headcount_budget_tm
             FROM projects
             ORDER BY project_name ASC, id ASC
+            """
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def sync_investment_records_from_projects():
+    init_db()
+    with get_conn() as conn:
+        project_rows = conn.execute(
+            """
+            SELECT
+                id,
+                investment_subject,
+                control_gate,
+                project_name,
+                rd_budget_w,
+                workload_person_month,
+                headcount_budget_self_owned,
+                headcount_budget_od,
+                headcount_budget_tm
+            FROM projects
+            """
+        ).fetchall()
+        project_ids = [row['id'] for row in project_rows]
+        if project_ids:
+            placeholders = ','.join(['?'] * len(project_ids))
+            conn.execute(
+                f"DELETE FROM investment_records WHERE source_project_id IS NOT NULL AND source_project_id NOT IN ({placeholders})",
+                project_ids,
+            )
+        else:
+            conn.execute("DELETE FROM investment_records WHERE source_project_id IS NOT NULL")
+        for row in project_rows:
+            conn.execute(
+                """
+                INSERT INTO investment_records (
+                    source_project_id,
+                    investment_subject,
+                    control_gate,
+                    invested_project,
+                    investment_amount,
+                    total_person_months,
+                    headcount_self_owned,
+                    headcount_od,
+                    headcount_tm
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(source_project_id) DO UPDATE SET
+                    investment_subject = excluded.investment_subject,
+                    control_gate = excluded.control_gate,
+                    invested_project = excluded.invested_project,
+                    investment_amount = excluded.investment_amount,
+                    total_person_months = excluded.total_person_months,
+                    headcount_self_owned = excluded.headcount_self_owned,
+                    headcount_od = excluded.headcount_od,
+                    headcount_tm = excluded.headcount_tm,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (
+                    row['id'],
+                    row['investment_subject'] or '',
+                    row['control_gate'] or '',
+                    row['project_name'] or '',
+                    row['rd_budget_w'] or '',
+                    row['workload_person_month'] or '',
+                    row['headcount_budget_self_owned'] or '',
+                    row['headcount_budget_od'] or '',
+                    row['headcount_budget_tm'] or '',
+                ),
+            )
+        conn.commit()
+
+
+def load_investment_records():
+    init_db()
+    import_csv_if_needed()
+    sync_investment_records_from_projects()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                id,
+                source_project_id,
+                investment_subject,
+                control_gate,
+                invested_project,
+                investment_amount,
+                total_person_months,
+                headcount_self_owned,
+                headcount_od,
+                headcount_tm
+            FROM investment_records
+            ORDER BY investment_subject ASC, control_gate ASC, invested_project ASC, id ASC
             """
         ).fetchall()
         return [dict(row) for row in rows]
