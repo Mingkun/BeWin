@@ -1,6 +1,8 @@
 import json
+import secrets
+from html import escape
 
-from flask import render_template, request, redirect, session, url_for
+from flask import Response, flash, render_template, request, redirect, session, url_for
 
 from src.app import (
     app,
@@ -29,6 +31,40 @@ from src.app import (
 from src.oauth_auth import DEFAULT_OAUTH_DEBUG_LOG_PATH, get_oauth_debug_log_path
 
 
+CAPTCHA_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+
+
+def generate_local_login_captcha():
+    value = ''.join(secrets.choice(CAPTCHA_CHARS) for _ in range(5))
+    session['local_login_captcha'] = value.lower()
+    return value
+
+
+def build_captcha_svg(value):
+    safe_value = escape(value)
+    noise_lines = []
+    for _ in range(6):
+        x1 = secrets.randbelow(140)
+        y1 = secrets.randbelow(44)
+        x2 = secrets.randbelow(140)
+        y2 = secrets.randbelow(44)
+        color = secrets.choice(('#94a3b8', '#cbd5e1', '#60a5fa', '#34d399'))
+        noise_lines.append(
+            f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{color}" stroke-width="1" opacity="0.55"/>'
+        )
+    dots = []
+    for _ in range(26):
+        cx = secrets.randbelow(140)
+        cy = secrets.randbelow(44)
+        dots.append(f'<circle cx="{cx}" cy="{cy}" r="1" fill="#94a3b8" opacity="0.45"/>')
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="140" height="44" viewBox="0 0 140 44">
+  <rect width="140" height="44" rx="8" fill="#f8fafc"/>
+  {''.join(noise_lines)}
+  {''.join(dots)}
+  <text x="70" y="29" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="24" font-weight="800" letter-spacing="5" fill="#0f172a">{safe_value}</text>
+</svg>'''
+
+
 @app.route('/login')
 def login_entry():
     next_url = normalize_next_url(request.args.get('next') or '/')
@@ -53,6 +89,11 @@ def local_login_form():
     if request.method == 'POST':
         username = (request.form.get('username') or '').strip()
         password = request.form.get('password') or ''
+        captcha_answer = (request.form.get('captcha') or '').strip().lower()
+        expected_captcha = (session.pop('local_login_captcha', '') or '').strip().lower()
+        if not expected_captcha or captcha_answer != expected_captcha:
+            flash('图片验证码不正确，请重新输入')
+            return redirect(url_for('local_login_form', next=next_url))
         if verify_local_admin(username, password):
             session['local_user'] = {
                 'user_id': username,
@@ -88,8 +129,18 @@ def local_login_form():
             }
             record_login_audit(session['local_user'])
             return redirect(next_url)
+        flash('账号或密码不正确')
         return redirect(url_for('local_login_form', next=next_url))
     return render_template('local_login.html', next=next_url, branding=get_branding(), **build_auth_context())
+
+
+@app.route('/login/captcha.svg')
+def local_login_captcha_image():
+    svg = build_captcha_svg(generate_local_login_captcha())
+    response = Response(svg, mimetype='image/svg+xml')
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    return response
 
 
 @app.route('/logout')

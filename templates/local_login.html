@@ -35,11 +35,26 @@
           <span class="ios-field-label">密码</span>
           <input type="password" name="password" placeholder="请输入密码" required>
         </label>
+        <label class="ios-field">
+          <span class="ios-field-label">图片验证码</span>
+          <div style="display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center;">
+            <input type="text" name="captcha" placeholder="请输入图片验证码" autocomplete="off" required>
+            <button type="button" class="button secondary" style="padding:0; overflow:hidden; height:44px; min-width:140px;" onclick="refreshLocalCaptcha()" title="点击刷新验证码">
+              <img id="local-captcha-image" src="{{ url_for('local_login_captcha_image') }}" alt="图片验证码" width="140" height="44" style="display:block;">
+            </button>
+          </div>
+        </label>
         <div class="toolbar-actions settings-actions" style="justify-content: flex-end;">
           <button type="submit" class="button">登录</button>
         </div>
       </form>
     </div>
   </div>
+  <script>
+    function refreshLocalCaptcha() {
+      const image = document.getElementById('local-captcha-image');
+      if (image) image.src = "{{ url_for('local_login_captcha_image') }}?t=" + Date.now();
+    }
+  </script>
 </body>
 </html>
