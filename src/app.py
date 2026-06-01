@@ -762,13 +762,70 @@ def require_admin():
 
 GUEST_ALLOWED_ENDPOINTS = {
     'index',
-    'milestone_condolence_page',
-    'milestone_condolence_image_route',
-    'requirements_page',
     'settings_auth_debug_page',
     'logout',
     'static',
 }
+
+GUEST_ENDPOINT_FEATURES = {
+    'roadmap': 'view_features',
+    'save_roadmap_feature_pin': 'view_features',
+    'milestone_condolence_page': 'view_milestone',
+    'milestone_condolence_image_route': 'view_milestone',
+    'requirements_page': 'view_requirements',
+    'requirement_status_update': 'manage_requirement_status',
+    'settings_general_page': 'view_system',
+    'settings_permissions_page': 'manage_permissions',
+    'settings_backups_page': 'manage_backup',
+    'admin_project_new': 'manage_projects',
+    'admin_project_edit': 'manage_projects',
+    'admin_project_delete': 'manage_projects',
+    'admin_feature_new': 'manage_features',
+    'admin_feature_edit': 'manage_features',
+    'admin_feature_delete': 'manage_features',
+    'admin_projects_import_csv': 'import_export_data',
+    'admin_projects_template_csv': 'import_export_data',
+    'admin_projects_export_csv': 'import_export_data',
+    'admin_features_import_csv': 'import_export_data',
+    'admin_features_export_csv': 'import_export_data',
+    'admin_service_resources': 'manage_service_resources',
+    'admin_departments': 'manage_service_resources',
+    'admin_department_new': 'manage_service_resources',
+    'admin_department_edit': 'manage_service_resources',
+    'admin_department_delete': 'manage_service_resources',
+    'admin_resource_people': 'manage_service_resources',
+    'admin_resource_person_new': 'manage_service_resources',
+    'admin_resource_person_edit': 'manage_service_resources',
+    'admin_resource_person_delete': 'manage_service_resources',
+    'admin_resource_people_import_csv': 'manage_service_resources',
+    'admin_resource_people_template_csv': 'manage_service_resources',
+    'admin_resource_people_export_csv': 'manage_service_resources',
+    'admin_service_resource_new': 'manage_service_resources',
+    'admin_service_resource_edit': 'manage_service_resources',
+    'admin_service_resource_delete': 'manage_service_resources',
+    'admin_service_resources_import_csv': 'import_export_data',
+    'admin_service_resources_template_csv': 'import_export_data',
+    'admin_service_resources_export_csv': 'import_export_data',
+    'admin_milestone_condolence_new': 'manage_features',
+    'admin_milestone_condolence_edit': 'manage_features',
+    'admin_milestone_condolence_delete': 'manage_features',
+}
+
+GUEST_VIEW_FEATURES = {
+    'milestone-condolence': 'view_milestone',
+    'department-budget-resource': 'view_investment',
+    'department-pipeline-load': 'view_projects',
+    'project-budget-resource': 'view_resource_people',
+    'cloud-service-view': 'view_service_resources',
+    'roadmap': 'view_features',
+}
+
+
+def get_guest_endpoint_feature(endpoint):
+    if endpoint == 'view_placeholder':
+        view_key = (request.view_args or {}).get('view_key')
+        return GUEST_VIEW_FEATURES.get(view_key)
+    return GUEST_ENDPOINT_FEATURES.get(endpoint)
 
 
 @app.before_request
@@ -778,7 +835,10 @@ def restrict_guest_access():
     endpoint = request.endpoint or ''
     if endpoint in GUEST_ALLOWED_ENDPOINTS or endpoint.startswith('login') or endpoint.startswith('oauth_'):
         return None
-    flash('Guest 角色只能访问关键突破信息卡片、需求和当前登录用户信息')
+    feature_key = get_guest_endpoint_feature(endpoint)
+    if feature_key and can_access(feature_key):
+        return None
+    flash('Guest 角色只能访问已授权的页面和功能')
     return redirect(url_for('index'))
 
 
