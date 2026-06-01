@@ -1638,6 +1638,17 @@ def filter_resource_people(rows, person_type='', department_name='', project_nam
     return [row for row in rows if matched(row)]
 
 
+def get_resource_person_type_bucket(person_type):
+    value = (person_type or '').strip().lower()
+    if value == '自有':
+        return 'self_owned_count'
+    if value == 'od':
+        return 'od_count'
+    if value in ('tm', '外包'):
+        return 'tm_count'
+    return None
+
+
 def build_resource_group_summary(rows, group_key, mode='allocation_total'):
     grouped = {}
     for row in rows:
@@ -1646,11 +1657,17 @@ def build_resource_group_summary(rows, group_key, mode='allocation_total'):
             grouped[key] = {
                 'name': key,
                 'count': 0,
+                'self_owned_count': 0,
+                'od_count': 0,
+                'tm_count': 0,
                 'allocation_total': 0.0,
                 'project_bound_count': 0,
                 'project_bound_ratio': 0.0,
             }
         grouped[key]['count'] += 1
+        type_bucket = get_resource_person_type_bucket(row.get('person_type'))
+        if type_bucket:
+            grouped[key][type_bucket] += 1
         grouped[key]['allocation_total'] += parse_ratio_value(row.get('allocation_ratio'))
         if (row.get('project_name') or '').strip():
             grouped[key]['project_bound_count'] += 1
