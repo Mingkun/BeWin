@@ -106,12 +106,14 @@ def local_login_form():
             record_login_audit(session['local_user'])
             return redirect(next_url)
         if verify_local_guest(username, password):
+            matched_rule = match_permission_rule(source='local', username=username, email='')
+            role = (matched_rule or {}).get('role') or 'guest'
             session['local_user'] = {
                 'user_id': username,
                 'name': username,
                 'email': '',
-                'roles': ['guest'],
-                'features': default_feature_flags('guest'),
+                'roles': [role],
+                'features': normalize_feature_flags((matched_rule or {}).get('features'), role),
                 'auth_type': 'local',
             }
             record_login_audit(session['local_user'])
