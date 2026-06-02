@@ -1804,6 +1804,22 @@ def parse_date_parts(date_text):
     return None, None
 
 
+def calculate_project_workload_person_month(data):
+    start_year, start_month = parse_date_parts(data.get("planned_start_date"))
+    end_year, end_month = parse_date_parts(data.get("planned_end_date"))
+    if not start_year or not start_month or not end_year or not end_month:
+        return ""
+    duration_months = (end_year - start_year) * 12 + (end_month - start_month) + 1
+    if duration_months <= 0:
+        return ""
+    headcount_total = (
+        to_number(data.get("headcount_budget_self_owned"))
+        + to_number(data.get("headcount_budget_od"))
+        + 0.8 * to_number(data.get("headcount_budget_tm"))
+    )
+    return format_number(headcount_total * duration_months)
+
+
 def parse_workload_value(value):
     text = (value or '').strip()
     if not text:
@@ -1978,6 +1994,9 @@ def form_to_project_data(form):
         "service_group": (form.get("service_group") or "").strip(),
         "delivery_pm": (form.get("delivery_pm") or "").strip(),
     }
+    calculated_workload = calculate_project_workload_person_month(data)
+    if calculated_workload:
+        data["workload_person_month"] = calculated_workload
     for month in MILESTONE_COLUMNS:
         data[month] = (form.get(month) or "").strip()
     return data

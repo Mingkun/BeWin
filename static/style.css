@@ -2382,6 +2382,12 @@ body.theme-ios-dark .backup-popover-text {
   grid-column: 1 / -1;
 }
 
+.field-hint {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .form-grid input,
 .form-grid select,
 .month-grid-form input,
