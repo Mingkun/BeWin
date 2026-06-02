@@ -61,16 +61,16 @@
         {% if status_summary.status_items %}
           <div class="resource-status-strip">
             {% for item in status_summary.status_items %}
-              <span class="resource-status-seg status-{{ loop.index0 % 6 }}" title="{{ item.name }} {{ item.count }} 人" style="width:{{ '%.2f%%'|format(item.ratio * 100) }};"></span>
+              <a class="resource-status-seg status-{{ loop.index0 % 6 }} {% if filters.status_filter == item.name %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type=filters.person_type, department_name=filters.department_name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='' if filters.quick_filter == 'status_not_on_duty' else filters.quick_filter, status_filter=item.name) }}" title="{{ item.name }} {{ item.count }} 人" style="width:{{ '%.2f%%'|format(item.ratio * 100) }};"></a>
             {% endfor %}
           </div>
           <div class="resource-status-list">
             {% for item in status_summary.status_items %}
-            <div class="resource-status-row">
+            <a class="resource-status-row {% if filters.status_filter == item.name %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type=filters.person_type, department_name=filters.department_name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='' if filters.quick_filter == 'status_not_on_duty' else filters.quick_filter, status_filter=item.name) }}">
               <span><i class="legend-dot status-{{ loop.index0 % 6 }}"></i>{{ item.name }}</span>
               <strong>{{ item.count }}</strong>
               <span>{{ '%.1f%%'|format(item.ratio * 100) }}</span>
-            </div>
+            </a>
             {% endfor %}
           </div>
         {% else %}
@@ -88,11 +88,13 @@
       <div class="card stat-card"><div class="stat-label">已投入到项目占比</div><div class="stat-value">{{ '%.2f%%'|format(summary.project_bound_ratio * 100) }}</div></div>
     </div>
 
-    {% if filters.quick_filter %}
+    {% if filters.quick_filter or filters.status_filter %}
     <div class="resource-active-filter">
       <span>
-        当前快速过滤：
-        {% if filters.quick_filter == 'missing_department' %}未关联部门{% elif filters.quick_filter == 'missing_project' %}未关联项目{% elif filters.quick_filter == 'status_not_on_duty' %}状态非在岗{% endif %}
+        当前过滤：
+        {% if filters.quick_filter %}{% if filters.quick_filter == 'missing_department' %}未关联部门{% elif filters.quick_filter == 'missing_project' %}未关联项目{% elif filters.quick_filter == 'status_not_on_duty' %}状态非在岗{% endif %}{% endif %}
+        {% if filters.quick_filter and filters.status_filter %} / {% endif %}
+        {% if filters.status_filter %}状态：{{ filters.status_filter }}{% endif %}
       </span>
       <a href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type=filters.person_type, department_name='' if filters.quick_filter == 'missing_department' else filters.department_name, project_name='' if filters.quick_filter == 'missing_project' else filters.project_name, keyword=filters.keyword) }}">取消</a>
     </div>
@@ -154,6 +156,9 @@
       <form class="filter-form" method="get" action="{{ url_for('view_placeholder', view_key='project-budget-resource') }}" style="margin-top:16px;">
         {% if filters.quick_filter %}
         <input type="hidden" name="quick_filter" value="{{ filters.quick_filter }}">
+        {% endif %}
+        {% if filters.status_filter %}
+        <input type="hidden" name="status_filter" value="{{ filters.status_filter }}">
         {% endif %}
         <div class="form-grid form-grid-2">
           <label>人员类型

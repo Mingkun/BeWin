@@ -1724,17 +1724,19 @@ def get_resource_people_filter_options(rows):
     }
 
 
-def filter_resource_people(rows, person_type='', department_name='', project_name='', keyword='', quick_filter=''):
+def filter_resource_people(rows, person_type='', department_name='', project_name='', keyword='', quick_filter='', status_filter=''):
     person_type = (person_type or '').strip().lower()
     department_name = (department_name or '').strip().lower()
     project_name = (project_name or '').strip().lower()
     keyword = (keyword or '').strip().lower()
     quick_filter = (quick_filter or '').strip()
+    status_filter = (status_filter or '').strip()
 
     def matched(row):
         person_type_ok = not person_type or (row.get('person_type') or '').strip().lower() == person_type
         department_ok = not department_name or (row.get('department_full_name') or '').strip().lower() == department_name
         project_ok = not project_name or (row.get('project_name') or '').strip().lower() == project_name
+        status_ok = not status_filter or (row.get('status') or '').strip() == status_filter
         keyword_ok = not keyword or keyword in (row.get('employee_id') or '').strip().lower() or keyword in (row.get('employee_name') or '').strip().lower()
         quick_ok = True
         if quick_filter == 'missing_department':
@@ -1743,7 +1745,7 @@ def filter_resource_people(rows, person_type='', department_name='', project_nam
             quick_ok = not (row.get('project_name') or '').strip()
         elif quick_filter == 'status_not_on_duty':
             quick_ok = (row.get('status') or '').strip() != '在岗'
-        return person_type_ok and department_ok and project_ok and keyword_ok and quick_ok
+        return person_type_ok and department_ok and project_ok and status_ok and keyword_ok and quick_ok
 
     return [row for row in rows if matched(row)]
 

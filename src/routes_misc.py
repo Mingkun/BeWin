@@ -300,6 +300,7 @@ def view_placeholder(view_key):
         project_name = (request.args.get('project_name') or '').strip()
         keyword = (request.args.get('keyword') or '').strip()
         quick_filter = (request.args.get('quick_filter') or '').strip()
+        status_filter = (request.args.get('status_filter') or '').strip()
         filtered_rows = filter_resource_people(
             rows,
             person_type=person_type,
@@ -307,6 +308,7 @@ def view_placeholder(view_key):
             project_name=project_name,
             keyword=keyword,
             quick_filter=quick_filter,
+            status_filter=status_filter,
         )
         return render_template(
             'resource_view.html',
@@ -322,6 +324,7 @@ def view_placeholder(view_key):
                 'project_name': project_name,
                 'keyword': keyword,
                 'quick_filter': quick_filter,
+                'status_filter': status_filter,
             },
             **build_auth_context(),
         )

@@ -2176,6 +2176,11 @@ body.theme-ios-dark .backup-popover-text {
   min-width: 2px;
 }
 
+.resource-status-seg:hover,
+.resource-status-seg.active {
+  filter: brightness(1.12);
+}
+
 .resource-status-list {
   display: flex;
   flex-direction: column;
@@ -2188,8 +2193,16 @@ body.theme-ios-dark .backup-popover-text {
   grid-template-columns: minmax(0, 1fr) 52px 62px;
   gap: 10px;
   align-items: center;
+  padding: 6px 8px;
+  border-radius: 6px;
   color: #475569;
   font-size: 13px;
+  text-decoration: none;
+}
+
+.resource-status-row:hover,
+.resource-status-row.active {
+  background: #eff6ff;
 }
 
 .resource-status-row strong {
