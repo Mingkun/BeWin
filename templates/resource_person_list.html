@@ -87,19 +87,19 @@
 
     {% if records %}
     <div class="table-wrap card">
-      <table class="data-table">
+      <table class="data-table" id="resource-people-table">
         <thead>
           <tr>
-            <th>工号</th>
-            <th>姓名</th>
-            <th>人员类型</th>
-            <th>上层部门</th>
-            <th>最小部门</th>
-            <th>所属项目</th>
-            <th>投入比例</th>
-            <th>角色</th>
-            <th>状态</th>
-            <th>备注</th>
+            <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">工号</th>
+            <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">姓名</th>
+            <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">人员类型</th>
+            <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">上层部门</th>
+            <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">最小部门</th>
+            <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">所属项目</th>
+            <th data-sort-type="number" tabindex="0" role="button" aria-sort="none">投入比例</th>
+            <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">角色</th>
+            <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">状态</th>
+            <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">备注</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -210,5 +210,74 @@
     <div class="empty">当前还没有人员资源数据。</div>
     {% endif %}
   </div>
+  <script>
+    (function () {
+      const table = document.getElementById('resource-people-table');
+      if (!table) return;
+      const tbody = table.querySelector('tbody');
+      const headers = Array.from(table.querySelectorAll('thead th[data-sort-type]'));
+      let activeHeader = null;
+      let activeDirection = 'asc';
+
+      function readCellValue(row, index, type) {
+        const cell = row.children[index];
+        if (!cell) return type === 'number' ? 0 : '';
+        const field = cell.querySelector('input, select, textarea');
+        const raw = field
+          ? (field.tagName === 'SELECT'
+            ? (field.selectedOptions[0]?.textContent || field.value || '')
+            : (field.value || ''))
+          : (cell.dataset.sortValue || cell.textContent || '');
+        const value = String(raw).trim();
+        if (type === 'number') {
+          const parsed = parseFloat(value.replace('%', ''));
+          return Number.isFinite(parsed) ? parsed : 0;
+        }
+        return value.toLocaleLowerCase('zh-CN');
+      }
+
+      function updateSortState(selectedHeader, direction) {
+        headers.forEach((header) => {
+          header.setAttribute(
+            'aria-sort',
+            header === selectedHeader ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'
+          );
+        });
+      }
+
+      function sortByHeader(header) {
+        const type = header.dataset.sortType || 'text';
+        const index = header.cellIndex;
+        const direction = activeHeader === header && activeDirection === 'asc' ? 'desc' : 'asc';
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((rowA, rowB) => {
+          const valueA = readCellValue(rowA, index, type);
+          const valueB = readCellValue(rowB, index, type);
+          let result = 0;
+          if (type === 'number') {
+            result = valueA - valueB;
+          } else {
+            result = valueA.localeCompare(valueB, 'zh-CN', { numeric: true, sensitivity: 'base' });
+          }
+          return direction === 'asc' ? result : -result;
+        });
+        rows.forEach((row) => tbody.appendChild(row));
+        activeHeader = header;
+        activeDirection = direction;
+        updateSortState(header, direction);
+      }
+
+      headers.forEach((header) => {
+        header.classList.add('sortable-col');
+        header.addEventListener('click', () => sortByHeader(header));
+        header.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            sortByHeader(header);
+          }
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
