@@ -471,6 +471,12 @@ def record_backup_history(archive_path, backup_type='manual'):
     save_backup_manifest(history[:200])
 
 
+def build_timestamped_export_filename(stem, extension='csv'):
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    normalized_extension = extension.lstrip('.')
+    return f"{stem}_{timestamp}.{normalized_extension}"
+
+
 def build_backup_archive(backup_type='manual'):
     backup_dir = ensure_backup_dir()
     timestamp = datetime.utcnow().strftime('%Y%m%d-%H%M%S')

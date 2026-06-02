@@ -9,6 +9,7 @@ from src.app import (
     MILESTONE_COLUMNS,
     PROJECT_ALL_COLUMNS,
     app,
+    build_timestamped_export_filename,
     build_auth_context,
     feature_row_to_db_tuple,
     form_to_feature_data,
@@ -245,7 +246,7 @@ def admin_projects_export_csv():
             row.get('headcount_budget_tm', ''),
         ])
     response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
-    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('项目数据_导出数据.csv')}"
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(build_timestamped_export_filename('项目数据_导出数据'))}"
     return response
 
 
@@ -281,5 +282,5 @@ def admin_features_export_csv():
             *[row.get(month, '') for month in MILESTONE_COLUMNS],
         ])
     response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
-    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('关键特性数据_导出数据.csv')}"
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(build_timestamped_export_filename('关键特性数据_导出数据'))}"
     return response

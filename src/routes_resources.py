@@ -5,6 +5,7 @@ from io import StringIO
 
 from src.app import (
     app,
+    build_timestamped_export_filename,
     build_auth_context,
     build_resource_people_summary,
     build_service_resource_summary,
@@ -422,7 +423,7 @@ def admin_resource_people_export_csv():
             row.get('remarks') or '',
         ])
     response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
-    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('人员资源库_导出数据.csv')}"
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(build_timestamped_export_filename('人员资源库_导出数据'))}"
     return response
 
 
@@ -465,5 +466,5 @@ def admin_service_resources_export_csv():
             row.get('summary_tm', ''),
         ])
     response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
-    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('service_resource_investment_export.csv')}"
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(build_timestamped_export_filename('服务资源数据_导出数据'))}"
     return response
