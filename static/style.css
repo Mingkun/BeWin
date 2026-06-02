@@ -1556,17 +1556,22 @@ body.theme-ios-dark .backup-popover-text {
   opacity: 1;
 }
 
-.project-gantt-menu-wrap .milestone-more-trigger {
+.milestone-card-actions .milestone-more-trigger,
+.milestone-card-actions .milestone-more-trigger:link,
+.milestone-card-actions .milestone-more-trigger:visited,
+.milestone-card-actions .milestone-more-trigger:hover,
+.milestone-card-actions .milestone-more-trigger:active {
   width: 26px;
   height: 26px;
   border: 1px solid #cbd5e1;
   background: #ffffff;
   color: #334155;
+  border-radius: 999px;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
 }
 
-.project-gantt-menu-wrap .milestone-more-trigger:hover,
-.project-gantt-menu-wrap .milestone-more-trigger:focus {
+.milestone-card-actions .milestone-more-trigger:hover,
+.milestone-card-actions .milestone-more-trigger:focus {
   border-color: #94a3b8;
   background: #f8fafc;
   color: #0f172a;
@@ -2125,28 +2130,11 @@ body.theme-ios-dark .backup-popover-text {
   align-self: flex-end;
   margin-bottom: 2px;
   position: relative;
-  opacity: 0.7;
+  opacity: 1;
 }
 
 .milestone-month-card:hover .milestone-card-actions {
   opacity: 1;
-}
-
-.milestone-card-actions .icon-action,
-.milestone-card-actions .icon-action:link,
-.milestone-card-actions .icon-action:visited,
-.milestone-card-actions .icon-action:hover,
-.milestone-card-actions .icon-action:active {
-  width: 24px;
-  height: 24px;
-  font-size: 13px;
-  color: #94a3b8;
-  border-radius: 999px;
-}
-
-.milestone-card-actions .icon-action:hover {
-  background: rgba(148, 163, 184, 0.12);
-  color: #64748b;
 }
 
 .milestone-more-trigger {

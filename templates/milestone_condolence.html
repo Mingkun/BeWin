@@ -56,7 +56,7 @@
                   <div class="milestone-month-card">
                     {% if user_features.manage_features %}
                     <div class="milestone-card-actions menu-wrap">
-                      <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
+                      <button class="icon-action milestone-more-trigger" type="button" title="更多" aria-label="更多操作">⋯</button>
                       <div class="milestone-card-menu">
                         <a class="milestone-card-menu-item" href="{{ url_for('admin_milestone_condolence_edit', item_id=item.id) }}">编辑</a>
                         <form method="post" action="{{ url_for('admin_milestone_condolence_delete', item_id=item.id) }}" class="inline-delete-form milestone-menu-delete-form">

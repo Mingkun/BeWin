@@ -181,7 +181,7 @@
                     <span>{{ record.l4_cloud_service or '' }}</span>
                     {% if user_features.manage_service_resources %}
                     <div class="milestone-card-actions menu-wrap" style="padding-top:0; margin:0;">
-                      <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
+                      <button class="icon-action milestone-more-trigger" type="button" title="更多" aria-label="更多操作">⋯</button>
                       <div class="milestone-card-menu">
                         <div class="milestone-card-menu-row">
                           <a class="milestone-card-menu-item" href="{{ url_for('admin_service_resource_edit', record_id=record.id) }}?return_to={{ url_for('view_placeholder', view_key='cloud-service-view') | urlencode }}">编辑</a>

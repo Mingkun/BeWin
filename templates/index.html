@@ -92,7 +92,7 @@
                         <div style="display:flex; align-items:center; gap:8px;">
                           <button type="button" class="feature-pin-toggle {% if feature.is_pinned %}active{% endif %}" data-project-id="{{ project.project_id }}" data-feature-id="{{ feature.id }}" data-pinned="{{ '1' if feature.is_pinned else '0' }}">置顶</button>
                           <div class="milestone-card-actions menu-wrap">
-                            <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
+                            <button class="icon-action milestone-more-trigger" type="button" title="更多" aria-label="更多操作">⋯</button>
                             <div class="milestone-card-menu">
                               <div class="milestone-card-menu-row">
                                 <a class="milestone-card-menu-item" href="{{ url_for('admin_feature_edit', feature_id=feature.id) }}">编辑</a>
