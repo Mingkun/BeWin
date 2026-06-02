@@ -86,7 +86,7 @@
               <div class="project-gantt-info-panel project-gantt-info-panel-with-menu">
                 {% if user_features.manage_projects %}
                 <div class="milestone-card-actions menu-wrap project-gantt-menu-wrap">
-                  <span class="icon-action milestone-more-trigger" title="更多" aria-label="更多">⋯</span>
+                  <button class="icon-action milestone-more-trigger" type="button" title="更多" aria-label="更多项目操作">⋯</button>
                   <div class="milestone-card-menu">
                     <div class="milestone-card-menu-row">
                       <a class="milestone-card-menu-item" href="{{ url_for('admin_project_edit', project_id=project.id) }}">编辑</a>

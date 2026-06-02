@@ -1553,6 +1553,23 @@ body.theme-ios-dark .backup-popover-text {
   margin-bottom: 0 !important;
   align-self: auto !important;
   z-index: 60;
+  opacity: 1;
+}
+
+.project-gantt-menu-wrap .milestone-more-trigger {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.project-gantt-menu-wrap .milestone-more-trigger:hover,
+.project-gantt-menu-wrap .milestone-more-trigger:focus {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 .project-gantt-info-head {
@@ -2180,6 +2197,7 @@ body.theme-ios-dark .backup-popover-text {
 }
 
 .milestone-card-actions:hover .milestone-card-menu,
+.milestone-card-actions:focus-within .milestone-card-menu,
 .milestone-card-menu:hover {
   opacity: 1;
   visibility: visible;
