@@ -20,6 +20,32 @@
       </div>
     </header>
 
+    {% if filters.quick_filter or filters.status_filter or filters.person_type or filters.department_name or filters.project_name or filters.keyword %}
+    <div class="resource-active-filter resource-active-filter-top">
+      <span>
+        当前过滤：
+        {% set has_active_filter_label = false %}
+        {% if filters.quick_filter %}{% if filters.quick_filter == 'missing_department' %}未关联部门{% elif filters.quick_filter == 'missing_project' %}未关联项目{% elif filters.quick_filter == 'status_not_on_duty' %}状态非在岗{% endif %}{% endif %}
+        {% if filters.quick_filter %}{% set has_active_filter_label = true %}{% endif %}
+        {% if has_active_filter_label and filters.status_filter %} / {% endif %}
+        {% if filters.status_filter %}状态：{{ filters.status_filter }}{% endif %}
+        {% if filters.status_filter %}{% set has_active_filter_label = true %}{% endif %}
+        {% if has_active_filter_label and filters.department_name %} / {% endif %}
+        {% if filters.department_name %}部门：{{ filters.department_name }}{% endif %}
+        {% if filters.department_name %}{% set has_active_filter_label = true %}{% endif %}
+        {% if has_active_filter_label and filters.person_type %} / {% endif %}
+        {% if filters.person_type %}人员类型：{{ filters.person_type }}{% endif %}
+        {% if filters.person_type %}{% set has_active_filter_label = true %}{% endif %}
+        {% if has_active_filter_label and filters.project_name %} / {% endif %}
+        {% if filters.project_name %}项目：{{ filters.project_name }}{% endif %}
+        {% if filters.project_name %}{% set has_active_filter_label = true %}{% endif %}
+        {% if has_active_filter_label and filters.keyword %} / {% endif %}
+        {% if filters.keyword %}关键词：{{ filters.keyword }}{% endif %}
+      </span>
+      <a href="{{ url_for('view_placeholder', view_key='project-budget-resource') }}">取消过滤</a>
+    </div>
+    {% endif %}
+
     {% if department_summary or status_summary.status_items %}
     <div class="resource-visual-grid">
       <div class="card resource-chart-card">
@@ -100,32 +126,6 @@
       <a class="card stat-card stat-filter-card {% if filters.quick_filter == 'status_not_on_duty' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type=filters.person_type, department_name=filters.department_name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='status_not_on_duty') }}"><div class="stat-label">状态非在岗</div><div class="stat-value">{{ summary.status_not_on_duty_count }}</div></a>
       <div class="card stat-card"><div class="stat-label">已投入到项目占比</div><div class="stat-value">{{ '%.2f%%'|format(summary.project_bound_ratio * 100) }}</div></div>
     </div>
-
-    {% if filters.quick_filter or filters.status_filter or filters.person_type or filters.department_name or filters.project_name or filters.keyword %}
-    <div class="resource-active-filter">
-      <span>
-        当前过滤：
-        {% set has_active_filter_label = false %}
-        {% if filters.quick_filter %}{% if filters.quick_filter == 'missing_department' %}未关联部门{% elif filters.quick_filter == 'missing_project' %}未关联项目{% elif filters.quick_filter == 'status_not_on_duty' %}状态非在岗{% endif %}{% endif %}
-        {% if filters.quick_filter %}{% set has_active_filter_label = true %}{% endif %}
-        {% if has_active_filter_label and filters.status_filter %} / {% endif %}
-        {% if filters.status_filter %}状态：{{ filters.status_filter }}{% endif %}
-        {% if filters.status_filter %}{% set has_active_filter_label = true %}{% endif %}
-        {% if has_active_filter_label and filters.department_name %} / {% endif %}
-        {% if filters.department_name %}部门：{{ filters.department_name }}{% endif %}
-        {% if filters.department_name %}{% set has_active_filter_label = true %}{% endif %}
-        {% if has_active_filter_label and filters.person_type %} / {% endif %}
-        {% if filters.person_type %}人员类型：{{ filters.person_type }}{% endif %}
-        {% if filters.person_type %}{% set has_active_filter_label = true %}{% endif %}
-        {% if has_active_filter_label and filters.project_name %} / {% endif %}
-        {% if filters.project_name %}项目：{{ filters.project_name }}{% endif %}
-        {% if filters.project_name %}{% set has_active_filter_label = true %}{% endif %}
-        {% if has_active_filter_label and filters.keyword %} / {% endif %}
-        {% if filters.keyword %}关键词：{{ filters.keyword }}{% endif %}
-      </span>
-      <a href="{{ url_for('view_placeholder', view_key='project-budget-resource') }}">取消</a>
-    </div>
-    {% endif %}
 
     {% if department_summary or project_summary %}
     <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); margin-top:16px;">

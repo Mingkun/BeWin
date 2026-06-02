@@ -2713,7 +2713,7 @@ a.resource-stack-seg:hover,
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin: -4px 0 16px;
+  margin: 0 0 16px;
   padding: 10px 14px;
   border: 1px solid #bfdbfe;
   border-radius: 8px;
