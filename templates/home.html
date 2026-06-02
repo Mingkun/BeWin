@@ -8,9 +8,11 @@
 </head>
 <body class="theme-{{ branding.theme }}">
   <div class="page home-page">
-    <header class="toolbar">
+    <header class="toolbar home-hero">
       <div>
+        <div class="home-kicker">BeWin 工作台</div>
         <h1>{{ branding.home_title }}</h1>
+        <p>项目推进、资源投入、云服务与关键突破一体化看板。</p>
       </div>
       <div class="toolbar-actions home-toolbar-actions">
         {% if user_features.view_requirements %}
@@ -34,12 +36,40 @@
       </div>
     </header>
 
-    <div class="entry-card-grid">
-      {% for card in home_cards %}
-      <a class="entry-card" href="{{ card.href }}">
-        <div class="entry-card-title">{{ card.title }}</div>
-        <div class="entry-card-desc">{{ card.desc }}</div>
+    {% if dashboard_metrics %}
+    <section class="home-metric-grid" aria-label="业务总览">
+      {% for metric in dashboard_metrics %}
+      <a class="home-metric-card" href="{{ metric.href }}">
+        <div class="home-metric-label">{{ metric.label }}</div>
+        <div class="home-metric-value">{{ metric.value }}</div>
+        <div class="home-metric-note">{{ metric.note }}</div>
       </a>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <div class="home-section-grid">
+      {% for section in home_sections %}
+      <section class="home-section-card">
+        <div class="home-section-header">
+          <div>
+            <div class="home-section-title">{{ section.title }}</div>
+          </div>
+          <span>{{ section.cards|length }} 项</span>
+        </div>
+        <div class="entry-card-grid">
+          {% for card in section.cards %}
+          <a class="entry-card" href="{{ card.href }}">
+            <div class="entry-card-top">
+              <span class="entry-card-badge">{{ card.badge }}</span>
+              <span class="entry-card-arrow">进入</span>
+            </div>
+            <div class="entry-card-title">{{ card.title }}</div>
+            <div class="entry-card-desc">{{ card.section_desc or card.desc }}</div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
       {% endfor %}
     </div>
   </div>
