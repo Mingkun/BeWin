@@ -70,7 +70,7 @@
         <label>计划启动日期<textarea name="planned_start_date" rows="2">{{ project.planned_start_date or '' }}</textarea></label>
         <label>计划结束日期<textarea name="planned_end_date" rows="2">{{ project.planned_end_date or '' }}</textarea></label>
         <label>工作量（人月）<textarea name="workload_person_month" rows="2">{{ project.workload_person_month or '' }}</textarea><span class="field-hint">自动计算： (自有 + OD + 0.8×TM) × 项目周期月数</span></label>
-        <label>研发费用预算（w）<textarea name="rd_budget_w" rows="2">{{ project.rd_budget_w or '' }}</textarea></label>
+        <label>研发费用预算（w）<textarea name="rd_budget_w" rows="2">{{ project.rd_budget_w or '' }}</textarea><span class="field-hint">自动计算：自有×月数×4.5 + OD×月数×3 + TM×月数×2；手动输入后保留手工值</span></label>
         <label>人力预算（自有）<textarea name="headcount_budget_self_owned" rows="2">{{ project.headcount_budget_self_owned or '' }}</textarea></label>
         <label>人力预算（OD）<textarea name="headcount_budget_od" rows="2">{{ project.headcount_budget_od or '' }}</textarea></label>
         <label>人力预算（TM）<textarea name="headcount_budget_tm" rows="2">{{ project.headcount_budget_tm or '' }}</textarea></label>
@@ -89,10 +89,12 @@
       const startField = form.elements.planned_start_date;
       const endField = form.elements.planned_end_date;
       const workloadField = form.elements.workload_person_month;
+      const rdBudgetField = form.elements.rd_budget_w;
       const selfOwnedField = form.elements.headcount_budget_self_owned;
       const odField = form.elements.headcount_budget_od;
       const tmField = form.elements.headcount_budget_tm;
       const fields = [startField, endField, selfOwnedField, odField, tmField].filter(Boolean);
+      let rdBudgetManual = Boolean(String(rdBudgetField?.value || '').trim());
 
       function parseNumber(value) {
         const normalized = String(value || '').trim().replace('%', '');
@@ -115,23 +117,42 @@
         return value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
       }
 
-      function updateWorkload() {
+      function getDurationMonths() {
         const start = parseDateParts(startField?.value);
         const end = parseDateParts(endField?.value);
-        if (!start || !end || !workloadField) return;
+        if (!start || !end) return null;
         const durationMonths = (end.year - start.year) * 12 + (end.month - start.month) + 1;
-        if (durationMonths <= 0) return;
+        return durationMonths > 0 ? durationMonths : null;
+      }
+
+      function updateCalculatedFields() {
+        const durationMonths = getDurationMonths();
+        if (!durationMonths) return;
         const headcountTotal = parseNumber(selfOwnedField?.value)
           + parseNumber(odField?.value)
           + 0.8 * parseNumber(tmField?.value);
-        workloadField.value = formatNumber(headcountTotal * durationMonths);
+        if (workloadField) {
+          workloadField.value = formatNumber(headcountTotal * durationMonths);
+        }
+        if (rdBudgetField && !rdBudgetManual) {
+          const rdBudget = parseNumber(selfOwnedField?.value) * durationMonths * 4.5
+            + parseNumber(odField?.value) * durationMonths * 3
+            + parseNumber(tmField?.value) * durationMonths * 2;
+          rdBudgetField.value = formatNumber(rdBudget);
+        }
       }
 
+      if (rdBudgetField) {
+        rdBudgetField.addEventListener('input', () => {
+          rdBudgetManual = Boolean(String(rdBudgetField.value || '').trim());
+          if (!rdBudgetManual) updateCalculatedFields();
+        });
+      }
       fields.forEach((field) => {
-        field.addEventListener('input', updateWorkload);
-        field.addEventListener('change', updateWorkload);
+        field.addEventListener('input', updateCalculatedFields);
+        field.addEventListener('change', updateCalculatedFields);
       });
-      updateWorkload();
+      updateCalculatedFields();
     })();
   </script>
 </body>
