@@ -31,7 +31,7 @@
         <a href="{{ url_for('oauth_login', next=next) }}">切换到 W3 账号登录</a>
       </div>
       {% endif %}
-      <form method="post" class="login-form">
+      <form method="post" class="login-form" id="local-login-form">
         <input type="hidden" name="next" value="{{ next }}">
         <label class="login-field">
           <span>账号</span>
@@ -50,7 +50,7 @@
             </button>
           </div>
         </label>
-        <button type="submit" class="button login-submit">登录</button>
+        <button type="submit" class="button login-submit" id="local-login-submit">登录</button>
       </form>
         <div class="login-footnote">访问受权限控制，请使用已授权账号登录。</div>
       </section>
@@ -61,6 +61,19 @@
       const image = document.getElementById('local-captcha-image');
       if (image) image.src = "{{ url_for('local_login_captcha_image') }}?t=" + Date.now();
     }
+
+    (function () {
+      const form = document.getElementById('local-login-form');
+      const submitButton = document.getElementById('local-login-submit');
+      if (!form || !submitButton) return;
+      form.addEventListener('submit', function () {
+        if (!form.checkValidity()) return;
+        document.body.classList.add('is-login-busy');
+        form.classList.add('is-submitting');
+        submitButton.disabled = true;
+        submitButton.textContent = '登录中...';
+      });
+    })();
   </script>
 </body>
 </html>

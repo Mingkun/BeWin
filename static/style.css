@@ -490,6 +490,20 @@ body.theme-ios-dark .entry-card-badge {
   background: #1d4ed8;
 }
 
+body.is-login-busy,
+body.is-login-busy * {
+  cursor: wait !important;
+}
+
+.login-form.is-submitting {
+  pointer-events: none;
+}
+
+.login-submit:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
 .login-footnote {
   margin-top: 16px;
   color: #94a3b8;
