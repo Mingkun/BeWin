@@ -1680,6 +1680,38 @@ def build_resource_people_summary(rows):
     }
 
 
+def build_resource_status_summary(rows):
+    status_order = ['在岗', '预入项', '流动中', '待释放', '休假', '支撑中']
+    grouped = {}
+    for row in rows:
+        key = (row.get('status') or '').strip() or '未填写'
+        grouped[key] = grouped.get(key, 0) + 1
+
+    total = len(rows)
+    items = [
+        {
+            'name': name,
+            'count': grouped[name],
+            'ratio': round((grouped[name] / total) if total else 0.0, 4),
+        }
+        for name in status_order
+        if name in grouped
+    ]
+    items.extend(
+        {
+            'name': name,
+            'count': count,
+            'ratio': round((count / total) if total else 0.0, 4),
+        }
+        for name, count in sorted(grouped.items(), key=lambda item: (-item[1], item[0]))
+        if name not in status_order
+    )
+    return {
+        'total': total,
+        'status_items': items,
+    }
+
+
 def get_resource_people_filter_options(rows):
     return {
         'person_types': sorted({(row.get('person_type') or '').strip() for row in rows if (row.get('person_type') or '').strip()}),

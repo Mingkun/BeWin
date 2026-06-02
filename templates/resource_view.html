@@ -20,6 +20,66 @@
       </div>
     </header>
 
+    {% if department_summary or status_summary.status_items %}
+    <div class="resource-visual-grid">
+      <div class="card resource-chart-card">
+        <div class="resource-chart-title">部门人力结构</div>
+        {% if department_summary %}
+          {% set max_department_count = department_summary[0].count if department_summary else 0 %}
+          <div class="resource-stack-list">
+            {% for item in department_summary[:8] %}
+            <div class="resource-stack-row">
+              <div class="resource-stack-name" title="{{ item.name }}">{{ item.name }}</div>
+              <div class="resource-stack-main">
+                <div class="resource-stack-meta">
+                  <span>{{ item.count }} 人</span>
+                  <span>自有 {{ item.self_owned_count }} · OD {{ item.od_count }} · TM {{ item.tm_count }}</span>
+                </div>
+                <div class="resource-stack-track">
+                  <div class="resource-stack-fill" style="width:{{ '%.2f%%'|format((item.count / max_department_count * 100) if max_department_count else 0) }};">
+                    <span class="resource-stack-seg self-owned" title="自有 {{ item.self_owned_count }}" style="width:{{ '%.2f%%'|format((item.self_owned_count / item.count * 100) if item.count else 0) }};"></span>
+                    <span class="resource-stack-seg od" title="OD {{ item.od_count }}" style="width:{{ '%.2f%%'|format((item.od_count / item.count * 100) if item.count else 0) }};"></span>
+                    <span class="resource-stack-seg tm" title="TM {{ item.tm_count }}" style="width:{{ '%.2f%%'|format((item.tm_count / item.count * 100) if item.count else 0) }};"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="resource-chart-legend">
+            <span><i class="legend-dot self-owned"></i>自有</span>
+            <span><i class="legend-dot od"></i>OD</span>
+            <span><i class="legend-dot tm"></i>TM</span>
+          </div>
+        {% else %}
+          <div class="empty">暂无部门人力结构数据。</div>
+        {% endif %}
+      </div>
+
+      <div class="card resource-chart-card">
+        <div class="resource-chart-title">人员状态分布</div>
+        {% if status_summary.status_items %}
+          <div class="resource-status-strip">
+            {% for item in status_summary.status_items %}
+              <span class="resource-status-seg status-{{ loop.index0 % 6 }}" title="{{ item.name }} {{ item.count }} 人" style="width:{{ '%.2f%%'|format(item.ratio * 100) }};"></span>
+            {% endfor %}
+          </div>
+          <div class="resource-status-list">
+            {% for item in status_summary.status_items %}
+            <div class="resource-status-row">
+              <span><i class="legend-dot status-{{ loop.index0 % 6 }}"></i>{{ item.name }}</span>
+              <strong>{{ item.count }}</strong>
+              <span>{{ '%.1f%%'|format(item.ratio * 100) }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty">暂无状态分布数据。</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
     <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));">
       <div class="card stat-card"><div class="stat-label">总人数</div><div class="stat-value">{{ summary.count }}</div></div>
       <div class="card stat-card"><div class="stat-label">已关联部门</div><div class="stat-value">{{ summary.department_bound_count }}</div></div>

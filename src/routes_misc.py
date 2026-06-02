@@ -11,6 +11,7 @@ from src.app import (
     build_project_gantt,
     build_resource_group_summary,
     build_resource_people_summary,
+    build_resource_status_summary,
     build_service_resource_summary,
     filter_resource_people,
     filter_service_resources,
@@ -305,6 +306,7 @@ def view_placeholder(view_key):
             summary=build_resource_people_summary(filtered_rows),
             department_summary=build_resource_group_summary(filtered_rows, 'department_full_name', mode='project_bound_ratio'),
             project_summary=build_resource_group_summary(filtered_rows, 'project_name', mode='allocation_total'),
+            status_summary=build_resource_status_summary(filtered_rows),
             filter_options=get_resource_people_filter_options(rows),
             filters={
                 'person_type': person_type,
