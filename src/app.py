@@ -472,7 +472,7 @@ def record_backup_history(archive_path, backup_type='manual'):
 
 
 def build_timestamped_export_filename(stem, extension='csv'):
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    timestamp = datetime.now().strftime('%Y%m%d%H%M')
     normalized_extension = extension.lstrip('.')
     return f"{stem}_{timestamp}.{normalized_extension}"
 
