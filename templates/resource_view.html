@@ -35,7 +35,19 @@
         {% if department_summary %}
         <div class="table-wrap">
           <table class="data-table" id="department-summary-table">
-            <thead><tr><th data-sort-type="text">部门</th><th data-sort-type="number">部门人数</th><th data-sort-type="number">自有</th><th data-sort-type="number">OD</th><th data-sort-type="number">TM</th><th data-sort-type="number">已投入到项目占比</th></tr></thead>
+            <thead>
+              <tr>
+                <th rowspan="2" data-sort-type="text" data-sort-index="0">部门</th>
+                <th colspan="4" style="text-align:center;">部门人数</th>
+                <th rowspan="2" data-sort-type="number" data-sort-index="5">已投入到项目占比</th>
+              </tr>
+              <tr>
+                <th data-sort-type="number" data-sort-index="1">汇总</th>
+                <th data-sort-type="number" data-sort-index="2">自有</th>
+                <th data-sort-type="number" data-sort-index="3">OD</th>
+                <th data-sort-type="number" data-sort-index="4">TM</th>
+              </tr>
+            </thead>
             <tbody>
               {% for item in department_summary %}
               <tr><td>{{ item.name }}</td><td>{{ item.count }}</td><td>{{ item.self_owned_count }}</td><td>{{ item.od_count }}</td><td>{{ item.tm_count }}</td><td>{{ '%.2f%%'|format(item.project_bound_ratio * 100) }}</td></tr>
@@ -152,13 +164,14 @@
         const table = document.getElementById(tableId);
         if (!table) return;
         const tbody = table.querySelector('tbody');
-        const headers = Array.from(table.querySelectorAll('thead th'));
-        headers.forEach((header, index) => {
+        const headers = Array.from(table.querySelectorAll('thead th[data-sort-type]'));
+        headers.forEach((header) => {
           header.style.cursor = 'pointer';
           let asc = true;
           header.addEventListener('click', (event) => {
             if (event.target.closest('.col-resizer')) return;
             const type = header.dataset.sortType || 'text';
+            const index = Number.isFinite(Number(header.dataset.sortIndex)) ? Number(header.dataset.sortIndex) : header.cellIndex;
             const rows = Array.from(tbody.querySelectorAll('tr'));
             rows.sort((a, b) => {
               const aText = (a.children[index]?.textContent || '').trim();
