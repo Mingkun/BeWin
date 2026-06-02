@@ -299,7 +299,15 @@ def view_placeholder(view_key):
         department_name = (request.args.get('department_name') or '').strip()
         project_name = (request.args.get('project_name') or '').strip()
         keyword = (request.args.get('keyword') or '').strip()
-        filtered_rows = filter_resource_people(rows, person_type=person_type, department_name=department_name, project_name=project_name, keyword=keyword)
+        quick_filter = (request.args.get('quick_filter') or '').strip()
+        filtered_rows = filter_resource_people(
+            rows,
+            person_type=person_type,
+            department_name=department_name,
+            project_name=project_name,
+            keyword=keyword,
+            quick_filter=quick_filter,
+        )
         return render_template(
             'resource_view.html',
             records=filtered_rows,
@@ -313,6 +321,7 @@ def view_placeholder(view_key):
                 'department_name': department_name,
                 'project_name': project_name,
                 'keyword': keyword,
+                'quick_filter': quick_filter,
             },
             **build_auth_context(),
         )
