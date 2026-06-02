@@ -119,20 +119,20 @@
       <div class="table-wrap card">
         <table class="data-table clean-project-table" id="cloud-service-table">
           <colgroup>
-            <col style="width: 160px;">
-            <col style="width: 220px;">
-            <col style="width: 280px;">
-            <col style="width: 120px;">
-            <col style="width: 90px;">
-            <col style="width: 90px;">
-            <col style="width: 90px;">
             <col style="width: 100px;">
+            <col style="width: 130px;">
+            <col style="width: 230px;">
             <col style="width: 90px;">
-            <col style="width: 90px;">
-            <col style="width: 90px;">
-            <col style="width: 90px;">
-            <col style="width: 90px;">
-            <col style="width: 90px;">
+            <col style="width: 70px;">
+            <col style="width: 70px;">
+            <col style="width: 70px;">
+            <col style="width: 78px;">
+            <col style="width: 62px;">
+            <col style="width: 62px;">
+            <col style="width: 62px;">
+            <col style="width: 62px;">
+            <col style="width: 62px;">
+            <col style="width: 62px;">
           </colgroup>
           <thead>
             <tr>
@@ -430,7 +430,7 @@
         const table = document.getElementById('cloud-service-table');
         if (!table) return;
 
-        const storageKey = 'releaseplan.cloudServiceTable.columnWidths.v2';
+        const storageKey = 'releaseplan.cloudServiceTable.columnWidths.v3';
         const cols = Array.from(table.querySelectorAll('colgroup col'));
         const headers = Array.from(table.querySelectorAll('thead th'));
         const leafHeaders = headers.filter((header) => header.querySelector('.col-resizer'));

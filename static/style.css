@@ -1337,6 +1337,22 @@ body.theme-ios-dark .backup-popover-text {
   min-width: 1400px;
 }
 
+#cloud-service-table {
+  min-width: 0;
+  width: 100%;
+}
+
+#cloud-service-table th,
+#cloud-service-table td {
+  padding: 7px 6px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+#cloud-service-table td:nth-child(7) {
+  min-width: 0;
+}
+
 .resizable-resource-table {
   min-width: 1120px;
 }
