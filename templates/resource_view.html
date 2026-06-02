@@ -28,8 +28,9 @@
           {% set max_department_count = department_summary[0].count if department_summary else 0 %}
           <div class="resource-stack-list">
             {% for item in department_summary[:8] %}
+            {% set department_display_name = item.name.split(' / ')|last if item.name else item.name %}
             <div class="resource-stack-row">
-              <div class="resource-stack-name" title="{{ item.name }}">{{ item.name }}</div>
+              <div class="resource-stack-name" title="{{ item.name }}">{{ department_display_name }}</div>
               <div class="resource-stack-main">
                 <div class="resource-stack-meta">
                   <span>{{ item.count }} 人</span>
@@ -38,19 +39,19 @@
                 <div class="resource-stack-track">
                   <div class="resource-stack-fill" style="width:{{ '%.2f%%'|format((item.count / max_department_count * 100) if max_department_count else 0) }};">
                     {% if item.self_owned_count %}
-                    <a class="resource-stack-seg self-owned {% if filters.department_name == item.name and filters.person_type == '自有' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type='自有', department_name=item.name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='' if filters.quick_filter == 'missing_department' else filters.quick_filter, status_filter=filters.status_filter) }}" title="{{ item.name }} · 自有 {{ item.self_owned_count }} 人" style="width:{{ '%.2f%%'|format((item.self_owned_count / item.count * 100) if item.count else 0) }};"></a>
+                    <a class="resource-stack-seg self-owned {% if filters.department_name == item.name and filters.person_type == '自有' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type='自有', department_name=item.name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='' if filters.quick_filter == 'missing_department' else filters.quick_filter, status_filter=filters.status_filter) }}" title="{{ department_display_name }} · 自有 {{ item.self_owned_count }} 人" style="width:{{ '%.2f%%'|format((item.self_owned_count / item.count * 100) if item.count else 0) }};"></a>
                     {% else %}
-                    <span class="resource-stack-seg self-owned disabled" title="{{ item.name }} · 自有 0 人" style="width:{{ '%.2f%%'|format((item.self_owned_count / item.count * 100) if item.count else 0) }};"></span>
+                    <span class="resource-stack-seg self-owned disabled" title="{{ department_display_name }} · 自有 0 人" style="width:{{ '%.2f%%'|format((item.self_owned_count / item.count * 100) if item.count else 0) }};"></span>
                     {% endif %}
                     {% if item.od_count %}
-                    <a class="resource-stack-seg od {% if filters.department_name == item.name and filters.person_type == 'OD' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type='OD', department_name=item.name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='' if filters.quick_filter == 'missing_department' else filters.quick_filter, status_filter=filters.status_filter) }}" title="{{ item.name }} · OD {{ item.od_count }} 人" style="width:{{ '%.2f%%'|format((item.od_count / item.count * 100) if item.count else 0) }};"></a>
+                    <a class="resource-stack-seg od {% if filters.department_name == item.name and filters.person_type == 'OD' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type='OD', department_name=item.name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='' if filters.quick_filter == 'missing_department' else filters.quick_filter, status_filter=filters.status_filter) }}" title="{{ department_display_name }} · OD {{ item.od_count }} 人" style="width:{{ '%.2f%%'|format((item.od_count / item.count * 100) if item.count else 0) }};"></a>
                     {% else %}
-                    <span class="resource-stack-seg od disabled" title="{{ item.name }} · OD 0 人" style="width:{{ '%.2f%%'|format((item.od_count / item.count * 100) if item.count else 0) }};"></span>
+                    <span class="resource-stack-seg od disabled" title="{{ department_display_name }} · OD 0 人" style="width:{{ '%.2f%%'|format((item.od_count / item.count * 100) if item.count else 0) }};"></span>
                     {% endif %}
                     {% if item.tm_count %}
-                    <a class="resource-stack-seg tm {% if filters.department_name == item.name and filters.person_type == 'TM' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type='TM', department_name=item.name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='' if filters.quick_filter == 'missing_department' else filters.quick_filter, status_filter=filters.status_filter) }}" title="{{ item.name }} · TM {{ item.tm_count }} 人" style="width:{{ '%.2f%%'|format((item.tm_count / item.count * 100) if item.count else 0) }};"></a>
+                    <a class="resource-stack-seg tm {% if filters.department_name == item.name and filters.person_type == 'TM' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type='TM', department_name=item.name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='' if filters.quick_filter == 'missing_department' else filters.quick_filter, status_filter=filters.status_filter) }}" title="{{ department_display_name }} · TM {{ item.tm_count }} 人" style="width:{{ '%.2f%%'|format((item.tm_count / item.count * 100) if item.count else 0) }};"></a>
                     {% else %}
-                    <span class="resource-stack-seg tm disabled" title="{{ item.name }} · TM 0 人" style="width:{{ '%.2f%%'|format((item.tm_count / item.count * 100) if item.count else 0) }};"></span>
+                    <span class="resource-stack-seg tm disabled" title="{{ department_display_name }} · TM 0 人" style="width:{{ '%.2f%%'|format((item.tm_count / item.count * 100) if item.count else 0) }};"></span>
                     {% endif %}
                   </div>
                 </div>
