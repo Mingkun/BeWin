@@ -64,6 +64,14 @@
             {% endfor %}
           </select>
         </label>
+        <label>服务Leader
+          <select name="leader">
+            <option value="">全部</option>
+            {% for item in filter_options.leaders %}
+              <option value="{{ item }}" {% if filters and filters.leader == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
         <label class="filter-actions">
           <span>操作</span>
           <div class="toolbar-actions">
@@ -114,6 +122,7 @@
             <col style="width: 160px;">
             <col style="width: 220px;">
             <col style="width: 280px;">
+            <col style="width: 120px;">
             <col style="width: 90px;">
             <col style="width: 90px;">
             <col style="width: 90px;">
@@ -130,6 +139,7 @@
               <th rowspan="2" data-sort-key="department" data-sort-type="text" tabindex="0" role="button" aria-label="按五层部门排序">五层部门<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
               <th rowspan="2" data-sort-key="service" data-sort-type="text" tabindex="0" role="button" aria-label="按L4云服务排序">L4云服务<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
               <th rowspan="2" data-sort-key="description" data-sort-type="text" tabindex="0" role="button" aria-label="按功能和用途简介排序">功能和用途简介<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
+              <th rowspan="2" data-sort-key="leader" data-sort-type="text" tabindex="0" role="button" aria-label="按服务Leader排序">服务Leader<span class="sort-indicator" aria-hidden="true"></span><div class="col-resizer"></div></th>
               <th colspan="4" style="text-align:center;">汇总</th>
               <th colspan="3" style="text-align:center;">HC</th>
               <th colspan="3" style="text-align:center;">HCS</th>
@@ -153,6 +163,7 @@
                 data-department="{{ (record.five_level_department or '') | e }}"
                 data-service="{{ (record.l4_cloud_service or '') | e }}"
                 data-description="{{ (record.function_description or '') | e }}"
+                data-leader="{{ (record.service_leader or '') | e }}"
                 data-summary-self-owned="{{ record.summary_self_owned or 0 }}"
                 data-summary-od="{{ record.summary_od or 0 }}"
                 data-summary-tm="{{ record.summary_tm or 0 }}"
@@ -194,6 +205,7 @@
                   </div>
                 </td>
                 <td>{{ record.function_description or '' }}</td>
+                <td>{{ record.service_leader or '' }}</td>
                 <td>{{ record.summary_self_owned or '' }}</td>
                 <td>{{ record.summary_od or '' }}</td>
                 <td>{{ record.summary_tm or '' }}</td>
@@ -418,7 +430,7 @@
         const table = document.getElementById('cloud-service-table');
         if (!table) return;
 
-        const storageKey = 'releaseplan.cloudServiceTable.columnWidths.v1';
+        const storageKey = 'releaseplan.cloudServiceTable.columnWidths.v2';
         const cols = Array.from(table.querySelectorAll('colgroup col'));
         const headers = Array.from(table.querySelectorAll('thead th'));
         const leafHeaders = headers.filter((header) => header.querySelector('.col-resizer'));

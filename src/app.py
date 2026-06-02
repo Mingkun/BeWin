@@ -1004,6 +1004,7 @@ def init_db():
                 five_level_department TEXT,
                 l4_cloud_service TEXT,
                 function_description TEXT,
+                service_leader TEXT,
                 summary_self_owned TEXT,
                 summary_od TEXT,
                 summary_tm TEXT,
@@ -1018,6 +1019,11 @@ def init_db():
             )
             """
         )
+        service_resource_columns = {
+            row['name'] for row in conn.execute("PRAGMA table_info(service_resource_investment)").fetchall()
+        }
+        if 'service_leader' not in service_resource_columns:
+            conn.execute("ALTER TABLE service_resource_investment ADD COLUMN service_leader TEXT")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS investment_records (
@@ -1975,6 +1981,7 @@ def form_to_service_resource_data(form):
         "five_level_department": (form.get("five_level_department") or "").strip(),
         "l4_cloud_service": (form.get("l4_cloud_service") or "").strip(),
         "function_description": (form.get("function_description") or "").strip(),
+        "service_leader": (form.get("service_leader") or "").strip(),
         "summary_self_owned": format_number(to_number(hc_self_owned) + to_number(hcs_self_owned)),
         "summary_od": format_number(to_number(hc_od) + to_number(hcs_od)),
         "summary_tm": format_number(to_number(hc_tm) + to_number(hcs_tm)),
@@ -1997,6 +2004,7 @@ def load_service_resources():
                 five_level_department,
                 l4_cloud_service,
                 function_description,
+                service_leader,
                 summary_self_owned,
                 summary_od,
                 summary_tm,
@@ -2023,6 +2031,7 @@ def load_service_resource(record_id):
                 five_level_department,
                 l4_cloud_service,
                 function_description,
+                service_leader,
                 summary_self_owned,
                 summary_od,
                 summary_tm,
@@ -2065,16 +2074,19 @@ def build_service_resource_summary(rows):
     }
 
 
-def filter_service_resources(rows, department_keyword='', service_keyword=''):
+def filter_service_resources(rows, department_keyword='', service_keyword='', leader_keyword=''):
     department_keyword = (department_keyword or '').strip().lower()
     service_keyword = (service_keyword or '').strip().lower()
+    leader_keyword = (leader_keyword or '').strip().lower()
 
     def matched(row):
         department_value = (row.get('five_level_department') or '').lower()
         service_value = (row.get('l4_cloud_service') or '').lower()
+        leader_value = (row.get('service_leader') or '').lower()
         department_ok = not department_keyword or department_keyword == department_value
         service_ok = not service_keyword or service_keyword == service_value
-        return department_ok and service_ok
+        leader_ok = not leader_keyword or leader_keyword == leader_value
+        return department_ok and service_ok and leader_ok
 
     return [row for row in rows if matched(row)]
 
@@ -2082,9 +2094,11 @@ def filter_service_resources(rows, department_keyword='', service_keyword=''):
 def get_service_resource_filter_options(rows):
     departments = sorted({(row.get('five_level_department') or '').strip() for row in rows if (row.get('five_level_department') or '').strip()})
     services = sorted({(row.get('l4_cloud_service') or '').strip() for row in rows if (row.get('l4_cloud_service') or '').strip()})
+    leaders = sorted({(row.get('service_leader') or '').strip() for row in rows if (row.get('service_leader') or '').strip()})
     return {
         'departments': departments,
         'services': services,
+        'leaders': leaders,
     }
 
 
@@ -2093,6 +2107,7 @@ def normalize_service_resource_row(row):
         "five_level_department": (row.get("五层部门") or row.get("five_level_department") or "").strip(),
         "l4_cloud_service": (row.get("L4云服务") or row.get("l4_cloud_service") or "").strip(),
         "function_description": (row.get("功能和用途简介") or row.get("function_description") or "").strip(),
+        "service_leader": (row.get("服务Leader") or row.get("service_leader") or "").strip(),
         "hc_self_owned": (row.get("HC（自有）") or row.get("hc_self_owned") or "").strip(),
         "hc_od": (row.get("HC（OD）") or row.get("hc_od") or "").strip(),
         "hc_tm": (row.get("HC（TM）") or row.get("hc_tm") or "").strip(),
@@ -2120,6 +2135,7 @@ def import_service_resource_rows(rows, replace=True):
                 five_level_department,
                 l4_cloud_service,
                 function_description,
+                service_leader,
                 summary_self_owned,
                 summary_od,
                 summary_tm,
@@ -2129,11 +2145,11 @@ def import_service_resource_rows(rows, replace=True):
                 hcs_self_owned,
                 hcs_od,
                 hcs_tm
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
-                    row["five_level_department"], row["l4_cloud_service"], row["function_description"],
+                    row["five_level_department"], row["l4_cloud_service"], row["function_description"], row["service_leader"],
                     row["summary_self_owned"], row["summary_od"], row["summary_tm"],
                     row["hc_self_owned"], row["hc_od"], row["hc_tm"],
                     row["hcs_self_owned"], row["hcs_od"], row["hcs_tm"],
@@ -2250,9 +2266,9 @@ def seed_service_resources_if_empty():
 
     if imported <= 0:
         seed_rows = [
-            {"五层部门": "云平台部", "L4云服务": "容器云", "功能和用途简介": "提供容器编排与运行环境", "HC（自有）": "4", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "120", "HCS（OD）": "30", "HCS（TM）": "15"},
-            {"五层部门": "云平台部", "L4云服务": "对象存储", "功能和用途简介": "提供对象存储与归档能力", "HC（自有）": "3", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "90", "HCS（OD）": "20", "HCS（TM）": "12"},
-            {"五层部门": "基础设施部", "L4云服务": "云网络", "功能和用途简介": "提供 VPC、负载均衡与网络连接能力", "HC（自有）": "5", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "140", "HCS（OD）": "35", "HCS（TM）": "18"},
+            {"五层部门": "云平台部", "L4云服务": "容器云", "功能和用途简介": "提供容器编排与运行环境", "服务Leader": "张云", "HC（自有）": "4", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "120", "HCS（OD）": "30", "HCS（TM）": "15"},
+            {"五层部门": "云平台部", "L4云服务": "对象存储", "功能和用途简介": "提供对象存储与归档能力", "服务Leader": "李存", "HC（自有）": "3", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "90", "HCS（OD）": "20", "HCS（TM）": "12"},
+            {"五层部门": "基础设施部", "L4云服务": "云网络", "功能和用途简介": "提供 VPC、负载均衡与网络连接能力", "服务Leader": "王网", "HC（自有）": "5", "HC（OD）": "1", "HC（TM）": "1", "HCS（自有）": "140", "HCS（OD）": "35", "HCS（TM）": "18"},
         ]
         imported = import_service_resource_rows([normalize_service_resource_row(row) for row in seed_rows], replace=True)
 

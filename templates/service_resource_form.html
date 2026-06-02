@@ -44,6 +44,7 @@
         <label>五层部门<textarea name="five_level_department" rows="2">{{ record.five_level_department or '' }}</textarea></label>
         <label>L4云服务<textarea name="l4_cloud_service" rows="2">{{ record.l4_cloud_service or '' }}</textarea></label>
         <label>功能和用途简介<textarea name="function_description" rows="2">{{ record.function_description or '' }}</textarea></label>
+        <label>服务Leader<input name="service_leader" value="{{ record.service_leader or '' }}"></label>
         <label>汇总（自有）<input class="readonly-summary" name="summary_self_owned" value="{{ record.summary_self_owned or '' }}" readonly tabindex="-1"></label>
         <label>汇总（OD）<input class="readonly-summary" name="summary_od" value="{{ record.summary_od or '' }}" readonly tabindex="-1"></label>
         <label>汇总（TM）<input class="readonly-summary" name="summary_tm" value="{{ record.summary_tm or '' }}" readonly tabindex="-1"></label>

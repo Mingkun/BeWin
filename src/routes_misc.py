@@ -243,13 +243,19 @@ def view_placeholder(view_key):
     if view_key == 'cloud-service-view':
         department_keyword = (request.args.get('department') or '').strip()
         service_keyword = (request.args.get('service') or '').strip()
+        leader_keyword = (request.args.get('leader') or '').strip()
         rows = load_service_resources()
-        filtered_rows = filter_service_resources(rows, department_keyword=department_keyword, service_keyword=service_keyword)
+        filtered_rows = filter_service_resources(
+            rows,
+            department_keyword=department_keyword,
+            service_keyword=service_keyword,
+            leader_keyword=leader_keyword,
+        )
         return render_template(
             'cloud_service_view.html',
             records=filtered_rows,
             summary=build_service_resource_summary(filtered_rows),
-            filters={'department': department_keyword, 'service': service_keyword},
+            filters={'department': department_keyword, 'service': service_keyword, 'leader': leader_keyword},
             filter_options=get_service_resource_filter_options(rows),
             **build_auth_context(),
         )

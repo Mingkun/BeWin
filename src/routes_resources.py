@@ -40,7 +40,13 @@ def admin_service_resources():
     rows = load_service_resources()
     department_keyword = (request.args.get('department_keyword') or '').strip()
     service_keyword = (request.args.get('service_keyword') or '').strip()
-    filtered_rows = filter_service_resources(rows, department_keyword=department_keyword, service_keyword=service_keyword)
+    leader_keyword = (request.args.get('leader_keyword') or '').strip()
+    filtered_rows = filter_service_resources(
+        rows,
+        department_keyword=department_keyword,
+        service_keyword=service_keyword,
+        leader_keyword=leader_keyword,
+    )
     return render_template(
         'service_resource_list.html',
         branding=get_branding(),
@@ -49,6 +55,7 @@ def admin_service_resources():
         filter_options=get_service_resource_filter_options(rows),
         department_keyword=department_keyword,
         service_keyword=service_keyword,
+        leader_keyword=leader_keyword,
         **build_auth_context(),
     )
 
@@ -271,6 +278,7 @@ def admin_service_resource_new():
                     five_level_department,
                     l4_cloud_service,
                     function_description,
+                    service_leader,
                     summary_self_owned,
                     summary_od,
                     summary_tm,
@@ -280,10 +288,10 @@ def admin_service_resource_new():
                     hcs_self_owned,
                     hcs_od,
                     hcs_tm
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    data['five_level_department'], data['l4_cloud_service'], data['function_description'],
+                    data['five_level_department'], data['l4_cloud_service'], data['function_description'], data['service_leader'],
                     data['summary_self_owned'], data['summary_od'], data['summary_tm'],
                     data['hc_self_owned'], data['hc_od'], data['hc_tm'],
                     data['hcs_self_owned'], data['hcs_od'], data['hcs_tm'],
@@ -313,6 +321,7 @@ def admin_service_resource_edit(record_id):
                 SET five_level_department = ?,
                     l4_cloud_service = ?,
                     function_description = ?,
+                    service_leader = ?,
                     summary_self_owned = ?,
                     summary_od = ?,
                     summary_tm = ?,
@@ -326,7 +335,7 @@ def admin_service_resource_edit(record_id):
                 WHERE id = ?
                 """,
                 (
-                    data['five_level_department'], data['l4_cloud_service'], data['function_description'],
+                    data['five_level_department'], data['l4_cloud_service'], data['function_description'], data['service_leader'],
                     data['summary_self_owned'], data['summary_od'], data['summary_tm'],
                     data['hc_self_owned'], data['hc_od'], data['hc_tm'],
                     data['hcs_self_owned'], data['hcs_od'], data['hcs_tm'], record_id,
@@ -425,7 +434,7 @@ def admin_service_resources_template_csv():
         return denied
     sio = StringIO()
     writer = csv.writer(sio)
-    writer.writerow(['五层部门', 'L4云服务', '功能和用途简介', 'HC（自有）', 'HC（OD）', 'HC（TM）', 'HCS（自有）', 'HCS（OD）', 'HCS（TM）', '汇总（自有）', '汇总（OD）', '汇总（TM）'])
+    writer.writerow(['五层部门', 'L4云服务', '功能和用途简介', '服务Leader', 'HC（自有）', 'HC（OD）', 'HC（TM）', 'HCS（自有）', 'HCS（OD）', 'HCS（TM）', '汇总（自有）', '汇总（OD）', '汇总（TM）'])
     content = '\ufeff' + sio.getvalue()
     response = Response(content, mimetype='text/csv; charset=utf-8')
     response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('服务资源导入模板.csv')}"
@@ -438,12 +447,13 @@ def admin_service_resources_export_csv():
     rows = load_service_resources()
     output = StringIO()
     writer = csv.writer(output)
-    writer.writerow(['五层部门', 'L4云服务', '功能和用途简介', 'HC（自有）', 'HC（OD）', 'HC（TM）', 'HCS（自有）', 'HCS（OD）', 'HCS（TM）', '汇总（自有）', '汇总（OD）', '汇总（TM）'])
+    writer.writerow(['五层部门', 'L4云服务', '功能和用途简介', '服务Leader', 'HC（自有）', 'HC（OD）', 'HC（TM）', 'HCS（自有）', 'HCS（OD）', 'HCS（TM）', '汇总（自有）', '汇总（OD）', '汇总（TM）'])
     for row in rows:
         writer.writerow([
             row.get('five_level_department', ''),
             row.get('l4_cloud_service', ''),
             row.get('function_description', ''),
+            row.get('service_leader', ''),
             row.get('hc_self_owned', ''),
             row.get('hc_od', ''),
             row.get('hc_tm', ''),
