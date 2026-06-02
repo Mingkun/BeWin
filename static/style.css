@@ -2005,6 +2005,29 @@ body.theme-ios-dark .backup-popover-text {
   margin-top: auto;
 }
 
+.cloud-service-filter-grid {
+  grid-template-columns: repeat(3, minmax(150px, 220px)) max-content;
+  align-items: end;
+}
+
+.cloud-service-filter-grid .filter-actions {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.cloud-service-filter-grid .filter-actions .toolbar-actions {
+  flex-wrap: nowrap;
+  gap: 0;
+  margin-top: 0;
+}
+
+.cloud-service-filter-grid .filter-actions .button {
+  white-space: nowrap;
+}
+
 .resource-filter-actions {
   display: flex;
   justify-content: flex-end;
@@ -2081,6 +2104,10 @@ body.theme-ios-dark .backup-popover-text {
   .permission-feature-grid {
     grid-template-columns: 1fr;
     flex-direction: column;
+  }
+
+  .cloud-service-filter-grid .filter-actions {
+    justify-content: flex-end;
   }
 
   .backup-history-actions {
