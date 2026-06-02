@@ -1879,6 +1879,8 @@ def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
             "project_manager": (row.get("project_manager") or "").strip(),
             "project_code": (row.get("project_code") or "").strip(),
             "project_status": (row.get("project_status") or "").strip(),
+            "workload_person_month": (row.get("workload_person_month") or "").strip(),
+            "workload_sort_value": parse_workload_value(row.get("workload_person_month")),
             "features": [],
         }
         project_id_map[row.get("id")] = project_name
@@ -1928,6 +1930,8 @@ def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
                 "project_manager": "",
                 "project_code": "",
                 "project_status": "",
+                "workload_person_month": "",
+                "workload_sort_value": 0,
                 "features": [],
             }
         grouped[project_name]["features"].append(feature)
@@ -1940,7 +1944,13 @@ def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
             )
         )
 
-    return list(grouped.values())
+    return sorted(
+        grouped.values(),
+        key=lambda item: (
+            -item.get("workload_sort_value", 0),
+            item.get("project_name") or "",
+        ),
+    )
 
 
 def form_to_project_data(form):
