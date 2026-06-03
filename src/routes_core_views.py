@@ -271,6 +271,18 @@ def has_roadmap_filters(filters):
     return any(filters.get(key) for key in ('project_name', 'department', 'service_group', 'delivery_pm', 'focus_work', 'keyword', 'status')) or filters.get('sort_by') not in ('', 'manual') or filters.get('density') == 'compact'
 
 
+def build_roadmap_clear_status_href(filters):
+    args = {}
+    for key in ('project_name', 'department', 'service_group', 'delivery_pm', 'focus_work', 'keyword'):
+        if filters.get(key):
+            args[key] = filters[key]
+    if filters.get('density') == 'compact':
+        args['density'] = 'compact'
+    if filters.get('sort_by') not in ('', 'manual'):
+        args['sort_by'] = filters['sort_by']
+    return url_for('roadmap', **args)
+
+
 @app.route('/')
 @login_required
 def index():
@@ -306,10 +318,15 @@ def roadmap():
         user_feature_orders,
         filters.get('sort_by'),
     )
+    roadmap_summary = build_roadmap_summary(project_rows, feature_rows)
+    clear_status_href = build_roadmap_clear_status_href(filters)
+    for metric in roadmap_summary.get('metrics', []):
+        if metric.get('status') and filters.get('status') == metric.get('status'):
+            metric['href'] = clear_status_href
     return render_template(
         'index.html',
         roadmap_features=roadmap_features,
-        roadmap_summary=build_roadmap_summary(project_rows, feature_rows),
+        roadmap_summary=roadmap_summary,
         filtered_summary=build_roadmap_summary(project_rows, filtered_features),
         filters=filters,
         filter_options=filter_options,
