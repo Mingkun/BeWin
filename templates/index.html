@@ -180,7 +180,9 @@
                   <div class="feature-main-row">
                     <div class="feature-name">
                       <span class="feature-name-text">{{ feature.feature_name }}</span>
+                      {% if feature.status.key != 'in_progress' %}
                       <span class="roadmap-status-badge status-{{ feature.status.key }}">{{ feature.status.label }}</span>
+                      {% endif %}
                     </div>
                     {% if user_features.manage_features %}
                     <div class="feature-actions">
