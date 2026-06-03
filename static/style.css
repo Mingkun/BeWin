@@ -2346,6 +2346,22 @@ body.theme-ios-dark .key-field-badge {
   flex-wrap: nowrap;
 }
 
+.inline-actions .button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+#resource-people-table {
+  min-width: 1500px;
+}
+
+#resource-people-table th:last-child,
+#resource-people-table td:last-child {
+  width: 116px;
+  min-width: 116px;
+  white-space: nowrap;
+}
+
 .actions-col {
   white-space: nowrap;
   width: 76px;
