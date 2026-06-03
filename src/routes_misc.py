@@ -274,6 +274,12 @@ def view_placeholder(view_key):
 
     if view_key == 'department-pipeline-load':
         project_rows = load_projects()
+        project_name_filter = (request.args.get('project_name') or '').strip()
+        if project_name_filter:
+            project_rows = [
+                row for row in project_rows
+                if (row.get('project_name') or '').strip() == project_name_filter
+            ]
         sorted_projects = sorted(
             project_rows,
             key=lambda row: (-parse_workload_value(row.get('workload_person_month')), (row.get('project_name') or '').strip(), row.get('id') or 0),
@@ -290,6 +296,7 @@ def view_placeholder(view_key):
             quarters=QUARTERS,
             display_year=display_year,
             today_marker_percent=today_marker_percent,
+            filters={'project_name': project_name_filter},
             **build_auth_context(),
         )
 

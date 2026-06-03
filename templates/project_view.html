@@ -32,6 +32,13 @@
       </div>
     </header>
 
+    {% if filters and filters.project_name %}
+      <div class="resource-active-filter resource-active-filter-top">
+        <span>当前过滤：项目：{{ filters.project_name }}</span>
+        <a href="{{ url_for('view_placeholder', view_key='department-pipeline-load') }}">取消过滤</a>
+      </div>
+    {% endif %}
+
     {% if projects %}
       <div class="card collapsible-card expanded glass-chart-card" data-collapsible style="margin-bottom:16px;">
         <button type="button" data-toggle style="width:100%; display:flex; align-items:center; justify-content:space-between; border:none; background:transparent; padding:0; cursor:pointer; margin-bottom:12px;">

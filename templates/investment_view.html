@@ -90,7 +90,9 @@
             <tr>
               <td>{{ record.investment_subject }}</td>
               <td>{{ record.control_gate }}</td>
-              <td>{{ record.project_name }}</td>
+              <td>
+                <a class="investment-project-link" href="{{ url_for('view_placeholder', view_key='department-pipeline-load', project_name=record.project_name) }}">{{ record.project_name }}</a>
+              </td>
               <td data-sort-value="{{ record.investment_amount_value }}">{{ record.investment_amount }}</td>
               <td data-sort-value="{{ record.person_months_value }}">{{ record.person_months }}</td>
               <td data-sort-value="{{ record.self_owned_value }}">{{ record.self_owned }}</td>

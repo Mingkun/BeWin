@@ -2079,6 +2079,16 @@ body.theme-ios-dark .feature-tags span {
   min-width: 980px;
 }
 
+.investment-project-link {
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.investment-project-link:hover {
+  text-decoration: underline;
+}
+
 .investment-sankey-card {
   margin-bottom: 16px;
 }
