@@ -181,7 +181,12 @@
                 <td>{{ record.five_level_department or '' }}</td>
                 <td>
                   <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                    <span>{{ record.l4_cloud_service or '' }}</span>
+                    <div class="cloud-service-name-stack">
+                      <span>{{ record.l4_cloud_service or '' }}</span>
+                      {% if record.l4_cloud_service %}
+                      <a class="service-people-link" href="{{ url_for('resource_people_service_allocations', service=record.l4_cloud_service) }}">人员分配</a>
+                      {% endif %}
+                    </div>
                     {% if user_features.manage_service_resources %}
                     <div class="milestone-card-actions menu-wrap" style="padding-top:0; margin:0;">
                       <button class="icon-action milestone-more-trigger" type="button" title="更多" aria-label="更多操作">⋯</button>

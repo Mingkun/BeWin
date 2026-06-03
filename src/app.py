@@ -2005,6 +2005,36 @@ def load_person_service_allocations():
         return [dict(row) for row in rows]
 
 
+def load_person_service_allocations_for_service(service_name):
+    service_name = (service_name or '').strip()
+    if not service_name:
+        return []
+    init_db()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, employee_id, employee_name, smallest_department_name, l4_cloud_service, allocation_ratio, remarks
+            FROM person_service_allocations
+            WHERE l4_cloud_service = ?
+            ORDER BY smallest_department_name ASC, employee_name ASC, employee_id ASC, id ASC
+            """,
+            (service_name,),
+        ).fetchall()
+    allocations = [dict(row) for row in rows]
+    people_by_key = {
+        get_person_service_allocation_key(row): row
+        for row in load_resource_people()
+    }
+    for allocation in allocations:
+        person = people_by_key.get(get_person_service_allocation_key(allocation)) or {}
+        allocation['person_id'] = person.get('id')
+        allocation['person_type'] = person.get('person_type') or ''
+        allocation['project_name'] = person.get('project_name') or ''
+        allocation['status'] = person.get('status') or ''
+        allocation['allocation_ratio_text'] = format_ratio_percent(parse_ratio_value(allocation.get('allocation_ratio')))
+    return allocations
+
+
 def import_person_service_allocation_csv_file(file_storage, replace=True):
     content = file_storage.read().decode('utf-8-sig')
     reader = csv.DictReader(StringIO(content))

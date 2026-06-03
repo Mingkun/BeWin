@@ -23,6 +23,7 @@ from src.app import (
     import_resource_people_csv_file,
     import_service_resource_csv_file,
     load_person_service_allocations,
+    load_person_service_allocations_for_service,
     load_person_service_allocations_for_person,
     load_department,
     load_departments,
@@ -320,6 +321,24 @@ def admin_resource_person_service_allocations(record_id):
         service_options=service_options,
         total_ratio_text=format_ratio_percent(total_ratio),
         total_ratio_complete=bool(allocations) and abs(total_ratio - 1.0) < 0.0001,
+        **build_auth_context(),
+    )
+
+
+@app.route('/views/service-allocation-people')
+@login_required
+def resource_people_service_allocations():
+    denied = require_feature('view_resource_people', '当前账号不能查看人员资源分配')
+    if denied:
+        return denied
+    service_name = (request.args.get('service') or '').strip()
+    records = load_person_service_allocations_for_service(service_name)
+    total_ratio = sum(parse_ratio_value(row.get('allocation_ratio')) for row in records)
+    return render_template(
+        'resource_service_allocation_people.html',
+        service_name=service_name,
+        records=records,
+        total_ratio_text=format_ratio_percent(total_ratio),
         **build_auth_context(),
     )
 

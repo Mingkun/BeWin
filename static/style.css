@@ -2138,6 +2138,33 @@ body.theme-ios-dark .feature-service-link:focus {
   min-width: 0;
 }
 
+.cloud-service-name-stack {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.service-people-link {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.service-people-link:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
 .resizable-resource-table {
   min-width: 1120px;
 }
@@ -3426,6 +3453,17 @@ a.resource-stack-seg:hover,
 .service-allocation-table input {
   width: 100%;
   box-sizing: border-box;
+}
+
+.service-allocation-people-table {
+  min-width: 980px;
+}
+
+.service-allocation-people-table th:nth-child(7),
+.service-allocation-people-table td:nth-child(7),
+.service-allocation-people-table th:last-child,
+.service-allocation-people-table td:last-child {
+  white-space: nowrap;
 }
 
 .service-allocation-actions {

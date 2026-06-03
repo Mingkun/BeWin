@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>云服务人员分配</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <div>
+        <h1>云服务人员分配</h1>
+        <p>L4云服务：{{ service_name or '未指定' }}</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+        <a class="button secondary" href="{{ url_for('view_placeholder', view_key='cloud-service-view', service=service_name) }}">返回云服务视图</a>
+        <a class="button secondary" href="{{ url_for('admin_resource_people') }}">人员资源库</a>
+      </div>
+    </header>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));">
+      <div class="card stat-card" style="background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%); border:1px solid #bfdbfe;">
+        <div class="stat-label">分配人员</div>
+        <div class="stat-value">{{ records|length }}</div>
+        <div class="ios-preview-subtitle" style="margin-top:8px;">来自人员资源库 L4 云服务分配</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">投入比例合计</div>
+        <div class="stat-value">{{ total_ratio_text }}</div>
+        <div class="ios-preview-subtitle" style="margin-top:8px;">按当前 L4 云服务汇总</div>
+      </div>
+    </div>
+
+    {% if service_name and records %}
+    <div class="table-wrap card">
+      <table class="data-table service-allocation-people-table">
+        <thead>
+          <tr>
+            <th>工号</th>
+            <th>姓名</th>
+            <th>最小部门</th>
+            <th>人员类型</th>
+            <th>所属项目</th>
+            <th>状态</th>
+            <th>投入比例</th>
+            <th>备注</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records %}
+          <tr>
+            <td>{{ record.employee_id or '' }}</td>
+            <td>{{ record.employee_name or '' }}</td>
+            <td>{{ record.smallest_department_name or '' }}</td>
+            <td>{{ record.person_type or '' }}</td>
+            <td>{{ record.project_name or '' }}</td>
+            <td>{{ record.status or '' }}</td>
+            <td>
+              <span class="service-allocation-pill complete">{{ record.allocation_ratio_text }}</span>
+            </td>
+            <td>{{ record.remarks or '' }}</td>
+            <td>
+              {% if record.person_id %}
+              <a class="button tiny secondary" href="{{ url_for('admin_resource_person_service_allocations', record_id=record.person_id) }}">调整</a>
+              {% else %}
+              <span class="ios-preview-subtitle">未匹配人员库</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% elif service_name %}
+      <div class="empty">当前没有人员分配到这个 L4 云服务。</div>
+    {% else %}
+      <div class="empty">请从云服务视图选择一个 L4 云服务查看人员分配。</div>
+    {% endif %}
+  </div>
+</body>
+</html>
