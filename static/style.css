@@ -1628,6 +1628,29 @@ body.theme-ios-dark .import-preview-result {
   line-height: 1.35;
 }
 
+.feature-service-link {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 3px 7px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.feature-service-link:hover,
+.feature-service-link:focus {
+  border-color: #93c5fd;
+  background: #dbeafe;
+  color: #1d4ed8;
+  text-decoration: none;
+}
+
 body.theme-ios-dark .feature-info-panel {
   background: #111827;
   border-color: rgba(148, 163, 184, 0.22);
@@ -1658,6 +1681,19 @@ body.theme-ios-dark .feature-desc-label {
 body.theme-ios-dark .feature-tags span {
   background: rgba(148, 163, 184, 0.16);
   color: #cbd5e1;
+}
+
+body.theme-ios-dark .feature-service-link {
+  border-color: rgba(96, 165, 250, 0.42);
+  background: rgba(37, 99, 235, 0.22);
+  color: #bfdbfe;
+}
+
+body.theme-ios-dark .feature-service-link:hover,
+body.theme-ios-dark .feature-service-link:focus {
+  border-color: rgba(147, 197, 253, 0.7);
+  background: rgba(37, 99, 235, 0.34);
+  color: #dbeafe;
 }
 
 .timeline-panel {
