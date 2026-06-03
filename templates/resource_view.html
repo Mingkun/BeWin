@@ -46,6 +46,14 @@
     </div>
     {% endif %}
 
+    <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));">
+      <div class="card stat-card"><div class="stat-label">总人数</div><div class="stat-value">{{ summary.count }}</div></div>
+      <a class="card stat-card stat-filter-card {% if filters.quick_filter == 'missing_department' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type=filters.person_type, department_name='', project_name=filters.project_name, keyword=filters.keyword, quick_filter='missing_department') }}"><div class="stat-label">未关联部门</div><div class="stat-value">{{ summary.department_unbound_count }}</div></a>
+      <a class="card stat-card stat-filter-card {% if filters.quick_filter == 'missing_project' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type=filters.person_type, department_name=filters.department_name, project_name='', keyword=filters.keyword, quick_filter='missing_project') }}"><div class="stat-label">未关联项目</div><div class="stat-value">{{ summary.project_unbound_count }}</div></a>
+      <a class="card stat-card stat-filter-card {% if filters.quick_filter == 'status_not_on_duty' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type=filters.person_type, department_name=filters.department_name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='status_not_on_duty') }}"><div class="stat-label">状态非在岗</div><div class="stat-value">{{ summary.status_not_on_duty_count }}</div></a>
+      <div class="card stat-card"><div class="stat-label">已投入到项目占比</div><div class="stat-value">{{ '%.2f%%'|format(summary.project_bound_ratio * 100) }}</div></div>
+    </div>
+
     {% if department_summary or status_summary.status_items %}
     <div class="resource-visual-grid">
       <div class="card resource-chart-card">
@@ -118,14 +126,6 @@
       </div>
     </div>
     {% endif %}
-
-    <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));">
-      <div class="card stat-card"><div class="stat-label">总人数</div><div class="stat-value">{{ summary.count }}</div></div>
-      <a class="card stat-card stat-filter-card {% if filters.quick_filter == 'missing_department' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type=filters.person_type, department_name='', project_name=filters.project_name, keyword=filters.keyword, quick_filter='missing_department') }}"><div class="stat-label">未关联部门</div><div class="stat-value">{{ summary.department_unbound_count }}</div></a>
-      <a class="card stat-card stat-filter-card {% if filters.quick_filter == 'missing_project' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type=filters.person_type, department_name=filters.department_name, project_name='', keyword=filters.keyword, quick_filter='missing_project') }}"><div class="stat-label">未关联项目</div><div class="stat-value">{{ summary.project_unbound_count }}</div></a>
-      <a class="card stat-card stat-filter-card {% if filters.quick_filter == 'status_not_on_duty' %}active{% endif %}" href="{{ url_for('view_placeholder', view_key='project-budget-resource', person_type=filters.person_type, department_name=filters.department_name, project_name=filters.project_name, keyword=filters.keyword, quick_filter='status_not_on_duty') }}"><div class="stat-label">状态非在岗</div><div class="stat-value">{{ summary.status_not_on_duty_count }}</div></a>
-      <div class="card stat-card"><div class="stat-label">已投入到项目占比</div><div class="stat-value">{{ '%.2f%%'|format(summary.project_bound_ratio * 100) }}</div></div>
-    </div>
 
     {% if department_summary or project_summary %}
     <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); margin-top:16px;">
