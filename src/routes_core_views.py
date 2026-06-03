@@ -154,6 +154,7 @@ def get_roadmap_filters():
         'department': (request.args.get('department') or '').strip(),
         'service_group': (request.args.get('service_group') or '').strip(),
         'delivery_pm': (request.args.get('delivery_pm') or '').strip(),
+        'focus_work': (request.args.get('focus_work') or '').strip(),
         'keyword': (request.args.get('keyword') or '').strip(),
         'status': (request.args.get('status') or '').strip(),
         'sort_by': (request.args.get('sort_by') or '').strip() or 'manual',
@@ -184,6 +185,7 @@ def build_roadmap_filter_options(project_rows, feature_rows):
 
 def filter_roadmap_features(feature_rows, filters):
     keyword = (filters.get('keyword') or '').lower()
+    focus_work_filter = (filters.get('focus_work') or '').lower()
     status_filter = filters.get('status') or ''
 
     def matched(row):
@@ -203,6 +205,8 @@ def filter_roadmap_features(feature_rows, filters):
         if filters.get('service_group') and (row.get('service_group') or '').strip() != filters['service_group']:
             return False
         if filters.get('delivery_pm') and (row.get('delivery_pm') or '').strip() != filters['delivery_pm']:
+            return False
+        if focus_work_filter and focus_work_filter not in (row.get('focus_work') or '').lower():
             return False
         if keyword and keyword not in text:
             return False
@@ -264,7 +268,7 @@ def build_roadmap_summary(project_rows, feature_rows):
 
 
 def has_roadmap_filters(filters):
-    return any(filters.get(key) for key in ('project_name', 'department', 'service_group', 'delivery_pm', 'keyword', 'status')) or filters.get('sort_by') not in ('', 'manual') or filters.get('density') == 'compact'
+    return any(filters.get(key) for key in ('project_name', 'department', 'service_group', 'delivery_pm', 'focus_work', 'keyword', 'status')) or filters.get('sort_by') not in ('', 'manual') or filters.get('density') == 'compact'
 
 
 @app.route('/')

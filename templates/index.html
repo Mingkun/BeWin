@@ -118,12 +118,8 @@
             {% endfor %}
           </select>
         </label>
-        <label>排序
-          <select name="sort_by">
-            {% for item in filter_options.sorts %}
-              <option value="{{ item.key }}" {% if filters.sort_by == item.key %}selected{% endif %}>{{ item.label }}</option>
-            {% endfor %}
-          </select>
+        <label>重点工作
+          <input type="text" name="focus_work" value="{{ filters.focus_work or '' }}" placeholder="按重点工作过滤">
         </label>
         <label>关键词
           <input type="text" name="keyword" value="{{ filters.keyword or '' }}" placeholder="特性、重点工作、里程碑">
@@ -358,15 +354,14 @@
         });
       });
 
-      const keywordInput = roadmapFilterForm.querySelector('input[name="keyword"]');
-      if (keywordInput) {
-        keywordInput.addEventListener('input', () => {
+      roadmapFilterForm.querySelectorAll('input[type="text"]').forEach((control) => {
+        control.addEventListener('input', () => {
           clearTimeout(roadmapKeywordTimer);
           roadmapKeywordTimer = setTimeout(() => {
             roadmapFilterForm.requestSubmit();
           }, 500);
         });
-      }
+      });
     }
 
     document.querySelectorAll('.feature-pin-toggle').forEach((button) => {
