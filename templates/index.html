@@ -177,10 +177,17 @@
             {% for feature in roadmap_features %}
               <div class="feature-lane-row" data-feature-id="{{ feature.id }}">
                 <div class="feature-info-panel">
-                  <div class="feature-info-head">
-                    <div class="feature-name">{{ feature.feature_name }}<span class="roadmap-status-badge status-{{ feature.status.key }}">{{ feature.status.label }}</span></div>
+                  <div class="feature-kicker">
+                    <span>{{ feature.project_name or '未填写项目' }}</span>
+                    <span>{{ feature.five_level_department or '未填写部门' }}</span>
+                  </div>
+                  <div class="feature-main-row">
+                    <div class="feature-name">
+                      <span class="feature-name-text">{{ feature.feature_name }}</span>
+                      <span class="roadmap-status-badge status-{{ feature.status.key }}">{{ feature.status.label }}</span>
+                    </div>
                     {% if user_features.manage_features %}
-                    <div style="display:flex; align-items:center; gap:8px;">
+                    <div class="feature-actions">
                       <button type="button" class="feature-pin-toggle {% if feature.is_pinned %}active{% endif %}" data-project-id="{{ feature.project_id }}" data-feature-id="{{ feature.id }}" data-pinned="{{ '1' if feature.is_pinned else '0' }}">置顶</button>
                       <div class="milestone-card-actions menu-wrap">
                         <button class="icon-action milestone-more-trigger" type="button" title="更多" aria-label="更多操作">⋯</button>
@@ -205,11 +212,12 @@
                     </div>
                     {% endif %}
                   </div>
-                  <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
+                  <div class="feature-desc">
+                    <span class="feature-desc-label">重点</span>
+                    <span>{{ feature.focus_work or '未填写重点工作' }}</span>
+                  </div>
                   <div class="feature-tags">
-                    <span>项目：{{ feature.project_name or '未填写' }}</span>
                     <span>项目经理：{{ feature.project_manager or '未填写' }}</span>
-                    <span>五层部门：{{ feature.five_level_department or '未填写' }}</span>
                     <span>L4：{{ feature.service_group or '未填写' }}</span>
                     <span>交付PM：{{ feature.delivery_pm or '未填写' }}</span>
                     <span>周期：{{ feature.start_label }} ~ {{ feature.end_label }}</span>
