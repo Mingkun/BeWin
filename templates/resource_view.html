@@ -106,7 +106,7 @@
 
     {% if department_summary or status_summary.status_items %}
     <div class="resource-visual-grid">
-      <div class="card resource-chart-card">
+      <div class="card resource-chart-card {% if filters.department_name and filters.person_type %}active{% endif %}">
         <div class="resource-chart-title">部门人力结构</div>
         {% if department_summary %}
           {% set max_department_count = department_summary[0].count if department_summary else 0 %}
@@ -153,7 +153,7 @@
         {% endif %}
       </div>
 
-      <div class="card resource-chart-card">
+      <div class="card resource-chart-card {% if filters.status_filter %}active{% endif %}">
         <div class="resource-chart-title">人员状态分布</div>
         {% if status_summary.status_items %}
           <div class="resource-status-strip">

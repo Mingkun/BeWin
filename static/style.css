@@ -2797,6 +2797,13 @@ body.theme-ios-dark .key-field-badge {
   min-height: 260px;
 }
 
+.resource-chart-card.active,
+.stat-filter-card.active {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.10);
+}
+
 .resource-chart-title {
   margin-bottom: 14px;
   color: #0f172a;
@@ -2997,8 +3004,8 @@ a.resource-stack-seg:hover,
 }
 
 .stat-filter-card.active {
-  border: 1px solid rgba(37, 99, 235, 0.5);
-  background: #eff6ff;
+  border-width: 1px;
+  border-style: solid;
 }
 
 .resource-active-filter {
