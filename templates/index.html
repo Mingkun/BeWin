@@ -60,6 +60,13 @@
       </form>
     </div>
 
+    {% if has_active_filter %}
+      <div class="resource-active-filter roadmap-active-filter">
+        <span>当前显示 {{ filtered_summary.feature_count }} 条关键特性，涉及 {{ filtered_summary.project_count }} 个项目</span>
+        <a href="{{ url_for('roadmap') }}">取消过滤</a>
+      </div>
+    {% endif %}
+
     <section class="roadmap-overview-grid">
       {% for metric in roadmap_summary.metrics %}
         <a class="card roadmap-metric-card" href="{{ metric.href }}">
@@ -137,13 +144,6 @@
         </div>
       </div>
     </form>
-
-    {% if has_active_filter %}
-      <div class="resource-active-filter roadmap-active-filter">
-        <span>当前显示 {{ filtered_summary.feature_count }} 条关键特性，涉及 {{ filtered_summary.project_count }} 个项目</span>
-        <a href="{{ url_for('roadmap') }}">取消过滤</a>
-      </div>
-    {% endif %}
 
     {% if roadmap_features %}
       <section class="roadmap-shell">
