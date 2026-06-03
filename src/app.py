@@ -1998,7 +1998,8 @@ def parse_workload_value(value):
         return -1
 
 
-def build_project_gantt(project_rows, display_year):
+def build_project_gantt(project_rows, display_year, feature_counts=None):
+    feature_counts = feature_counts or {}
     gantt_projects = []
     for row in project_rows:
         start_value = (row.get("planned_start_date") or "").strip()
@@ -2016,12 +2017,15 @@ def build_project_gantt(project_rows, display_year):
         if start_index is not None and end_index is not None and end_index < start_index:
             start_index, end_index = end_index, start_index
 
+        project_name = (row.get("project_name") or "").strip() or "未命名项目"
         gantt_projects.append({
             "id": row.get("id"),
-            "project_name": (row.get("project_name") or "").strip() or "未命名项目",
+            "project_name": project_name,
             "project_role": (row.get("project_role") or "").strip(),
             "project_manager": (row.get("project_manager") or "").strip(),
             "workload_person_month": (row.get("workload_person_month") or "").strip(),
+            "feature_count": feature_counts.get(project_name, 0),
+            "feature_href": url_for("roadmap", project_name=project_name),
             "planned_start_date": start_value or '未填写',
             "planned_end_date": end_value or '未填写',
             "start_label": MONTH_LABELS[start_index] if start_index is not None else "-",

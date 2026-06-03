@@ -1853,6 +1853,22 @@ body.theme-ios-dark .feature-tags span {
   line-height: 1.2;
 }
 
+.project-gantt-feature-link {
+  display: inline-flex;
+  align-items: center;
+  margin: 2px 0 8px;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.project-gantt-feature-link:hover,
+.project-gantt-feature-link:focus {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
 .project-gantt-tags {
   display: flex;
   flex-wrap: wrap;

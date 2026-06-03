@@ -119,6 +119,7 @@
                   {% endif %}
                   <div class="project-gantt-name">{{ project.project_name }}</div>
                 </div>
+                <a class="project-gantt-feature-link" href="{{ project.feature_href }}">关键特性：{{ project.feature_count }} 条</a>
                 <div class="project-gantt-tags">
                   <span>项目名称：{{ project.project_name }}</span>
                   <span>项目工作量（人月）：{{ project.workload_person_month or '未填写' }}</span>

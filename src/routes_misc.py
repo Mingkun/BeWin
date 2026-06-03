@@ -21,6 +21,7 @@ from src.app import (
     get_resource_people_filter_options,
     get_service_resource_filter_options,
     load_investment_records,
+    load_project_features,
     load_projects,
     load_resource_people,
     load_service_resources,
@@ -277,6 +278,10 @@ def view_placeholder(view_key):
 
     if view_key == 'department-pipeline-load':
         project_rows = load_projects()
+        project_feature_counts = defaultdict(int)
+        for row in load_project_features():
+            project_name = (row.get('project_name') or '').strip() or '未命名项目'
+            project_feature_counts[project_name] += 1
         project_name_filter = (request.args.get('project_name') or '').strip()
         if project_name_filter:
             project_rows = [
@@ -294,7 +299,7 @@ def view_placeholder(view_key):
         return render_template(
             'project_view.html',
             projects=sorted_projects,
-            gantt_projects=build_project_gantt(sorted_projects, display_year),
+            gantt_projects=build_project_gantt(sorted_projects, display_year, project_feature_counts),
             month_labels=MONTH_LABELS,
             quarters=QUARTERS,
             display_year=display_year,
