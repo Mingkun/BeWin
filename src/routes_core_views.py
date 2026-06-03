@@ -245,24 +245,38 @@ def sort_roadmap_features(feature_rows, sort_by):
     return sorted_rows
 
 
-def build_roadmap_summary(project_rows, feature_rows):
+def build_roadmap_summary(project_rows, feature_rows, filters=None):
+    filters = filters or {}
     project_names = {(row.get('project_name') or '').strip() for row in feature_rows if (row.get('project_name') or '').strip()}
     status_counts = {key: 0 for key in ROADMAP_STATUS_LABELS}
     for row in feature_rows:
         status_counts[get_roadmap_feature_status_key(row)] += 1
         if is_roadmap_due_this_month(row):
             status_counts['due_this_month'] += 1
+    base_args = {}
+    for key in ('project_name', 'department', 'service_group', 'delivery_pm', 'focus_work', 'keyword'):
+        if filters.get(key):
+            base_args[key] = filters[key]
+    if filters.get('density') == 'compact':
+        base_args['density'] = 'compact'
+    if filters.get('sort_by') not in ('', 'manual'):
+        base_args['sort_by'] = filters['sort_by']
+
+    has_filter_scope = any(filters.get(key) for key in ('project_name', 'department', 'service_group', 'delivery_pm', 'focus_work', 'keyword', 'status')) or filters.get('sort_by') not in ('', 'manual') or filters.get('density') == 'compact'
+    project_count = len(project_names)
+    if not has_filter_scope and not feature_rows:
+        project_count = len(project_rows)
     return {
-        'project_count': len(project_names) or len(project_rows),
+        'project_count': project_count,
         'feature_count': len(feature_rows),
         'current_month': MONTH_LABELS[max(0, min(11, datetime.now().month - 1))],
         'metrics': [
-            {'label': '项目数', 'value': len(project_names) or len(project_rows), 'href': url_for('roadmap')},
-            {'label': '关键特性', 'value': len(feature_rows), 'href': url_for('roadmap')},
-            {'label': '进行中', 'value': status_counts['in_progress'], 'href': url_for('roadmap', status='in_progress'), 'status': 'in_progress'},
-            {'label': '本月到期', 'value': status_counts['due_this_month'], 'href': url_for('roadmap', status='due_this_month'), 'status': 'due_this_month'},
-            {'label': '风险', 'value': status_counts['risk'], 'href': url_for('roadmap', status='risk'), 'status': 'risk'},
-            {'label': '未排期', 'value': status_counts['unscheduled'], 'href': url_for('roadmap', status='unscheduled'), 'status': 'unscheduled'},
+            {'label': '项目数', 'value': project_count, 'href': url_for('roadmap', **base_args)},
+            {'label': '关键特性', 'value': len(feature_rows), 'href': url_for('roadmap', **base_args)},
+            {'label': '进行中', 'value': status_counts['in_progress'], 'href': url_for('roadmap', **base_args, status='in_progress'), 'status': 'in_progress'},
+            {'label': '本月到期', 'value': status_counts['due_this_month'], 'href': url_for('roadmap', **base_args, status='due_this_month'), 'status': 'due_this_month'},
+            {'label': '风险', 'value': status_counts['risk'], 'href': url_for('roadmap', **base_args, status='risk'), 'status': 'risk'},
+            {'label': '未排期', 'value': status_counts['unscheduled'], 'href': url_for('roadmap', **base_args, status='unscheduled'), 'status': 'unscheduled'},
         ],
     }
 
@@ -318,7 +332,10 @@ def roadmap():
         user_feature_orders,
         filters.get('sort_by'),
     )
-    roadmap_summary = build_roadmap_summary(project_rows, feature_rows)
+    summary_filters = dict(filters)
+    summary_filters['status'] = ''
+    summary_features = filter_roadmap_features(feature_rows, summary_filters)
+    roadmap_summary = build_roadmap_summary(project_rows, summary_features, summary_filters)
     clear_status_href = build_roadmap_clear_status_href(filters)
     for metric in roadmap_summary.get('metrics', []):
         if metric.get('status') and filters.get('status') == metric.get('status'):
@@ -327,7 +344,7 @@ def roadmap():
         'index.html',
         roadmap_features=roadmap_features,
         roadmap_summary=roadmap_summary,
-        filtered_summary=build_roadmap_summary(project_rows, filtered_features),
+        filtered_summary=build_roadmap_summary(project_rows, filtered_features, filters),
         filters=filters,
         filter_options=filter_options,
         has_active_filter=has_roadmap_filters(filters),
