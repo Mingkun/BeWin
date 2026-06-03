@@ -1928,10 +1928,10 @@ body.theme-ios-dark .backup-popover-text {
   justify-content: center;
   margin-left: 5px;
   padding: 1px 5px;
-  border: 1px solid rgba(37, 99, 235, 0.42);
+  border: 1px solid #1d4ed8;
   border-radius: 4px;
-  background: rgba(37, 99, 235, 0.08);
-  color: #1d4ed8;
+  background: #2563eb;
+  color: #ffffff;
   font-size: 10px;
   font-weight: 800;
   line-height: 1.25;
@@ -1941,9 +1941,9 @@ body.theme-ios-dark .backup-popover-text {
 }
 
 body.theme-ios-dark .key-field-badge {
-  border-color: rgba(96, 165, 250, 0.46);
-  background: rgba(96, 165, 250, 0.14);
-  color: #93c5fd;
+  border-color: #60a5fa;
+  background: #2563eb;
+  color: #ffffff;
 }
 
 .sortable-col {
