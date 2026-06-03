@@ -1854,19 +1854,34 @@ body.theme-ios-dark .feature-tags span {
 }
 
 .project-gantt-feature-link {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  margin: 2px 0 8px;
+  justify-content: space-between;
+  width: 100%;
+  margin: 10px 0 0;
+  padding: 7px 9px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
   color: #2563eb;
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
 }
 
+.project-gantt-feature-link::after {
+  content: '查看';
+  color: #60a5fa;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .project-gantt-feature-link:hover,
 .project-gantt-feature-link:focus {
+  border-color: #93c5fd;
+  background: #dbeafe;
   color: #1d4ed8;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .project-gantt-tags {
