@@ -17,10 +17,24 @@
         <a class="button home-button" href="{{ url_for('index') }}">首页</a>
         <a class="button secondary" href="{{ url_for('admin_resource_people_template_csv') }}">导出模板</a>
         <a class="button secondary" href="{{ url_for('admin_resource_people_export_csv') }}">导出数据</a>
+        <a class="button secondary" href="{{ url_for('admin_resource_person_service_allocations_template_csv') }}">L4分配模板</a>
+        <a class="button secondary" href="{{ url_for('admin_resource_person_service_allocations_export_csv') }}">L4分配导出</a>
         <button class="button warning" type="button" onclick="document.getElementById('resource-people-import-panel').hidden = false;">导入数据</button>
+        <button class="button warning" type="button" onclick="document.getElementById('resource-service-allocation-import-panel').hidden = false;">导入L4分配</button>
         <a class="button" href="{{ url_for('admin_resource_person_new') }}">新增人员</a>
       </div>
     </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="flash-stack">
+        {% for message in messages %}
+          <div class="flash-success">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
     <div class="card import-panel" id="resource-people-import-panel" hidden>
       <form method="post" action="{{ url_for('admin_resource_people_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form">
         <div class="import-panel-title">导入人员资源数据</div>
@@ -29,6 +43,17 @@
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">确认导入</button>
           <button class="button secondary" type="button" onclick="document.getElementById('resource-people-import-panel').hidden = true;">取消</button>
+        </div>
+      </form>
+    </div>
+    <div class="card import-panel" id="resource-service-allocation-import-panel" hidden>
+      <form method="post" action="{{ url_for('admin_resource_person_service_allocations_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form">
+        <div class="import-panel-title">导入人员 L4 云服务分配</div>
+        <div class="import-panel-desc">请选择 CSV 文件，按工号/姓名、最小部门和 L4 云服务匹配；同一人员同一最小部门下的投入百分比合计必须为 100%。</div>
+        <div class="import-panel-actions">
+          <input type="file" name="csv_file" accept=".csv" required>
+          <button class="button warning" type="submit">确认导入</button>
+          <button class="button secondary" type="button" onclick="document.getElementById('resource-service-allocation-import-panel').hidden = true;">取消</button>
         </div>
       </form>
     </div>
@@ -97,6 +122,7 @@
             <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">最小部门<span class="key-field-badge" title="导入关键字段">key</span></th>
             <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">所属项目<span class="key-field-badge" title="导入关键字段">key</span></th>
             <th data-sort-type="number" tabindex="0" role="button" aria-sort="none">投入比例</th>
+            <th data-sort-type="number" tabindex="0" role="button" aria-sort="none">L4云服务分配</th>
             <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">角色</th>
             <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">状态</th>
             <th data-sort-type="text" tabindex="0" role="button" aria-sort="none">备注</th>
@@ -140,6 +166,11 @@
               </td>
               <td><input type="text" name="allocation_ratio" value="{{ record.allocation_ratio or '' }}" style="width:80px;"></td>
               <td>
+                <a class="service-allocation-pill {% if record.service_allocation_complete %}complete{% elif record.service_allocation_count %}warning{% endif %}" href="{{ url_for('admin_resource_person_service_allocations', record_id=record.id) }}">
+                  {{ record.service_allocation_label }}
+                </a>
+              </td>
+              <td>
                 <select name="role_name" style="max-width:110px;">
                   <option value="" {% if not record.role_name %}selected{% endif %}>空白</option>
                   <option value="开发" {% if record.role_name == '开发' %}selected{% endif %}>开发</option>
@@ -182,6 +213,11 @@
             <td>{{ record.smallest_department_name or '' }}</td>
             <td>{{ record.project_name or '' }}</td>
             <td>{{ record.allocation_ratio or '' }}</td>
+            <td data-sort-value="{{ record.service_allocation_total_ratio or 0 }}">
+              <a class="service-allocation-pill {% if record.service_allocation_complete %}complete{% elif record.service_allocation_count %}warning{% endif %}" href="{{ url_for('admin_resource_person_service_allocations', record_id=record.id) }}">
+                {{ record.service_allocation_label }}
+              </a>
+            </td>
             <td>{{ record.role_name or '' }}</td>
             <td>{{ record.status or '' }}</td>
             <td>{{ record.remarks or '' }}</td>

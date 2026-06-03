@@ -805,9 +805,13 @@ GUEST_ENDPOINT_FEATURES = {
     'admin_resource_person_new': 'manage_service_resources',
     'admin_resource_person_edit': 'manage_service_resources',
     'admin_resource_person_delete': 'manage_service_resources',
+    'admin_resource_person_service_allocations': 'manage_service_resources',
     'admin_resource_people_import_csv': 'manage_service_resources',
+    'admin_resource_person_service_allocations_import_csv': 'manage_service_resources',
     'admin_resource_people_template_csv': 'manage_service_resources',
+    'admin_resource_person_service_allocations_template_csv': 'manage_service_resources',
     'admin_resource_people_export_csv': 'manage_service_resources',
+    'admin_resource_person_service_allocations_export_csv': 'manage_service_resources',
     'admin_service_resource_new': 'manage_service_resources',
     'admin_service_resource_edit': 'manage_service_resources',
     'admin_service_resource_delete': 'manage_service_resources',
@@ -1089,6 +1093,21 @@ def init_db():
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(department_id) REFERENCES departments(id) ON DELETE SET NULL,
                 FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE SET NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS person_service_allocations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employee_id TEXT,
+                employee_name TEXT,
+                smallest_department_name TEXT,
+                l4_cloud_service TEXT,
+                allocation_ratio TEXT,
+                remarks TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
@@ -1713,6 +1732,16 @@ def load_resource_people():
             item['smallest_department_name'] = smallest_department
             item['department_full_name'] = ' / '.join([part for part in [upper_department, level_2_department] if part])
             result.append(item)
+        summaries = load_person_service_allocation_summaries(conn)
+        for item in result:
+            summary = summaries.get(get_person_service_allocation_key(item), {})
+            total = summary.get('total_ratio', 0.0)
+            count = summary.get('count', 0)
+            item['service_allocation_count'] = count
+            item['service_allocation_total_ratio'] = total
+            item['service_allocation_total_text'] = format_ratio_percent(total)
+            item['service_allocation_label'] = f"{count} 个服务 / {format_ratio_percent(total)}" if count else "未分配"
+            item['service_allocation_complete'] = bool(count) and abs(total - 1.0) < 0.0001
         return result
 
 
@@ -1813,6 +1842,244 @@ def parse_ratio_value(value):
         return number / 100.0 if number > 1 else number
     except ValueError:
         return 0.0
+
+
+def format_ratio_percent(value):
+    percent = round((value or 0.0) * 100, 2)
+    if float(percent).is_integer():
+        return f"{int(percent)}%"
+    return f"{percent:.2f}".rstrip('0').rstrip('.') + "%"
+
+
+def get_person_service_allocation_key(row):
+    employee_id = (row.get('employee_id') or '').strip()
+    employee_name = (row.get('employee_name') or '').strip()
+    smallest_department = (row.get('smallest_department_name') or '').strip()
+    identity_kind = 'id' if employee_id else 'name'
+    identity_value = employee_id or employee_name
+    return (identity_kind, identity_value, smallest_department)
+
+
+def load_person_service_allocation_summaries(conn=None):
+    should_close = conn is None
+    conn = conn or get_conn()
+    try:
+        rows = conn.execute(
+            """
+            SELECT employee_id, employee_name, smallest_department_name, l4_cloud_service, allocation_ratio
+            FROM person_service_allocations
+            ORDER BY employee_id ASC, employee_name ASC, smallest_department_name ASC, id ASC
+            """
+        ).fetchall()
+        summaries = {}
+        for row in rows:
+            item = dict(row)
+            key = get_person_service_allocation_key(item)
+            if not key[1]:
+                continue
+            if key not in summaries:
+                summaries[key] = {'count': 0, 'total_ratio': 0.0, 'services': []}
+            summaries[key]['count'] += 1
+            summaries[key]['total_ratio'] += parse_ratio_value(item.get('allocation_ratio'))
+            service_name = (item.get('l4_cloud_service') or '').strip()
+            if service_name:
+                summaries[key]['services'].append(service_name)
+        for summary in summaries.values():
+            summary['total_ratio'] = round(summary['total_ratio'], 4)
+        return summaries
+    finally:
+        if should_close:
+            conn.close()
+
+
+def load_person_service_allocations_for_person(person):
+    init_db()
+    key = get_person_service_allocation_key(person)
+    if not key[1]:
+        return []
+    employee_id = (person.get('employee_id') or '').strip()
+    employee_name = (person.get('employee_name') or '').strip()
+    smallest_department = (person.get('smallest_department_name') or '').strip()
+    with get_conn() as conn:
+        if employee_id:
+            rows = conn.execute(
+                """
+                SELECT id, employee_id, employee_name, smallest_department_name, l4_cloud_service, allocation_ratio, remarks
+                FROM person_service_allocations
+                WHERE employee_id = ? AND COALESCE(smallest_department_name, '') = ?
+                ORDER BY l4_cloud_service ASC, id ASC
+                """,
+                (employee_id, smallest_department),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT id, employee_id, employee_name, smallest_department_name, l4_cloud_service, allocation_ratio, remarks
+                FROM person_service_allocations
+                WHERE employee_name = ? AND COALESCE(employee_id, '') = '' AND COALESCE(smallest_department_name, '') = ?
+                ORDER BY l4_cloud_service ASC, id ASC
+                """,
+                (employee_name, smallest_department),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def save_person_service_allocations(person, allocation_rows):
+    employee_id = (person.get('employee_id') or '').strip()
+    employee_name = (person.get('employee_name') or '').strip()
+    smallest_department = (person.get('smallest_department_name') or '').strip()
+    if not employee_id and not employee_name:
+        raise ValueError('人员缺少工号和姓名，无法保存 L4 分配')
+    normalized_rows = []
+    seen_services = set()
+    total_ratio = 0.0
+    for row in allocation_rows:
+        service = (row.get('l4_cloud_service') or '').strip()
+        ratio_text = (row.get('allocation_ratio') or '').strip()
+        remarks = (row.get('remarks') or '').strip()
+        if not service and not ratio_text and not remarks:
+            continue
+        if not service:
+            raise ValueError('L4 云服务不能为空')
+        if service in seen_services:
+            raise ValueError(f'L4 云服务不能重复：{service}')
+        ratio_value = parse_ratio_value(ratio_text)
+        if ratio_value <= 0:
+            raise ValueError(f'{service} 的投入百分比必须大于 0')
+        seen_services.add(service)
+        total_ratio += ratio_value
+        normalized_rows.append({
+            'l4_cloud_service': service,
+            'allocation_ratio': ratio_text,
+            'remarks': remarks,
+        })
+    if normalized_rows and abs(total_ratio - 1.0) > 0.0001:
+        raise ValueError(f'L4 云服务投入百分比合计必须为 100%，当前为 {format_ratio_percent(total_ratio)}')
+    with get_conn() as conn:
+        if employee_id:
+            conn.execute(
+                """
+                DELETE FROM person_service_allocations
+                WHERE employee_id = ? AND COALESCE(smallest_department_name, '') = ?
+                """,
+                (employee_id, smallest_department),
+            )
+        else:
+            conn.execute(
+                """
+                DELETE FROM person_service_allocations
+                WHERE employee_name = ? AND COALESCE(employee_id, '') = '' AND COALESCE(smallest_department_name, '') = ?
+                """,
+                (employee_name, smallest_department),
+            )
+        for row in normalized_rows:
+            conn.execute(
+                """
+                INSERT INTO person_service_allocations (
+                    employee_id, employee_name, smallest_department_name, l4_cloud_service, allocation_ratio, remarks
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    employee_id,
+                    employee_name,
+                    smallest_department,
+                    row['l4_cloud_service'],
+                    row['allocation_ratio'],
+                    row['remarks'],
+                ),
+            )
+        conn.commit()
+    return len(normalized_rows)
+
+
+def load_person_service_allocations():
+    init_db()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, employee_id, employee_name, smallest_department_name, l4_cloud_service, allocation_ratio, remarks
+            FROM person_service_allocations
+            ORDER BY employee_id ASC, employee_name ASC, smallest_department_name ASC, l4_cloud_service ASC, id ASC
+            """
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def import_person_service_allocation_csv_file(file_storage, replace=True):
+    content = file_storage.read().decode('utf-8-sig')
+    reader = csv.DictReader(StringIO(content))
+    rows = []
+    for row in reader:
+        rows.append({
+            'employee_id': (row.get('工号') or row.get('employee_id') or '').strip(),
+            'employee_name': (row.get('姓名') or row.get('employee_name') or '').strip(),
+            'smallest_department_name': (row.get('最小部门') or row.get('smallest_department_name') or '').strip(),
+            'l4_cloud_service': (row.get('L4云服务') or row.get('l4_cloud_service') or '').strip(),
+            'allocation_ratio': (row.get('投入百分比') or row.get('投入比例') or row.get('allocation_ratio') or '').strip(),
+            'remarks': (row.get('备注') or row.get('remarks') or '').strip(),
+        })
+    grouped = {}
+    for row in rows:
+        key = get_person_service_allocation_key(row)
+        if not key[1]:
+            raise ValueError('人员 L4 分配导入中存在缺少工号和姓名的记录')
+        if not row['l4_cloud_service']:
+            raise ValueError('人员 L4 分配导入中存在缺少 L4 云服务的记录')
+        grouped.setdefault(key, []).append(row)
+    imported_count = 0
+    with get_conn() as conn:
+        if replace:
+            conn.execute('DELETE FROM person_service_allocations')
+        for key, group_rows in grouped.items():
+            total_ratio = sum(parse_ratio_value(row.get('allocation_ratio')) for row in group_rows)
+            if abs(total_ratio - 1.0) > 0.0001:
+                raise ValueError(f'{key[1]} / {key[2] or "未填写最小部门"} 的 L4 投入合计必须为 100%，当前为 {format_ratio_percent(total_ratio)}')
+            service_names = [
+                (row.get('l4_cloud_service') or '').strip()
+                for row in group_rows
+                if (row.get('l4_cloud_service') or '').strip()
+            ]
+            if len(service_names) != len(set(service_names)):
+                raise ValueError(f'{key[1]} / {key[2] or "未填写最小部门"} 存在重复 L4 云服务')
+            first_row = group_rows[0]
+            employee_id = (first_row.get('employee_id') or '').strip()
+            employee_name = (first_row.get('employee_name') or '').strip()
+            smallest_department = (first_row.get('smallest_department_name') or '').strip()
+            if employee_id:
+                conn.execute(
+                    """
+                    DELETE FROM person_service_allocations
+                    WHERE employee_id = ? AND COALESCE(smallest_department_name, '') = ?
+                    """,
+                    (employee_id, smallest_department),
+                )
+            else:
+                conn.execute(
+                    """
+                    DELETE FROM person_service_allocations
+                    WHERE employee_name = ? AND COALESCE(employee_id, '') = '' AND COALESCE(smallest_department_name, '') = ?
+                    """,
+                    (employee_name, smallest_department),
+                )
+            for row in group_rows:
+                conn.execute(
+                    """
+                    INSERT INTO person_service_allocations (
+                        employee_id, employee_name, smallest_department_name, l4_cloud_service, allocation_ratio, remarks
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        employee_id,
+                        employee_name,
+                        smallest_department,
+                        row['l4_cloud_service'],
+                        row['allocation_ratio'],
+                        row['remarks'],
+                    ),
+                )
+                imported_count += 1
+        conn.commit()
+    return imported_count
 
 
 def build_resource_people_summary(rows):

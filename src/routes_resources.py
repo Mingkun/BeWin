@@ -1,4 +1,4 @@
-from flask import Response, redirect, render_template, request, url_for
+from flask import Response, flash, redirect, render_template, request, url_for
 from urllib.parse import quote
 import csv
 from io import StringIO
@@ -11,6 +11,7 @@ from src.app import (
     build_service_resource_summary,
     filter_resource_people_admin,
     filter_service_resources,
+    format_ratio_percent,
     form_to_department_data,
     form_to_resource_person_data,
     form_to_service_resource_data,
@@ -18,8 +19,11 @@ from src.app import (
     get_conn,
     get_resource_people_admin_filter_options,
     get_service_resource_filter_options,
+    import_person_service_allocation_csv_file,
     import_resource_people_csv_file,
     import_service_resource_csv_file,
+    load_person_service_allocations,
+    load_person_service_allocations_for_person,
     load_department,
     load_departments,
     load_project_options,
@@ -28,7 +32,9 @@ from src.app import (
     load_service_resource,
     load_service_resources,
     login_required,
+    parse_ratio_value,
     require_feature,
+    save_person_service_allocations,
 )
 
 
@@ -264,6 +270,60 @@ def admin_resource_person_delete(record_id):
     return redirect(url_for('admin_resource_people'))
 
 
+@app.route('/admin/resource-people/<int:record_id>/service-allocations', methods=['GET', 'POST'])
+@login_required
+def admin_resource_person_service_allocations(record_id):
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    record = load_resource_person(record_id)
+    if not record:
+        flash('人员记录不存在')
+        return redirect(url_for('admin_resource_people'))
+    service_options = sorted({
+        (row.get('l4_cloud_service') or '').strip()
+        for row in load_service_resources()
+        if (row.get('l4_cloud_service') or '').strip()
+    })
+    if request.method == 'POST':
+        services = request.form.getlist('l4_cloud_service')
+        ratios = request.form.getlist('allocation_ratio')
+        remarks_values = request.form.getlist('remarks')
+        allocation_rows = [
+            {
+                'l4_cloud_service': services[index] if index < len(services) else '',
+                'allocation_ratio': ratios[index] if index < len(ratios) else '',
+                'remarks': remarks_values[index] if index < len(remarks_values) else '',
+            }
+            for index in range(max(len(services), len(ratios), len(remarks_values)))
+        ]
+        try:
+            count = save_person_service_allocations(record, allocation_rows)
+            flash(f'L4 云服务分配已保存，共 {count} 条')
+            return redirect(url_for('admin_resource_people'))
+        except ValueError as exc:
+            flash(str(exc))
+            allocations = allocation_rows
+    else:
+        allocations = load_person_service_allocations_for_person(record)
+    total_ratio = sum(parse_ratio_value(row.get('allocation_ratio')) for row in allocations)
+    selected_services = {
+        (row.get('l4_cloud_service') or '').strip()
+        for row in allocations
+        if (row.get('l4_cloud_service') or '').strip()
+    }
+    service_options = sorted(set(service_options) | selected_services)
+    return render_template(
+        'resource_person_service_allocations.html',
+        record=record,
+        allocations=allocations,
+        service_options=service_options,
+        total_ratio_text=format_ratio_percent(total_ratio),
+        total_ratio_complete=bool(allocations) and abs(total_ratio - 1.0) < 0.0001,
+        **build_auth_context(),
+    )
+
+
 @app.route('/admin/service-resources/new', methods=['GET', 'POST'])
 @login_required
 def admin_service_resource_new():
@@ -372,6 +432,22 @@ def admin_resource_people_import_csv():
     return redirect(url_for('admin_resource_people'))
 
 
+@app.route('/admin/resource-people/service-allocations/import-csv', methods=['POST'])
+@login_required
+def admin_resource_person_service_allocations_import_csv():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    file = request.files.get('csv_file')
+    if file and file.filename:
+        try:
+            count = import_person_service_allocation_csv_file(file, replace=False)
+            flash(f'人员 L4 云服务分配已导入，共 {count} 条')
+        except ValueError as exc:
+            flash(f'导入失败：{exc}')
+    return redirect(url_for('admin_resource_people'))
+
+
 @app.route('/admin/service-resources/import-csv', methods=['POST'])
 @login_required
 def admin_service_resources_import_csv():
@@ -396,6 +472,21 @@ def admin_resource_people_template_csv():
     content = '\ufeff' + sio.getvalue()
     response = Response(content, mimetype='text/csv; charset=utf-8')
     response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('人员资源导入模板.csv')}"
+    return response
+
+
+@app.route('/admin/resource-people/service-allocations/template-csv')
+@login_required
+def admin_resource_person_service_allocations_template_csv():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    sio = StringIO()
+    writer = csv.writer(sio)
+    writer.writerow(['工号', '姓名', '最小部门', 'L4云服务', '投入百分比', '备注'])
+    content = '\ufeff' + sio.getvalue()
+    response = Response(content, mimetype='text/csv; charset=utf-8')
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('人员L4云服务分配导入模板.csv')}"
     return response
 
 
@@ -424,6 +515,30 @@ def admin_resource_people_export_csv():
         ])
     response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
     response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(build_timestamped_export_filename('人员资源库_导出数据'))}"
+    return response
+
+
+@app.route('/admin/resource-people/service-allocations/export-csv')
+@login_required
+def admin_resource_person_service_allocations_export_csv():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    rows = load_person_service_allocations()
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['工号', '姓名', '最小部门', 'L4云服务', '投入百分比', '备注'])
+    for row in rows:
+        writer.writerow([
+            row.get('employee_id') or '',
+            row.get('employee_name') or '',
+            row.get('smallest_department_name') or '',
+            row.get('l4_cloud_service') or '',
+            row.get('allocation_ratio') or '',
+            row.get('remarks') or '',
+        ])
+    response = Response('\ufeff' + output.getvalue(), mimetype='text/csv; charset=utf-8')
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote(build_timestamped_export_filename('人员L4云服务分配_导出数据'))}"
     return response
 
 

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L4云服务分配</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page">
+    <header class="toolbar">
+      <div>
+        <h1>L4云服务分配</h1>
+        <p>{{ record.employee_name or '未填写姓名' }}{% if record.employee_id %} / {{ record.employee_id }}{% endif %} · 最小部门：{{ record.smallest_department_name or '未填写' }}</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+        <a class="button secondary" href="{{ url_for('admin_resource_people') }}">返回人员资源库</a>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="flash-stack">
+        {% for message in messages %}
+          <div class="flash-success">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="card service-allocation-editor-card">
+      <div class="service-allocation-header">
+        <div>
+          <div class="section-title">分配明细</div>
+          <div class="section-subtitle">同一人员、同一最小部门下，所有 L4 云服务投入百分比合计必须为 100%。</div>
+        </div>
+        <div class="service-allocation-total {% if total_ratio_complete %}complete{% elif allocations %}warning{% endif %}" id="allocation-total">
+          合计 {{ total_ratio_text }}
+        </div>
+      </div>
+
+      <form method="post" id="service-allocation-form">
+        <div class="table-wrap service-allocation-table-wrap">
+          <table class="data-table service-allocation-table" id="service-allocation-table">
+            <thead>
+              <tr>
+                <th>L4云服务</th>
+                <th>投入百分比</th>
+                <th>备注</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for allocation in allocations %}
+              <tr>
+                <td>
+                  <input list="service-options" name="l4_cloud_service" value="{{ allocation.l4_cloud_service or '' }}" placeholder="选择或输入 L4 云服务">
+                </td>
+                <td>
+                  <input class="allocation-ratio-input" type="text" name="allocation_ratio" value="{{ allocation.allocation_ratio or '' }}" placeholder="例如 40%">
+                </td>
+                <td>
+                  <input type="text" name="remarks" value="{{ allocation.remarks or '' }}" placeholder="备注">
+                </td>
+                <td>
+                  <button class="button tiny secondary allocation-remove" type="button">删除</button>
+                </td>
+              </tr>
+              {% endfor %}
+              {% if not allocations %}
+              <tr>
+                <td>
+                  <input list="service-options" name="l4_cloud_service" value="" placeholder="选择或输入 L4 云服务">
+                </td>
+                <td>
+                  <input class="allocation-ratio-input" type="text" name="allocation_ratio" value="" placeholder="例如 100%">
+                </td>
+                <td>
+                  <input type="text" name="remarks" value="" placeholder="备注">
+                </td>
+                <td>
+                  <button class="button tiny secondary allocation-remove" type="button">删除</button>
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+        <datalist id="service-options">
+          {% for item in service_options %}
+          <option value="{{ item }}"></option>
+          {% endfor %}
+        </datalist>
+
+        <div class="form-actions">
+          <button class="button secondary" type="button" id="allocation-add">新增一行</button>
+          <button class="button" type="submit">保存</button>
+          <a class="button secondary" href="{{ url_for('admin_resource_people') }}">取消</a>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const table = document.getElementById('service-allocation-table');
+      const addButton = document.getElementById('allocation-add');
+      const total = document.getElementById('allocation-total');
+      if (!table || !addButton || !total) return;
+      const tbody = table.querySelector('tbody');
+
+      function parseRatio(value) {
+        const text = (value || '').trim();
+        if (!text) return 0;
+        const number = Number(text.endsWith('%') ? text.slice(0, -1) : text);
+        if (!Number.isFinite(number)) return 0;
+        return number > 1 ? number / 100 : number;
+      }
+
+      function formatPercent(value) {
+        const percent = Math.round(value * 10000) / 100;
+        return `${Number.isInteger(percent) ? percent.toFixed(0) : String(percent).replace(/0+$/, '').replace(/\.$/, '')}%`;
+      }
+
+      function updateTotal() {
+        const value = Array.from(tbody.querySelectorAll('.allocation-ratio-input'))
+          .reduce((sum, input) => sum + parseRatio(input.value), 0);
+        const hasRows = Array.from(tbody.querySelectorAll('tr')).some((row) => {
+          return Array.from(row.querySelectorAll('input')).some((input) => input.value.trim());
+        });
+        total.textContent = `合计 ${formatPercent(value)}`;
+        total.classList.toggle('complete', hasRows && Math.abs(value - 1) < 0.0001);
+        total.classList.toggle('warning', hasRows && Math.abs(value - 1) >= 0.0001);
+      }
+
+      function bindRow(row) {
+        row.querySelectorAll('input').forEach((input) => {
+          input.addEventListener('input', updateTotal);
+        });
+        const remove = row.querySelector('.allocation-remove');
+        if (remove) {
+          remove.addEventListener('click', () => {
+            if (tbody.querySelectorAll('tr').length === 1) {
+              row.querySelectorAll('input').forEach((input) => {
+                input.value = '';
+              });
+            } else {
+              row.remove();
+            }
+            updateTotal();
+          });
+        }
+      }
+
+      Array.from(tbody.querySelectorAll('tr')).forEach(bindRow);
+      addButton.addEventListener('click', () => {
+        const row = tbody.querySelector('tr').cloneNode(true);
+        row.querySelectorAll('input').forEach((input) => {
+          input.value = '';
+        });
+        tbody.appendChild(row);
+        bindRow(row);
+        updateTotal();
+      });
+      updateTotal();
+    })();
+  </script>
+</body>
+</html>
