@@ -17,9 +17,9 @@
         <a class="button home-button" href="{{ url_for('index') }}">首页</a>
         <a class="button secondary" href="{{ url_for('admin_resource_people_template_csv') }}">导出模板</a>
         <a class="button secondary" href="{{ url_for('admin_resource_people_export_csv') }}">导出数据</a>
+        <button class="button warning" type="button" onclick="document.getElementById('resource-people-import-panel').hidden = false;">导入数据</button>
         <a class="button secondary" href="{{ url_for('admin_resource_person_service_allocations_template_csv') }}">L4分配模板</a>
         <a class="button secondary" href="{{ url_for('admin_resource_person_service_allocations_export_csv') }}">L4分配导出</a>
-        <button class="button warning" type="button" onclick="document.getElementById('resource-people-import-panel').hidden = false;">导入数据</button>
         <button class="button warning" type="button" onclick="document.getElementById('resource-service-allocation-import-panel').hidden = false;">导入L4分配</button>
         <a class="button" href="{{ url_for('admin_resource_person_new') }}">新增人员</a>
       </div>
