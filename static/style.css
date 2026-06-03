@@ -1922,6 +1922,30 @@ body.theme-ios-dark .backup-popover-text {
   vertical-align: 1px;
 }
 
+.key-field-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  padding: 1px 5px;
+  border: 1px solid rgba(37, 99, 235, 0.42);
+  border-radius: 4px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+
+body.theme-ios-dark .key-field-badge {
+  border-color: rgba(96, 165, 250, 0.46);
+  background: rgba(96, 165, 250, 0.14);
+  color: #93c5fd;
+}
+
 .sortable-col {
   cursor: pointer;
 }

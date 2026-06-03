@@ -62,12 +62,12 @@
           <div class="roadmap-shell">
             <div class="project-lane-card">
               <div class="project-lane-title">
-                <h2>{{ project.project_name }}</h2>
+                <h2>{{ project.project_name }}<span class="key-field-badge" title="导入关键字段">key</span></h2>
                 <div class="meta">项目经理：{{ project.project_manager or '未填写' }}，关键特性数：{{ project.features|length }}</div>
               </div>
 
               <div class="roadmap-header-grid">
-                <div class="roadmap-left-header">关键特性</div>
+                <div class="roadmap-left-header">关键特性<span class="key-field-badge" title="导入关键字段">key</span></div>
                 <div class="roadmap-time-header">
                   <div class="quarter-row">
                     {% for quarter in quarters %}
@@ -87,7 +87,7 @@
                   <div class="feature-lane-row" data-feature-id="{{ feature.id }}">
                     <div class="feature-info-panel">
                       <div class="feature-info-head">
-                        <div class="feature-name">{{ feature.feature_name }}</div>
+                        <div class="feature-name">{{ feature.feature_name }}<span class="key-field-badge" title="导入关键字段">key</span></div>
                         {% if user_features.manage_features %}
                         <div style="display:flex; align-items:center; gap:8px;">
                           <button type="button" class="feature-pin-toggle {% if feature.is_pinned %}active{% endif %}" data-project-id="{{ project.project_id }}" data-feature-id="{{ feature.id }}" data-pinned="{{ '1' if feature.is_pinned else '0' }}">置顶</button>
@@ -116,7 +116,7 @@
                       </div>
                       <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
                       <div class="feature-tags">
-                        <span>五层部门：{{ feature.five_level_department or '未填写' }}</span>
+                        <span>五层部门<span class="key-field-badge" title="导入关键字段">key</span>：{{ feature.five_level_department or '未填写' }}</span>
                         <span>L4：{{ feature.service_group or '未填写' }}</span>
                         <span>交付PM：{{ feature.delivery_pm or '未填写' }}</span>
                         <span>周期：{{ feature.start_label }} ~ {{ feature.end_label }}</span>
