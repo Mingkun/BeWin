@@ -6,7 +6,7 @@
   <title>{{ branding.roadmap_browser_title }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="theme-{{ branding.theme }}">
+<body class="theme-{{ branding.theme }} roadmap-density-{{ filters.density if filters else 'comfortable' }}">
   <div class="page page-roadmap">
     <header class="toolbar">
       <div>
@@ -36,17 +36,112 @@
       </div>
     </header>
 
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card flash-card">
+          {% for message in messages %}
+            <div class="flash-success">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <div class="card import-panel" id="project-import-panel" hidden {% if not user_features.import_export_data %}style="display:none !important;"{% endif %}>
-      <form method="post" action="{{ url_for('admin_projects_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form">
+      <form method="post" action="{{ url_for('admin_roadmap_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form" id="roadmap-import-form">
         <div class="import-panel-title">导入关键特性路标图数据</div>
         <div class="import-panel-desc">请选择 CSV 文件，项目按编码/名称匹配，关键特性按项目、部门和特性匹配；已有记录会更新，未匹配记录会新增。</div>
+        <div class="import-preview-result" id="roadmap-import-preview" hidden></div>
         <div class="import-panel-actions">
-          <input type="file" name="csv_file" accept=".csv" required>
+          <input type="file" name="csv_file" accept=".csv" required id="roadmap-import-file">
+          <button class="button secondary" type="button" id="roadmap-import-preview-button">预检查</button>
           <button class="button warning" type="submit">确认导入</button>
           <button class="button secondary" type="button" id="cancel-project-import" onclick="document.getElementById('project-import-panel').hidden = true;">取消</button>
         </div>
       </form>
     </div>
+
+    <section class="roadmap-overview-grid">
+      {% for metric in roadmap_summary.metrics %}
+        <a class="card roadmap-metric-card" href="{{ metric.href }}">
+          <span>{{ metric.label }}</span>
+          <strong>{{ metric.value }}</strong>
+        </a>
+      {% endfor %}
+    </section>
+
+    <form class="card filter-form roadmap-filter-form" method="get" action="{{ url_for('roadmap') }}">
+      <div class="form-grid form-grid-3 roadmap-filter-grid">
+        <label>项目
+          <select name="project_name">
+            <option value="">全部</option>
+            {% for item in filter_options.projects %}
+              <option value="{{ item }}" {% if filters.project_name == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>五层部门
+          <select name="department">
+            <option value="">全部</option>
+            {% for item in filter_options.departments %}
+              <option value="{{ item }}" {% if filters.department == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>L4服务
+          <select name="service_group">
+            <option value="">全部</option>
+            {% for item in filter_options.services %}
+              <option value="{{ item }}" {% if filters.service_group == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>交付PM
+          <select name="delivery_pm">
+            <option value="">全部</option>
+            {% for item in filter_options.pms %}
+              <option value="{{ item }}" {% if filters.delivery_pm == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>状态
+          <select name="status">
+            <option value="">全部</option>
+            {% for item in filter_options.statuses %}
+              <option value="{{ item.key }}" {% if filters.status == item.key %}selected{% endif %}>{{ item.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>排序
+          <select name="sort_by">
+            {% for item in filter_options.sorts %}
+              <option value="{{ item.key }}" {% if filters.sort_by == item.key %}selected{% endif %}>{{ item.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>关键词
+          <input type="text" name="keyword" value="{{ filters.keyword or '' }}" placeholder="特性、重点工作、里程碑">
+        </label>
+        <label>显示密度
+          <select name="density">
+            <option value="comfortable" {% if filters.density != 'compact' %}selected{% endif %}>舒适</option>
+            <option value="compact" {% if filters.density == 'compact' %}selected{% endif %}>紧凑</option>
+          </select>
+        </label>
+        <div class="filter-actions roadmap-filter-actions">
+          <div class="toolbar-actions">
+            <button class="button" type="submit">查询</button>
+            <a class="button secondary" href="{{ url_for('roadmap') }}">重置</a>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    {% if has_active_filter %}
+      <div class="resource-active-filter roadmap-active-filter">
+        <span>当前显示 {{ filtered_summary.feature_count }} 条关键特性 / {{ filtered_summary.project_count }} 个项目</span>
+        <a href="{{ url_for('roadmap') }}">取消过滤</a>
+      </div>
+    {% endif %}
 
     {% if project_groups %}
       <div class="project-tab-bar">
@@ -87,7 +182,7 @@
                   <div class="feature-lane-row" data-feature-id="{{ feature.id }}">
                     <div class="feature-info-panel">
                       <div class="feature-info-head">
-                        <div class="feature-name">{{ feature.feature_name }}<span class="key-field-badge" title="导入关键字段">key</span></div>
+                        <div class="feature-name">{{ feature.feature_name }}<span class="key-field-badge" title="导入关键字段">key</span><span class="roadmap-status-badge status-{{ feature.status.key }}">{{ feature.status.label }}</span></div>
                         {% if user_features.manage_features %}
                         <div style="display:flex; align-items:center; gap:8px;">
                           <button type="button" class="feature-pin-toggle {% if feature.is_pinned %}active{% endif %}" data-project-id="{{ project.project_id }}" data-feature-id="{{ feature.id }}" data-pinned="{{ '1' if feature.is_pinned else '0' }}">置顶</button>
@@ -154,7 +249,11 @@
         </section>
       {% endfor %}
     {% else %}
-      <div class="empty">当前还没有项目数据，请先初始化数据库中的项目数据。</div>
+      {% if has_active_filter %}
+        <div class="empty">当前没有匹配的关键特性数据。</div>
+      {% else %}
+        <div class="empty">当前还没有项目数据，请先初始化数据库中的项目数据。</div>
+      {% endif %}
     {% endif %}
   </div>
 
@@ -162,6 +261,10 @@
     const importPanel = document.getElementById('project-import-panel');
     const showImportButton = document.getElementById('show-project-import');
     const cancelImportButton = document.getElementById('cancel-project-import');
+    const importForm = document.getElementById('roadmap-import-form');
+    const importFile = document.getElementById('roadmap-import-file');
+    const importPreviewButton = document.getElementById('roadmap-import-preview-button');
+    const importPreview = document.getElementById('roadmap-import-preview');
 
     if (showImportButton && importPanel) {
       showImportButton.addEventListener('click', () => {
@@ -173,6 +276,40 @@
       cancelImportButton.addEventListener('click', (event) => {
         event.preventDefault();
         importPanel.hidden = true;
+      });
+    }
+
+    if (importPreviewButton && importForm && importFile && importPreview) {
+      importPreviewButton.addEventListener('click', async () => {
+        if (!importFile.files || !importFile.files.length) {
+          importPreview.hidden = false;
+          importPreview.textContent = '请先选择 CSV 文件。';
+          return;
+        }
+        const formData = new FormData();
+        formData.append('csv_file', importFile.files[0]);
+        importPreview.hidden = false;
+        importPreview.textContent = '正在预检查...';
+        try {
+          const response = await fetch('{{ url_for("admin_roadmap_import_preview_csv") }}', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          if (!data.ok) {
+            importPreview.textContent = data.message || '预检查失败';
+            return;
+          }
+          importPreview.innerHTML = `
+            <strong>${data.type_label}</strong>
+            共 ${data.total} 行，预计更新 <strong>${data.updates}</strong> 行，
+            新增 <strong>${data.creates}</strong> 行，
+            缺少关键字段 <strong>${data.invalid}</strong> 行，
+            未知项目 <strong>${data.unknown_projects}</strong> 行。
+          `;
+        } catch (error) {
+          importPreview.textContent = '预检查失败，请确认文件格式。';
+        }
       });
     }
 

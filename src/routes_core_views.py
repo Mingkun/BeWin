@@ -1,6 +1,9 @@
+from datetime import datetime
+
 from flask import jsonify, render_template, request, url_for
 
 from src.app import (
+    MILESTONE_COLUMNS,
     MONTH_LABELS,
     QUARTERS,
     app,
@@ -106,6 +109,164 @@ def build_home_sections(cards):
     ]
 
 
+ROADMAP_STATUS_LABELS = {
+    'in_progress': '进行中',
+    'not_started': '未开始',
+    'completed': '已完成',
+    'risk': '风险',
+    'unscheduled': '未排期',
+    'due_this_month': '本月到期',
+}
+
+
+def get_roadmap_feature_active_indexes(row):
+    return [index for index, month in enumerate(MILESTONE_COLUMNS) if (row.get(month) or '').strip()]
+
+
+def get_roadmap_feature_status_key(row):
+    active_indexes = get_roadmap_feature_active_indexes(row)
+    if not active_indexes:
+        return 'unscheduled'
+    searchable_text = ' '.join([
+        row.get('focus_work') or '',
+        row.get('feature_name') or '',
+        *[(row.get(month) or '') for month in MILESTONE_COLUMNS],
+    ])
+    if any(keyword in searchable_text for keyword in ('延期', '风险', '阻塞', '延迟')):
+        return 'risk'
+    current_index = max(0, min(11, datetime.now().month - 1))
+    if active_indexes[-1] < current_index:
+        return 'completed'
+    if active_indexes[0] > current_index:
+        return 'not_started'
+    return 'in_progress'
+
+
+def is_roadmap_due_this_month(row):
+    active_indexes = get_roadmap_feature_active_indexes(row)
+    current_index = max(0, min(11, datetime.now().month - 1))
+    return bool(active_indexes and active_indexes[-1] == current_index)
+
+
+def get_roadmap_filters():
+    return {
+        'project_name': (request.args.get('project_name') or '').strip(),
+        'department': (request.args.get('department') or '').strip(),
+        'service_group': (request.args.get('service_group') or '').strip(),
+        'delivery_pm': (request.args.get('delivery_pm') or '').strip(),
+        'keyword': (request.args.get('keyword') or '').strip(),
+        'status': (request.args.get('status') or '').strip(),
+        'sort_by': (request.args.get('sort_by') or '').strip() or 'manual',
+        'density': (request.args.get('density') or '').strip() or 'comfortable',
+    }
+
+
+def build_roadmap_filter_options(project_rows, feature_rows):
+    def unique_values(rows, key):
+        return sorted({(row.get(key) or '').strip() for row in rows if (row.get(key) or '').strip()})
+
+    return {
+        'projects': unique_values(project_rows, 'project_name'),
+        'departments': unique_values(feature_rows, 'five_level_department'),
+        'services': unique_values(feature_rows, 'service_group'),
+        'pms': unique_values(feature_rows, 'delivery_pm'),
+        'statuses': [{'key': key, 'label': label} for key, label in ROADMAP_STATUS_LABELS.items()],
+        'sorts': [
+            {'key': 'manual', 'label': '手动/置顶'},
+            {'key': 'start_month', 'label': '开始月份'},
+            {'key': 'end_month', 'label': '结束月份'},
+            {'key': 'department', 'label': '五层部门'},
+            {'key': 'service', 'label': 'L4服务'},
+            {'key': 'pm', 'label': '交付PM'},
+        ],
+    }
+
+
+def filter_roadmap_features(feature_rows, filters):
+    keyword = (filters.get('keyword') or '').lower()
+    status_filter = filters.get('status') or ''
+
+    def matched(row):
+        text = ' '.join([
+            row.get('project_name') or '',
+            row.get('five_level_department') or '',
+            row.get('focus_work') or '',
+            row.get('feature_name') or '',
+            row.get('service_group') or '',
+            row.get('delivery_pm') or '',
+            *[(row.get(month) or '') for month in MILESTONE_COLUMNS],
+        ]).lower()
+        if filters.get('project_name') and (row.get('project_name') or '').strip() != filters['project_name']:
+            return False
+        if filters.get('department') and (row.get('five_level_department') or '').strip() != filters['department']:
+            return False
+        if filters.get('service_group') and (row.get('service_group') or '').strip() != filters['service_group']:
+            return False
+        if filters.get('delivery_pm') and (row.get('delivery_pm') or '').strip() != filters['delivery_pm']:
+            return False
+        if keyword and keyword not in text:
+            return False
+        if status_filter == 'due_this_month':
+            return is_roadmap_due_this_month(row)
+        if status_filter and get_roadmap_feature_status_key(row) != status_filter:
+            return False
+        return True
+
+    return [row for row in feature_rows if matched(row)]
+
+
+def sort_roadmap_features(feature_rows, sort_by):
+    if sort_by == 'manual':
+        return feature_rows
+
+    def sort_key(row):
+        indexes = get_roadmap_feature_active_indexes(row)
+        if sort_by == 'start_month':
+            return (indexes[0] if indexes else 99, row.get('feature_name') or '')
+        if sort_by == 'end_month':
+            return (indexes[-1] if indexes else 99, row.get('feature_name') or '')
+        if sort_by == 'department':
+            return (row.get('five_level_department') or '', row.get('feature_name') or '')
+        if sort_by == 'service':
+            return (row.get('service_group') or '', row.get('feature_name') or '')
+        if sort_by == 'pm':
+            return (row.get('delivery_pm') or '', row.get('feature_name') or '')
+        return (row.get('id') or 0,)
+
+    sorted_rows = []
+    for index, row in enumerate(sorted(feature_rows, key=sort_key)):
+        item = dict(row)
+        item['__roadmap_order'] = index
+        sorted_rows.append(item)
+    return sorted_rows
+
+
+def build_roadmap_summary(project_rows, feature_rows):
+    project_names = {(row.get('project_name') or '').strip() for row in feature_rows if (row.get('project_name') or '').strip()}
+    status_counts = {key: 0 for key in ROADMAP_STATUS_LABELS}
+    for row in feature_rows:
+        status_counts[get_roadmap_feature_status_key(row)] += 1
+        if is_roadmap_due_this_month(row):
+            status_counts['due_this_month'] += 1
+    return {
+        'project_count': len(project_names) or len(project_rows),
+        'feature_count': len(feature_rows),
+        'current_month': MONTH_LABELS[max(0, min(11, datetime.now().month - 1))],
+        'metrics': [
+            {'label': '项目数', 'value': len(project_names) or len(project_rows), 'href': url_for('roadmap')},
+            {'label': '关键特性', 'value': len(feature_rows), 'href': url_for('roadmap')},
+            {'label': '进行中', 'value': status_counts['in_progress'], 'href': url_for('roadmap', status='in_progress')},
+            {'label': '本月到期', 'value': status_counts['due_this_month'], 'href': url_for('roadmap', status='due_this_month')},
+            {'label': '风险', 'value': status_counts['risk'], 'href': url_for('roadmap', status='risk')},
+            {'label': '未排期', 'value': status_counts['unscheduled'], 'href': url_for('roadmap', status='unscheduled')},
+        ],
+    }
+
+
+def has_roadmap_filters(filters):
+    return any(filters.get(key) for key in ('project_name', 'department', 'service_group', 'delivery_pm', 'keyword', 'status')) or filters.get('sort_by') not in ('', 'manual') or filters.get('density') == 'compact'
+
+
 @app.route('/')
 @login_required
 def index():
@@ -129,12 +290,23 @@ def roadmap():
         return denied
     project_rows = load_projects()
     feature_rows = load_project_features()
+    filters = get_roadmap_filters()
+    filter_options = build_roadmap_filter_options(project_rows, feature_rows)
+    filtered_features = filter_roadmap_features(feature_rows, filters)
+    filtered_features = sort_roadmap_features(filtered_features, filters.get('sort_by'))
     current_user = get_current_user() or {}
     user_feature_orders = load_user_feature_orders(current_user.get('user_id'))
-    project_groups = build_project_roadmap(project_rows, feature_rows, user_feature_orders)
+    project_groups = build_project_roadmap(project_rows, filtered_features, user_feature_orders)
+    if has_roadmap_filters(filters):
+        project_groups = [project for project in project_groups if project.get('features')]
     return render_template(
         'index.html',
         project_groups=project_groups,
+        roadmap_summary=build_roadmap_summary(project_rows, feature_rows),
+        filtered_summary=build_roadmap_summary(project_rows, filtered_features),
+        filters=filters,
+        filter_options=filter_options,
+        has_active_filter=has_roadmap_filters(filters),
         month_labels=MONTH_LABELS,
         quarters=QUARTERS,
         branding=get_branding(),

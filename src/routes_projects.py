@@ -2,7 +2,7 @@ import csv
 from io import StringIO
 from urllib.parse import quote
 
-from flask import Response, flash, redirect, render_template, request, url_for
+from flask import Response, flash, jsonify, redirect, render_template, request, url_for
 
 from src.app import (
     FEATURE_ALL_COLUMNS,
@@ -18,6 +18,7 @@ from src.app import (
     get_conn,
     get_project_options,
     import_project_csv_file,
+    import_roadmap_csv_content,
     load_project,
     load_project_feature,
     load_project_features,
@@ -26,6 +27,7 @@ from src.app import (
     normalize_feature_row,
     normalize_project_row,
     project_row_to_db_tuple,
+    preview_roadmap_csv_content,
     require_feature,
     save_feature_csv_content,
 )
@@ -206,6 +208,44 @@ def admin_projects_import_csv():
     file = request.files.get('csv_file')
     if file and file.filename:
         import_project_csv_file(file, replace=False)
+    return redirect(url_for('roadmap'))
+
+
+@app.route('/admin/roadmap/import-preview-csv', methods=['POST'])
+@login_required
+def admin_roadmap_import_preview_csv():
+    denied = require_feature('import_export_data', '当前账号不能导入关键特性视图数据')
+    if denied:
+        return jsonify({'ok': False, 'message': '当前账号不能导入关键特性视图数据'}), 403
+    file = request.files.get('csv_file')
+    if not file or not file.filename:
+        return jsonify({'ok': False, 'message': '请选择 CSV 文件'}), 400
+    raw = file.read()
+    content = raw.decode('utf-8-sig') if isinstance(raw, bytes) else raw
+    try:
+        summary = preview_roadmap_csv_content(content)
+    except Exception as exc:
+        return jsonify({'ok': False, 'message': f'预检查失败：{exc}'}), 400
+    summary['ok'] = True
+    return jsonify(summary)
+
+
+@app.route('/admin/roadmap/import-csv', methods=['POST'])
+@login_required
+def admin_roadmap_import_csv():
+    denied = require_feature('import_export_data', '当前账号不能导入关键特性视图数据')
+    if denied:
+        return denied
+    file = request.files.get('csv_file')
+    if file and file.filename:
+        raw = file.read()
+        content = raw.decode('utf-8-sig') if isinstance(raw, bytes) else raw
+        summary = import_roadmap_csv_content(content, replace=False)
+        flash(
+            f"导入完成：{summary['type_label']}，共 {summary['total']} 行，"
+            f"更新 {summary['updates']}，新增 {summary['creates']}，"
+            f"缺少关键字段 {summary['invalid']}，未知项目 {summary['unknown_projects']}"
+        )
     return redirect(url_for('roadmap'))
 
 

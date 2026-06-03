@@ -790,6 +790,8 @@ GUEST_ENDPOINT_FEATURES = {
     'admin_feature_edit': 'manage_features',
     'admin_feature_delete': 'manage_features',
     'admin_projects_import_csv': 'import_export_data',
+    'admin_roadmap_import_preview_csv': 'import_export_data',
+    'admin_roadmap_import_csv': 'import_export_data',
     'admin_projects_template_csv': 'import_export_data',
     'admin_projects_export_csv': 'import_export_data',
     'admin_features_import_csv': 'import_export_data',
@@ -1255,6 +1257,85 @@ def find_existing_feature(conn, row):
     ).fetchone()
 
 
+def is_feature_csv_header(fieldnames):
+    normalized = {str(name or '').strip() for name in (fieldnames or [])}
+    return bool({'关键特性', 'feature_name'} & normalized) or any(month in normalized for month in MILESTONE_COLUMNS)
+
+
+def preview_project_csv_content(content):
+    init_db()
+    reader = csv.DictReader(StringIO(content))
+    rows = [normalize_project_row(row) for row in reader]
+    summary = {
+        'type': 'project',
+        'type_label': '项目数据',
+        'total': len(rows),
+        'updates': 0,
+        'creates': 0,
+        'invalid': 0,
+        'unknown_projects': 0,
+    }
+    if not rows:
+        return summary
+    with get_conn() as conn:
+        for row in rows:
+            if not (row["项目编码"] or row["项目名称"]):
+                summary['invalid'] += 1
+                continue
+            if find_existing_project(conn, row):
+                summary['updates'] += 1
+            else:
+                summary['creates'] += 1
+    return summary
+
+
+def preview_feature_csv_content(content):
+    init_db()
+    reader = csv.DictReader(StringIO(content))
+    rows = [normalize_feature_row(row) for row in reader]
+    summary = {
+        'type': 'feature',
+        'type_label': '关键特性数据',
+        'total': len(rows),
+        'updates': 0,
+        'creates': 0,
+        'invalid': 0,
+        'unknown_projects': 0,
+    }
+    if not rows:
+        return summary
+    with get_conn() as conn:
+        for row in rows:
+            if not (row["项目名称"] and row["关键特性"]):
+                summary['invalid'] += 1
+                continue
+            project_row = conn.execute("SELECT id FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (row["项目名称"],)).fetchone()
+            if not project_row:
+                summary['unknown_projects'] += 1
+            if find_existing_feature(conn, row):
+                summary['updates'] += 1
+            else:
+                summary['creates'] += 1
+    return summary
+
+
+def preview_roadmap_csv_content(content):
+    reader = csv.DictReader(StringIO(content))
+    if is_feature_csv_header(reader.fieldnames):
+        return preview_feature_csv_content(content)
+    return preview_project_csv_content(content)
+
+
+def import_roadmap_csv_content(content, replace=False):
+    preview = preview_roadmap_csv_content(content)
+    if preview['type'] == 'feature':
+        imported = save_feature_csv_content(content, replace=replace)
+    else:
+        imported = save_project_csv_content(content, replace=replace)
+    preview['imported'] = imported
+    return preview
+
+
 def save_project_csv_content(content, replace=False):
     init_db()
     reader = csv.DictReader(StringIO(content))
@@ -1270,7 +1351,10 @@ def save_project_csv_content(content, replace=False):
     with get_conn() as conn:
         if replace:
             conn.execute("DELETE FROM projects")
+        imported = 0
         for row in rows:
+            if not (row["项目编码"] or row["项目名称"]):
+                continue
             existing = None if replace else find_existing_project(conn, row)
             values = project_row_to_db_tuple(row)
             if existing:
@@ -1284,8 +1368,9 @@ def save_project_csv_content(content, replace=False):
                     f"INSERT INTO projects ({', '.join(sql_columns)}) VALUES ({placeholders})",
                     values,
                 )
+            imported += 1
         conn.commit()
-    return len(rows)
+    return imported
 
 
 def save_feature_csv_content(content, replace=False):
@@ -1299,7 +1384,10 @@ def save_feature_csv_content(content, replace=False):
             conn.execute("DELETE FROM project_features")
         feature_month_columns = ', '.join([f'"{m}"' for m in MILESTONE_COLUMNS])
         feature_month_placeholders = ', '.join(['?'] * len(MILESTONE_COLUMNS))
+        imported = 0
         for row in rows:
+            if not (row["项目名称"] and row["关键特性"]):
+                continue
             project_row = conn.execute("SELECT id FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (row["项目名称"],)).fetchone()
             project_id = project_row['id'] if project_row else None
             existing = None if replace else find_existing_feature(conn, row)
@@ -1319,8 +1407,9 @@ def save_feature_csv_content(content, replace=False):
                     f"INSERT INTO project_features (project_id, project_name, five_level_department, focus_work, feature_name, service_group, delivery_pm, {feature_month_columns}) VALUES (?, ?, ?, ?, ?, ?, ?, {feature_month_placeholders})",
                     values,
                 )
+            imported += 1
         conn.commit()
-    return len(rows)
+    return imported
 
 
 def import_project_csv_file(file_storage, replace=True):
@@ -1962,6 +2051,27 @@ def load_user_feature_orders(user_id):
     return {(row['project_id'], row['feature_id']): row['sort_index'] for row in rows}
 
 
+def get_roadmap_feature_status(active_indexes, row=None):
+    row = row or {}
+    if not active_indexes:
+        return {'key': 'unscheduled', 'label': '未排期'}
+    searchable_text = " ".join([
+        (row.get('focus_work') or ''),
+        (row.get('feature_name') or ''),
+        *[(row.get(month) or '') for month in MILESTONE_COLUMNS],
+    ])
+    if any(keyword in searchable_text for keyword in ('延期', '风险', '阻塞', '延迟')):
+        return {'key': 'risk', 'label': '风险'}
+    current_index = max(0, min(11, datetime.now().month - 1))
+    start_index = active_indexes[0]
+    end_index = active_indexes[-1]
+    if end_index < current_index:
+        return {'key': 'completed', 'label': '已完成'}
+    if start_index > current_index:
+        return {'key': 'not_started', 'label': '未开始'}
+    return {'key': 'in_progress', 'label': '进行中'}
+
+
 def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
     user_feature_orders = user_feature_orders or {}
     grouped = {}
@@ -1999,11 +2109,12 @@ def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
 
         feature_order = user_feature_orders.get((row.get("project_id"), row.get("id")))
         is_pinned = feature_order is not None and feature_order <= 0
+        status = get_roadmap_feature_status(active_indexes, row)
         feature = {
             "id": row.get("id"),
             "project_id": row.get("project_id"),
             "sort_index": feature_order if feature_order is not None else 10**9,
-            "base_index": row.get("id") or 10**9,
+            "base_index": row.get("__roadmap_order") if row.get("__roadmap_order") is not None else (row.get("id") or 10**9),
             "is_pinned": is_pinned,
             "five_level_department": (row.get("five_level_department") or "").strip(),
             "feature_name": feature_name,
@@ -2016,6 +2127,7 @@ def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
             "width_percent": width_percent,
             "month_values": month_values,
             "active_indexes": active_indexes,
+            "status": status,
         }
 
         if project_name not in grouped:
