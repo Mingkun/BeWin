@@ -1243,6 +1243,10 @@ body.theme-ios-dark .backup-popover-text {
   display: none;
 }
 
+.roadmap-filter-collapsed .roadmap-filter-actions {
+  display: none;
+}
+
 .roadmap-filter-actions {
   display: flex;
   justify-content: flex-end;
