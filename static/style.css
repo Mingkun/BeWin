@@ -2138,6 +2138,25 @@ body.theme-ios-dark .feature-tags span {
   font-weight: 700;
 }
 
+.investment-sankey-node-link {
+  cursor: pointer;
+}
+
+.investment-sankey-node-link rect {
+  transition: filter 0.15s ease, stroke 0.15s ease, stroke-width 0.15s ease;
+}
+
+.investment-sankey-node-link:hover rect,
+.investment-sankey-node-link:focus rect {
+  filter: brightness(1.08);
+  stroke: #bfdbfe;
+  stroke-width: 2;
+}
+
+.investment-sankey-node-link:focus {
+  outline: none;
+}
+
 .investment-sankey-node-label {
   fill: #ffffff;
   font-size: 12px;

@@ -164,16 +164,19 @@ def build_investment_sankey(records):
 
     levels = []
     for level in range(3):
-        level_nodes = [
-            {
+        level_nodes = []
+        for (node_level, node_id, label), value in node_totals.items():
+            if node_level != level:
+                continue
+            node = {
                 'id': node_id,
                 'label': label,
                 'value': value,
                 'display_value': format_number(value),
             }
-            for (node_level, node_id, label), value in node_totals.items()
-            if node_level == level
-        ]
+            if level == 2 and label:
+                node['href'] = url_for('view_placeholder', view_key='department-pipeline-load', project_name=label)
+            level_nodes.append(node)
         level_nodes.sort(key=lambda item: (-item['value'], item['label']))
         levels.append(level_nodes)
 

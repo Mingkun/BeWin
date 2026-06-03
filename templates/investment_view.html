@@ -190,6 +190,21 @@
 
       Array.from(nodeMap.values()).forEach((node) => {
         const group = createSvg('g');
+        if (node.href) {
+          group.classList.add('investment-sankey-node-link');
+          group.setAttribute('tabindex', '0');
+          group.setAttribute('role', 'link');
+          group.setAttribute('aria-label', `查看项目：${node.label}`);
+          group.addEventListener('click', () => {
+            window.location.href = node.href;
+          });
+          group.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              window.location.href = node.href;
+            }
+          });
+        }
         const rect = createSvg('rect', {
           x: node.x,
           y: node.y,
@@ -199,7 +214,7 @@
           fill: colors[node.levelIndex],
         });
         const title = createSvg('title');
-        title.textContent = `${node.label}: ${node.display_value}`;
+        title.textContent = node.href ? `${node.label}: ${node.display_value}，点击查看项目` : `${node.label}: ${node.display_value}`;
         rect.appendChild(title);
         const label = createSvg('text', {
           x: node.x + 10,
