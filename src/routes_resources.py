@@ -368,7 +368,7 @@ def admin_resource_people_import_csv():
         return denied
     file = request.files.get('csv_file')
     if file and file.filename:
-        import_resource_people_csv_file(file, replace=True)
+        import_resource_people_csv_file(file, replace=False)
     return redirect(url_for('admin_resource_people'))
 
 
@@ -380,7 +380,7 @@ def admin_service_resources_import_csv():
         return denied
     file = request.files.get('csv_file')
     if file and file.filename:
-        import_service_resource_csv_file(file, replace=True)
+        import_service_resource_csv_file(file, replace=False)
     return redirect(url_for('view_placeholder', view_key='cloud-service-view'))
 
 

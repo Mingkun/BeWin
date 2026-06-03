@@ -205,7 +205,7 @@ def admin_projects_import_csv():
         return denied
     file = request.files.get('csv_file')
     if file and file.filename:
-        import_project_csv_file(file, replace=True)
+        import_project_csv_file(file, replace=False)
     return redirect(url_for('roadmap'))
 
 
@@ -236,6 +236,7 @@ def admin_projects_export_csv():
             row.get('project_category', ''),
             row.get('project_subcategory', ''),
             row.get('project_complexity', ''),
+            row.get('project_role', ''),
             row.get('project_manager', ''),
             row.get('planned_start_date', ''),
             row.get('planned_end_date', ''),
@@ -260,7 +261,7 @@ def admin_features_import_csv():
     if file and file.filename:
         raw = file.read()
         content = raw.decode('utf-8-sig') if isinstance(raw, bytes) else raw
-        save_feature_csv_content(content, replace=True)
+        save_feature_csv_content(content, replace=False)
     return redirect(url_for('roadmap'))
 
 

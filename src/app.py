@@ -1221,6 +1221,40 @@ def feature_row_to_db_tuple(row, project_id=None):
     )
 
 
+def find_existing_project(conn, row):
+    project_code = row["项目编码"]
+    project_name = row["项目名称"]
+    if project_code:
+        existing = conn.execute(
+            "SELECT id FROM projects WHERE project_code = ? ORDER BY id LIMIT 1",
+            (project_code,),
+        ).fetchone()
+        if existing:
+            return existing
+    if project_name:
+        return conn.execute(
+            "SELECT id FROM projects WHERE project_name = ? ORDER BY id LIMIT 1",
+            (project_name,),
+        ).fetchone()
+    return None
+
+
+def find_existing_feature(conn, row):
+    project_name = row["项目名称"]
+    feature_name = row["关键特性"]
+    department_name = row["五层部门"]
+    if not (project_name and feature_name):
+        return None
+    return conn.execute(
+        """
+        SELECT id FROM project_features
+        WHERE project_name = ? AND feature_name = ? AND COALESCE(five_level_department, '') = ?
+        ORDER BY id LIMIT 1
+        """,
+        (project_name, feature_name, department_name),
+    ).fetchone()
+
+
 def save_project_csv_content(content, replace=False):
     init_db()
     reader = csv.DictReader(StringIO(content))
@@ -1236,10 +1270,20 @@ def save_project_csv_content(content, replace=False):
     with get_conn() as conn:
         if replace:
             conn.execute("DELETE FROM projects")
-        conn.executemany(
-            f"INSERT INTO projects ({', '.join(sql_columns)}) VALUES ({placeholders})",
-            [project_row_to_db_tuple(row) for row in rows],
-        )
+        for row in rows:
+            existing = None if replace else find_existing_project(conn, row)
+            values = project_row_to_db_tuple(row)
+            if existing:
+                assignments = ", ".join([f"{column} = ?" for column in sql_columns])
+                conn.execute(
+                    f"UPDATE projects SET {assignments}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    [*values, existing['id']],
+                )
+            else:
+                conn.execute(
+                    f"INSERT INTO projects ({', '.join(sql_columns)}) VALUES ({placeholders})",
+                    values,
+                )
         conn.commit()
     return len(rows)
 
@@ -1258,10 +1302,23 @@ def save_feature_csv_content(content, replace=False):
         for row in rows:
             project_row = conn.execute("SELECT id FROM projects WHERE project_name = ? ORDER BY id LIMIT 1", (row["项目名称"],)).fetchone()
             project_id = project_row['id'] if project_row else None
-            conn.execute(
-                f"INSERT INTO project_features (project_id, project_name, five_level_department, focus_work, feature_name, service_group, delivery_pm, {feature_month_columns}) VALUES (?, ?, ?, ?, ?, ?, ?, {feature_month_placeholders})",
-                feature_row_to_db_tuple(row, project_id=project_id),
-            )
+            existing = None if replace else find_existing_feature(conn, row)
+            values = feature_row_to_db_tuple(row, project_id=project_id)
+            if existing:
+                update_columns = [
+                    "project_id", "project_name", "five_level_department", "focus_work", "feature_name", "service_group", "delivery_pm",
+                    *[f'"{month}"' for month in MILESTONE_COLUMNS],
+                ]
+                assignments = ", ".join([f"{column} = ?" for column in update_columns])
+                conn.execute(
+                    f"UPDATE project_features SET {assignments}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    [*values, existing['id']],
+                )
+            else:
+                conn.execute(
+                    f"INSERT INTO project_features (project_id, project_name, five_level_department, focus_work, feature_name, service_group, delivery_pm, {feature_month_columns}) VALUES (?, ?, ?, ?, ?, ?, ?, {feature_month_placeholders})",
+                    values,
+                )
         conn.commit()
     return len(rows)
 
@@ -2229,34 +2286,36 @@ def import_service_resource_rows(rows, replace=True):
     with get_conn() as conn:
         if replace:
             conn.execute("DELETE FROM service_resource_investment")
-        conn.executemany(
-            """
-            INSERT INTO service_resource_investment (
-                five_level_department,
-                l4_cloud_service,
-                function_description,
-                service_leader,
-                summary_self_owned,
-                summary_od,
-                summary_tm,
-                hc_self_owned,
-                hc_od,
-                hc_tm,
-                hcs_self_owned,
-                hcs_od,
-                hcs_tm
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                (
-                    row["five_level_department"], row["l4_cloud_service"], row["function_description"], row["service_leader"],
-                    row["summary_self_owned"], row["summary_od"], row["summary_tm"],
-                    row["hc_self_owned"], row["hc_od"], row["hc_tm"],
-                    row["hcs_self_owned"], row["hcs_od"], row["hcs_tm"],
+        columns = [
+            "five_level_department", "l4_cloud_service", "function_description", "service_leader",
+            "summary_self_owned", "summary_od", "summary_tm",
+            "hc_self_owned", "hc_od", "hc_tm",
+            "hcs_self_owned", "hcs_od", "hcs_tm",
+        ]
+        placeholders = ", ".join(["?"] * len(columns))
+        for row in rows:
+            values = [row[column] for column in columns]
+            existing = None
+            if not replace and row["five_level_department"] and row["l4_cloud_service"]:
+                existing = conn.execute(
+                    """
+                    SELECT id FROM service_resource_investment
+                    WHERE five_level_department = ? AND l4_cloud_service = ?
+                    ORDER BY id LIMIT 1
+                    """,
+                    (row["five_level_department"], row["l4_cloud_service"]),
+                ).fetchone()
+            if existing:
+                assignments = ", ".join([f"{column} = ?" for column in columns])
+                conn.execute(
+                    f"UPDATE service_resource_investment SET {assignments}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    [*values, existing['id']],
                 )
-                for row in rows
-            ],
-        )
+            else:
+                conn.execute(
+                    f"INSERT INTO service_resource_investment ({', '.join(columns)}) VALUES ({placeholders})",
+                    values,
+                )
         conn.commit()
     return len(rows)
 
@@ -2327,21 +2386,48 @@ def import_resource_people_csv_file(file_storage, replace=True):
     with get_conn() as conn:
         if replace:
             conn.execute('DELETE FROM resource_people')
-        conn.executemany(
-            """
-            INSERT INTO resource_people (
-                employee_id, employee_name, person_type, department_id, project_id,
-                allocation_ratio, role_name, status, remarks
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                (
-                    row['employee_id'], row['employee_name'], row['person_type'], row['department_id'], row['project_id'],
-                    row['allocation_ratio'], row['role_name'], row['status'], row['remarks'],
+        columns = [
+            'employee_id', 'employee_name', 'person_type', 'department_id', 'project_id',
+            'allocation_ratio', 'role_name', 'status', 'remarks',
+        ]
+        placeholders = ", ".join(["?"] * len(columns))
+        for row in normalized_rows:
+            values = [row[column] for column in columns]
+            existing = None
+            if not replace:
+                if row['employee_id']:
+                    existing = conn.execute(
+                        """
+                        SELECT id FROM resource_people
+                        WHERE employee_id = ?
+                          AND COALESCE(project_id, 0) = COALESCE(?, 0)
+                          AND COALESCE(department_id, 0) = COALESCE(?, 0)
+                        ORDER BY id LIMIT 1
+                        """,
+                        (row['employee_id'], row['project_id'], row['department_id']),
+                    ).fetchone()
+                elif row['employee_name']:
+                    existing = conn.execute(
+                        """
+                        SELECT id FROM resource_people
+                        WHERE employee_name = ?
+                          AND COALESCE(project_id, 0) = COALESCE(?, 0)
+                          AND COALESCE(department_id, 0) = COALESCE(?, 0)
+                        ORDER BY id LIMIT 1
+                        """,
+                        (row['employee_name'], row['project_id'], row['department_id']),
+                    ).fetchone()
+            if existing:
+                assignments = ", ".join([f"{column} = ?" for column in columns])
+                conn.execute(
+                    f"UPDATE resource_people SET {assignments}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    [*values, existing['id']],
                 )
-                for row in normalized_rows
-            ],
-        )
+            else:
+                conn.execute(
+                    f"INSERT INTO resource_people ({', '.join(columns)}) VALUES ({placeholders})",
+                    values,
+                )
         conn.commit()
     return len(normalized_rows)
 

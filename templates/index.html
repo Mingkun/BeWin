@@ -39,7 +39,7 @@
     <div class="card import-panel" id="project-import-panel" hidden {% if not user_features.import_export_data %}style="display:none !important;"{% endif %}>
       <form method="post" action="{{ url_for('admin_projects_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form">
         <div class="import-panel-title">导入关键特性路标图数据</div>
-        <div class="import-panel-desc">请选择关键特性 CSV 文件，导入后会覆盖当前关键特性数据。</div>
+        <div class="import-panel-desc">请选择 CSV 文件，项目按编码/名称匹配，关键特性按项目、部门和特性匹配；已有记录会更新，未匹配记录会新增。</div>
         <div class="import-panel-actions">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">确认导入</button>

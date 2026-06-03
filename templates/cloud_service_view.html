@@ -37,7 +37,7 @@
     <div class="card import-panel" id="service-import-panel" hidden {% if not user_features.import_export_data %}style="display:none !important;"{% endif %}>
       <form method="post" action="{{ url_for('admin_service_resources_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form">
         <div class="import-panel-title">导入云服务视图数据</div>
-        <div class="import-panel-desc">请选择云服务 CSV 文件，导入后会覆盖当前云服务数据。</div>
+        <div class="import-panel-desc">请选择云服务 CSV 文件，按五层部门和 L4 云服务匹配；已有记录会更新，未匹配记录会新增。</div>
         <div class="import-panel-actions">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">确认导入</button>

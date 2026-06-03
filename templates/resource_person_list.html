@@ -24,7 +24,7 @@
     <div class="card import-panel" id="resource-people-import-panel" hidden>
       <form method="post" action="{{ url_for('admin_resource_people_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form">
         <div class="import-panel-title">导入人员资源数据</div>
-        <div class="import-panel-desc">请选择 CSV 文件，导入后会覆盖当前人员资源库数据。</div>
+        <div class="import-panel-desc">请选择 CSV 文件，按工号/姓名、所属项目和部门匹配；已有记录会更新，未匹配记录会新增。</div>
         <div class="import-panel-actions">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">确认导入</button>
