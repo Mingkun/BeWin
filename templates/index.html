@@ -69,8 +69,15 @@
       {% endfor %}
     </section>
 
-    <form class="card filter-form roadmap-filter-form" method="get" action="{{ url_for('roadmap') }}">
-      <div class="form-grid form-grid-3 roadmap-filter-grid">
+    <form class="card filter-form roadmap-filter-form roadmap-filter-collapsed" method="get" action="{{ url_for('roadmap') }}" id="roadmap-filter-form">
+      <div class="roadmap-filter-header">
+        <div>
+          <div class="roadmap-filter-title">过滤条件</div>
+          <div class="roadmap-filter-subtitle">选择后自动生效，刷新后保留展开状态</div>
+        </div>
+        <button class="button secondary" type="button" id="roadmap-filter-toggle" aria-expanded="false">展开</button>
+      </div>
+      <div class="form-grid form-grid-3 roadmap-filter-grid" id="roadmap-filter-body">
         <label>项目
           <select name="project_name">
             <option value="">全部</option>
@@ -129,7 +136,6 @@
         </label>
         <div class="filter-actions roadmap-filter-actions">
           <div class="toolbar-actions">
-            <button class="button" type="submit">查询</button>
             <a class="button secondary" href="{{ url_for('roadmap') }}">重置</a>
           </div>
         </div>
@@ -257,6 +263,26 @@
     const importFile = document.getElementById('roadmap-import-file');
     const importPreviewButton = document.getElementById('roadmap-import-preview-button');
     const importPreview = document.getElementById('roadmap-import-preview');
+    const roadmapFilterForm = document.getElementById('roadmap-filter-form');
+    const roadmapFilterToggle = document.getElementById('roadmap-filter-toggle');
+    const roadmapFilterStateKey = 'bewin.roadmap.filter.expanded';
+    let roadmapKeywordTimer = null;
+
+    function readRoadmapFilterState() {
+      try {
+        return localStorage.getItem(roadmapFilterStateKey) === '1';
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function writeRoadmapFilterState(expanded) {
+      try {
+        localStorage.setItem(roadmapFilterStateKey, expanded ? '1' : '0');
+      } catch (error) {
+        // Ignore storage restrictions; the filter still works for this page view.
+      }
+    }
 
     if (showImportButton && importPanel) {
       showImportButton.addEventListener('click', () => {
@@ -303,6 +329,38 @@
           importPreview.textContent = '预检查失败，请确认文件格式。';
         }
       });
+    }
+
+    function setRoadmapFilterExpanded(expanded) {
+      if (!roadmapFilterForm || !roadmapFilterToggle) return;
+      roadmapFilterForm.classList.toggle('roadmap-filter-collapsed', !expanded);
+      roadmapFilterToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      roadmapFilterToggle.textContent = expanded ? '折叠' : '展开';
+      writeRoadmapFilterState(expanded);
+    }
+
+    if (roadmapFilterForm && roadmapFilterToggle) {
+      setRoadmapFilterExpanded(readRoadmapFilterState());
+      roadmapFilterToggle.addEventListener('click', () => {
+        const expanded = roadmapFilterToggle.getAttribute('aria-expanded') !== 'true';
+        setRoadmapFilterExpanded(expanded);
+      });
+
+      roadmapFilterForm.querySelectorAll('select').forEach((control) => {
+        control.addEventListener('change', () => {
+          roadmapFilterForm.requestSubmit();
+        });
+      });
+
+      const keywordInput = roadmapFilterForm.querySelector('input[name="keyword"]');
+      if (keywordInput) {
+        keywordInput.addEventListener('input', () => {
+          clearTimeout(roadmapKeywordTimer);
+          roadmapKeywordTimer = setTimeout(() => {
+            roadmapFilterForm.requestSubmit();
+          }, 500);
+        });
+      }
     }
 
     document.querySelectorAll('.feature-pin-toggle').forEach((button) => {

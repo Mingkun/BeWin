@@ -1214,8 +1214,33 @@ body.theme-ios-dark .backup-popover-text {
   margin-bottom: 14px;
 }
 
+.roadmap-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.roadmap-filter-title {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.roadmap-filter-subtitle {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
 .roadmap-filter-grid {
   align-items: end;
+  margin-top: 14px;
+}
+
+.roadmap-filter-collapsed .roadmap-filter-grid {
+  display: none;
 }
 
 .roadmap-filter-actions {
@@ -1251,6 +1276,14 @@ body.theme-ios-dark .roadmap-metric-card span {
 
 body.theme-ios-dark .roadmap-metric-card strong {
   color: #e5e7eb;
+}
+
+body.theme-ios-dark .roadmap-filter-title {
+  color: #e5e7eb;
+}
+
+body.theme-ios-dark .roadmap-filter-subtitle {
+  color: #94a3b8;
 }
 
 body.theme-ios-dark .import-preview-result {
