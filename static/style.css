@@ -3411,3 +3411,10 @@ a.resource-stack-seg:hover,
   width: 100%;
   box-sizing: border-box;
 }
+
+.service-allocation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
