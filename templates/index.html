@@ -144,113 +144,111 @@
 
     {% if has_active_filter %}
       <div class="resource-active-filter roadmap-active-filter">
-        <span>当前显示 {{ filtered_summary.feature_count }} 条关键特性 / {{ filtered_summary.project_count }} 个项目</span>
+        <span>当前显示 {{ filtered_summary.feature_count }} 条关键特性，涉及 {{ filtered_summary.project_count }} 个项目</span>
         <a href="{{ url_for('roadmap') }}">取消过滤</a>
       </div>
     {% endif %}
 
-    {% if project_groups %}
-      {% for project in project_groups %}
-        <section class="project-tab-panel">
-          <div class="roadmap-shell">
-            <div class="project-lane-card">
-              <div class="project-lane-title">
-                <h2>{{ project.project_name }}<span class="key-field-badge" title="导入关键字段">key</span></h2>
-                <div class="meta">项目经理：{{ project.project_manager or '未填写' }}，关键特性数：{{ project.features|length }}</div>
+    {% if roadmap_features %}
+      <section class="roadmap-shell">
+        <div class="project-lane-card feature-lane-card">
+          <div class="project-lane-title feature-lane-title">
+            <h2>全部关键特性</h2>
+            <div class="meta">共 {{ roadmap_features|length }} 条，项目作为关键特性的属性展示</div>
+          </div>
+
+          <div class="roadmap-header-grid">
+            <div class="roadmap-left-header">关键特性<span class="key-field-badge" title="导入关键字段">key</span></div>
+            <div class="roadmap-time-header">
+              <div class="quarter-row">
+                {% for quarter in quarters %}
+                  <div class="quarter-cell" style="width: {{ quarter.span / 12 * 100 }}%;">{{ quarter.name }}</div>
+                {% endfor %}
               </div>
-
-              <div class="roadmap-header-grid">
-                <div class="roadmap-left-header">关键特性<span class="key-field-badge" title="导入关键字段">key</span></div>
-                <div class="roadmap-time-header">
-                  <div class="quarter-row">
-                    {% for quarter in quarters %}
-                      <div class="quarter-cell" style="width: {{ quarter.span / 12 * 100 }}%;">{{ quarter.name }}</div>
-                    {% endfor %}
-                  </div>
-                  <div class="month-row">
-                    {% for month in month_labels %}
-                      <div class="month-cell-head">{{ month }}</div>
-                    {% endfor %}
-                  </div>
-                </div>
-              </div>
-
-              <div class="feature-lane-list" data-project-id="{{ project.project_id }}">
-                {% for feature in project.features %}
-                  <div class="feature-lane-row" data-feature-id="{{ feature.id }}">
-                    <div class="feature-info-panel">
-                      <div class="feature-info-head">
-                        <div class="feature-name">{{ feature.feature_name }}<span class="key-field-badge" title="导入关键字段">key</span><span class="roadmap-status-badge status-{{ feature.status.key }}">{{ feature.status.label }}</span></div>
-                        {% if user_features.manage_features %}
-                        <div style="display:flex; align-items:center; gap:8px;">
-                          <button type="button" class="feature-pin-toggle {% if feature.is_pinned %}active{% endif %}" data-project-id="{{ project.project_id }}" data-feature-id="{{ feature.id }}" data-pinned="{{ '1' if feature.is_pinned else '0' }}">置顶</button>
-                          <div class="milestone-card-actions menu-wrap">
-                            <button class="icon-action milestone-more-trigger" type="button" title="更多" aria-label="更多操作">⋯</button>
-                            <div class="milestone-card-menu">
-                              <div class="milestone-card-menu-row">
-                                <a class="milestone-card-menu-item" href="{{ url_for('admin_feature_edit', feature_id=feature.id) }}">编辑</a>
-                              </div>
-                              <form method="post" action="{{ url_for('admin_feature_delete', feature_id=feature.id) }}" class="inline-delete-form milestone-menu-delete-form">
-                                <div class="milestone-card-menu-row">
-                                  <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
-                                </div>
-                                <div class="delete-popover" hidden>
-                                  <span class="delete-popover-text">确认删除？</span>
-                                  <div class="delete-popover-actions">
-                                    <button class="button tiny danger" type="submit">删</button>
-                                    <button class="button tiny secondary delete-cancel" type="button">取消</button>
-                                  </div>
-                                </div>
-                              </form>
-                            </div>
-                          </div>
-                        </div>
-                        {% endif %}
-                      </div>
-                      <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
-                      <div class="feature-tags">
-                        <span>五层部门<span class="key-field-badge" title="导入关键字段">key</span>：{{ feature.five_level_department or '未填写' }}</span>
-                        <span>L4：{{ feature.service_group or '未填写' }}</span>
-                        <span>交付PM：{{ feature.delivery_pm or '未填写' }}</span>
-                        <span>周期：{{ feature.start_label }} ~ {{ feature.end_label }}</span>
-                      </div>
-                    </div>
-
-                    <div class="timeline-panel">
-                      <div class="timeline-grid-lines">
-                        {% for month in month_labels %}
-                          <div class="timeline-grid-col"></div>
-                        {% endfor %}
-                      </div>
-
-                      {% if feature.active_indexes %}
-                        <div class="timeline-bar" style="left: {{ feature.start_percent }}%; width: {{ feature.width_percent }}%;">
-                          <div class="timeline-bar-label">{{ feature.feature_name }}</div>
-                        </div>
-                        <div class="timeline-milestones">
-                          {% for idx in feature.active_indexes %}
-                            <div class="timeline-milestone" style="left: {{ (idx + 0.5) / 12 * 100 }}%;">
-                              <span class="timeline-milestone-text">{{ feature.month_values[idx] }}</span>
-                              <div class="timeline-milestone-tooltip">{{ feature.month_values[idx] }}</div>
-                            </div>
-                          {% endfor %}
-                        </div>
-                      {% else %}
-                        <div class="timeline-empty">未排期</div>
-                      {% endif %}
-                    </div>
-                  </div>
+              <div class="month-row">
+                {% for month in month_labels %}
+                  <div class="month-cell-head">{{ month }}</div>
                 {% endfor %}
               </div>
             </div>
           </div>
-        </section>
-      {% endfor %}
+
+          <div class="feature-lane-list">
+            {% for feature in roadmap_features %}
+              <div class="feature-lane-row" data-feature-id="{{ feature.id }}">
+                <div class="feature-info-panel">
+                  <div class="feature-info-head">
+                    <div class="feature-name">{{ feature.feature_name }}<span class="key-field-badge" title="导入关键字段">key</span><span class="roadmap-status-badge status-{{ feature.status.key }}">{{ feature.status.label }}</span></div>
+                    {% if user_features.manage_features %}
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <button type="button" class="feature-pin-toggle {% if feature.is_pinned %}active{% endif %}" data-project-id="{{ feature.project_id }}" data-feature-id="{{ feature.id }}" data-pinned="{{ '1' if feature.is_pinned else '0' }}">置顶</button>
+                      <div class="milestone-card-actions menu-wrap">
+                        <button class="icon-action milestone-more-trigger" type="button" title="更多" aria-label="更多操作">⋯</button>
+                        <div class="milestone-card-menu">
+                          <div class="milestone-card-menu-row">
+                            <a class="milestone-card-menu-item" href="{{ url_for('admin_feature_edit', feature_id=feature.id) }}">编辑</a>
+                          </div>
+                          <form method="post" action="{{ url_for('admin_feature_delete', feature_id=feature.id) }}" class="inline-delete-form milestone-menu-delete-form">
+                            <div class="milestone-card-menu-row">
+                              <button class="milestone-card-menu-item danger delete-trigger" type="button">删除</button>
+                            </div>
+                            <div class="delete-popover" hidden>
+                              <span class="delete-popover-text">确认删除？</span>
+                              <div class="delete-popover-actions">
+                                <button class="button tiny danger" type="submit">删</button>
+                                <button class="button tiny secondary delete-cancel" type="button">取消</button>
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %}
+                  </div>
+                  <div class="feature-desc">{{ feature.focus_work or '未填写重点工作' }}</div>
+                  <div class="feature-tags">
+                    <span>项目：{{ feature.project_name or '未填写' }}</span>
+                    <span>项目经理：{{ feature.project_manager or '未填写' }}</span>
+                    <span>五层部门<span class="key-field-badge" title="导入关键字段">key</span>：{{ feature.five_level_department or '未填写' }}</span>
+                    <span>L4：{{ feature.service_group or '未填写' }}</span>
+                    <span>交付PM：{{ feature.delivery_pm or '未填写' }}</span>
+                    <span>周期：{{ feature.start_label }} ~ {{ feature.end_label }}</span>
+                  </div>
+                </div>
+
+                <div class="timeline-panel">
+                  <div class="timeline-grid-lines">
+                    {% for month in month_labels %}
+                      <div class="timeline-grid-col"></div>
+                    {% endfor %}
+                  </div>
+
+                  {% if feature.active_indexes %}
+                    <div class="timeline-bar" style="left: {{ feature.start_percent }}%; width: {{ feature.width_percent }}%;">
+                      <div class="timeline-bar-label">{{ feature.feature_name }}</div>
+                    </div>
+                    <div class="timeline-milestones">
+                      {% for idx in feature.active_indexes %}
+                        <div class="timeline-milestone" style="left: {{ (idx + 0.5) / 12 * 100 }}%;">
+                          <span class="timeline-milestone-text">{{ feature.month_values[idx] }}</span>
+                          <div class="timeline-milestone-tooltip">{{ feature.month_values[idx] }}</div>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <div class="timeline-empty">未排期</div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
     {% else %}
       {% if has_active_filter %}
         <div class="empty">当前没有匹配的关键特性数据。</div>
       {% else %}
-        <div class="empty">当前还没有项目数据，请先初始化数据库中的项目数据。</div>
+        <div class="empty">当前还没有关键特性数据，请先初始化数据库中的关键特性数据。</div>
       {% endif %}
     {% endif %}
   </div>

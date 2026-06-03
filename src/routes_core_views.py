@@ -9,7 +9,7 @@ from src.app import (
     app,
     build_auth_context,
     build_project_gantt,
-    build_project_roadmap,
+    build_roadmap_feature_list,
     can_access,
     get_branding,
     get_current_user,
@@ -296,12 +296,15 @@ def roadmap():
     filtered_features = sort_roadmap_features(filtered_features, filters.get('sort_by'))
     current_user = get_current_user() or {}
     user_feature_orders = load_user_feature_orders(current_user.get('user_id'))
-    project_groups = build_project_roadmap(project_rows, filtered_features, user_feature_orders)
-    if has_roadmap_filters(filters):
-        project_groups = [project for project in project_groups if project.get('features')]
+    roadmap_features = build_roadmap_feature_list(
+        project_rows,
+        filtered_features,
+        user_feature_orders,
+        filters.get('sort_by'),
+    )
     return render_template(
         'index.html',
-        project_groups=project_groups,
+        roadmap_features=roadmap_features,
         roadmap_summary=build_roadmap_summary(project_rows, feature_rows),
         filtered_summary=build_roadmap_summary(project_rows, filtered_features),
         filters=filters,

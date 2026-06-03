@@ -1292,54 +1292,6 @@ body.theme-ios-dark .import-preview-result {
   color: #bfdbfe;
 }
 
-.project-tab-bar {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
-}
-
-.project-tab-button {
-  border: 0;
-  background: #dbeafe;
-  color: #1d4ed8;
-  padding: 10px 12px;
-  width: 19em;
-  min-width: 19em;
-  max-width: 19em;
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  text-align: center;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.project-tab-button-text {
-  display: block;
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  text-align: center;
-}
-
-.project-tab-button.active {
-  background: #2563eb;
-  color: #fff;
-}
-
-.project-tab-panel {
-  display: block;
-  margin-bottom: 18px;
-}
-
-.project-tab-panel:last-of-type {
-  margin-bottom: 0;
-}
-
 .roadmap-header-grid {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -1521,10 +1473,6 @@ body.theme-ios-dark .import-preview-result {
 
 .roadmap-status-badge.status-unscheduled {
   background: #f97316;
-}
-
-.roadmap-density-compact .project-tab-bar {
-  margin-bottom: 12px;
 }
 
 .roadmap-density-compact .project-lane-card {

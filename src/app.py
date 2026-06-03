@@ -2160,6 +2160,79 @@ def build_project_roadmap(project_rows, feature_rows, user_feature_orders=None):
     )
 
 
+def build_roadmap_feature_list(project_rows, feature_rows, user_feature_orders=None, sort_by=None):
+    user_feature_orders = user_feature_orders or {}
+    project_by_id = {}
+    project_by_name = {}
+    for row in project_rows:
+        project_name = (row.get("project_name") or "").strip() or "未命名项目"
+        project_info = {
+            "project_id": row.get("id"),
+            "project_name": project_name,
+            "project_manager": (row.get("project_manager") or "").strip(),
+            "project_code": (row.get("project_code") or "").strip(),
+        }
+        project_by_id[row.get("id")] = project_info
+        project_by_name[project_name] = project_info
+
+    features = []
+    for row in feature_rows:
+        project_name = (row.get("project_name") or "").strip() or "未命名项目"
+        project_info = project_by_id.get(row.get("project_id")) or project_by_name.get(project_name) or {
+            "project_id": row.get("project_id"),
+            "project_name": project_name,
+            "project_manager": "",
+            "project_code": "",
+        }
+        feature_name = (row.get("feature_name") or "").strip() or "未命名关键特性"
+        active_indexes = [i for i, month in enumerate(MILESTONE_COLUMNS) if (row.get(month) or "").strip()]
+        month_values = [(row.get(month) or "").strip() for month in MILESTONE_COLUMNS]
+
+        if active_indexes:
+            start_index = active_indexes[0]
+            end_index = active_indexes[-1]
+            start_percent = start_index / 12 * 100
+            width_percent = (end_index - start_index + 1) / 12 * 100
+        else:
+            start_index = None
+            end_index = None
+            start_percent = 0
+            width_percent = 0
+
+        feature_order = user_feature_orders.get((row.get("project_id"), row.get("id")))
+        is_pinned = feature_order is not None and feature_order <= 0
+        features.append({
+            "id": row.get("id"),
+            "project_id": project_info.get("project_id"),
+            "project_name": project_info.get("project_name") or project_name,
+            "project_manager": project_info.get("project_manager") or "",
+            "project_code": project_info.get("project_code") or "",
+            "sort_index": feature_order if feature_order is not None else 10**9,
+            "base_index": row.get("__roadmap_order") if row.get("__roadmap_order") is not None else (row.get("id") or 10**9),
+            "is_pinned": is_pinned,
+            "five_level_department": (row.get("five_level_department") or "").strip(),
+            "feature_name": feature_name,
+            "focus_work": (row.get("focus_work") or "").strip(),
+            "service_group": (row.get("service_group") or "").strip(),
+            "delivery_pm": (row.get("delivery_pm") or "").strip(),
+            "start_label": MONTH_LABELS[start_index] if start_index is not None else "-",
+            "end_label": MONTH_LABELS[end_index] if end_index is not None else "-",
+            "start_percent": start_percent,
+            "width_percent": width_percent,
+            "month_values": month_values,
+            "active_indexes": active_indexes,
+            "status": get_roadmap_feature_status(active_indexes, row),
+        })
+
+    if not sort_by or sort_by == "manual":
+        features.sort(key=lambda item: (
+            0 if item.get("is_pinned") else 1,
+            item.get("sort_index", 10**9) if item.get("is_pinned") else item.get("base_index", 10**9),
+            item.get("project_name") or "",
+        ))
+    return features
+
+
 def form_to_project_data(form):
     data = {
         "project_status": (form.get("project_status") or "").strip(),
