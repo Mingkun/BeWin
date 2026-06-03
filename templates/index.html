@@ -210,11 +210,8 @@
                     </div>
                     {% endif %}
                   </div>
-                  <div class="feature-desc">
-                    <span class="feature-desc-label">重点</span>
-                    <span>{{ feature.focus_work or '未填写重点工作' }}</span>
-                  </div>
                   <div class="feature-tags">
+                    <span>重点工作：{{ feature.focus_work or '未填写' }}</span>
                     <span>项目经理：{{ feature.project_manager or '未填写' }}</span>
                     <span>交付PM：{{ feature.delivery_pm or '未填写' }}</span>
                     {% if feature.service_group %}
