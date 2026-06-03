@@ -259,10 +259,10 @@ def build_roadmap_summary(project_rows, feature_rows):
         'metrics': [
             {'label': '项目数', 'value': len(project_names) or len(project_rows), 'href': url_for('roadmap')},
             {'label': '关键特性', 'value': len(feature_rows), 'href': url_for('roadmap')},
-            {'label': '进行中', 'value': status_counts['in_progress'], 'href': url_for('roadmap', status='in_progress')},
-            {'label': '本月到期', 'value': status_counts['due_this_month'], 'href': url_for('roadmap', status='due_this_month')},
-            {'label': '风险', 'value': status_counts['risk'], 'href': url_for('roadmap', status='risk')},
-            {'label': '未排期', 'value': status_counts['unscheduled'], 'href': url_for('roadmap', status='unscheduled')},
+            {'label': '进行中', 'value': status_counts['in_progress'], 'href': url_for('roadmap', status='in_progress'), 'status': 'in_progress'},
+            {'label': '本月到期', 'value': status_counts['due_this_month'], 'href': url_for('roadmap', status='due_this_month'), 'status': 'due_this_month'},
+            {'label': '风险', 'value': status_counts['risk'], 'href': url_for('roadmap', status='risk'), 'status': 'risk'},
+            {'label': '未排期', 'value': status_counts['unscheduled'], 'href': url_for('roadmap', status='unscheduled'), 'status': 'unscheduled'},
         ],
     }
 

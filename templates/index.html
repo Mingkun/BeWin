@@ -69,7 +69,7 @@
 
     <section class="roadmap-overview-grid">
       {% for metric in roadmap_summary.metrics %}
-        <a class="card roadmap-metric-card" href="{{ metric.href }}">
+        <a class="card roadmap-metric-card {% if metric.status and filters.status == metric.status %}active{% endif %}" href="{{ metric.href }}">
           <span>{{ metric.label }}</span>
           <strong>{{ metric.value }}</strong>
         </a>
