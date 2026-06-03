@@ -1299,11 +1299,12 @@ body.theme-ios-dark .import-preview-result {
 }
 
 .project-tab-panel {
-  display: none;
+  display: block;
+  margin-bottom: 18px;
 }
 
-.project-tab-panel.active {
-  display: block;
+.project-tab-panel:last-of-type {
+  margin-bottom: 0;
 }
 
 .roadmap-header-grid {

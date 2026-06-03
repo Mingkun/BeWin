@@ -144,16 +144,8 @@
     {% endif %}
 
     {% if project_groups %}
-      <div class="project-tab-bar">
-        {% for project in project_groups %}
-          <button class="project-tab-button {% if loop.first %}active{% endif %}" data-tab-target="tab-{{ loop.index0 }}" title="{{ project.project_name }}">
-            <span class="project-tab-button-text">{{ project.project_name }}</span>
-          </button>
-        {% endfor %}
-      </div>
-
       {% for project in project_groups %}
-        <section class="project-tab-panel {% if loop.first %}active{% endif %}" id="tab-{{ loop.index0 }}">
+        <section class="project-tab-panel">
           <div class="roadmap-shell">
             <div class="project-lane-card">
               <div class="project-lane-title">
@@ -312,17 +304,6 @@
         }
       });
     }
-
-    document.querySelectorAll('.project-tab-button').forEach((button) => {
-      button.addEventListener('click', () => {
-        const target = button.getAttribute('data-tab-target');
-        document.querySelectorAll('.project-tab-button').forEach((b) => b.classList.remove('active'));
-        document.querySelectorAll('.project-tab-panel').forEach((p) => p.classList.remove('active'));
-        button.classList.add('active');
-        const panel = document.getElementById(target);
-        if (panel) panel.classList.add('active');
-      });
-    });
 
     document.querySelectorAll('.feature-pin-toggle').forEach((button) => {
       button.addEventListener('click', async () => {
