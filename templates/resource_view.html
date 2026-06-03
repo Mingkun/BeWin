@@ -54,50 +54,55 @@
       <div class="card stat-card"><div class="stat-label">已投入到项目占比</div><div class="stat-value">{{ '%.2f%%'|format(summary.project_bound_ratio * 100) }}</div></div>
     </div>
 
-    <details class="card" style="margin-top:16px;" id="resource-filter-panel">
-      <summary style="cursor:pointer; font-size:16px; font-weight:700;">查询过滤条件</summary>
-      <form class="filter-form" method="get" action="{{ url_for('view_placeholder', view_key='project-budget-resource') }}" style="margin-top:16px;">
-        {% if filters.quick_filter %}
-        <input type="hidden" name="quick_filter" value="{{ filters.quick_filter }}">
-        {% endif %}
-        {% if filters.status_filter %}
-        <input type="hidden" name="status_filter" value="{{ filters.status_filter }}">
-        {% endif %}
-        <div class="form-grid form-grid-2">
-          <label>人员类型
-            <select name="person_type">
-              <option value="">全部</option>
-              {% for item in filter_options.person_types %}
-              <option value="{{ item }}" {% if filters.person_type == item %}selected{% endif %}>{{ item }}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <label>部门
-            <select name="department_name">
-              <option value="">全部</option>
-              {% for item in filter_options.departments %}
-              <option value="{{ item }}" {% if filters.department_name == item %}selected{% endif %}>{{ item }}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <label>所属项目
-            <select name="project_name">
-              <option value="">全部</option>
-              {% for item in filter_options.projects %}
-              <option value="{{ item }}" {% if filters.project_name == item %}selected{% endif %}>{{ item }}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <label>工号 / 姓名
-            <input type="text" name="keyword" value="{{ filters.keyword or '' }}" placeholder="输入工号或姓名关键词">
-          </label>
+    <form class="card filter-form roadmap-filter-form roadmap-filter-collapsed" method="get" action="{{ url_for('view_placeholder', view_key='project-budget-resource') }}" id="resource-filter-form" style="margin-top:16px;">
+      <div class="roadmap-filter-header">
+        <div>
+          <div class="roadmap-filter-title">过滤条件</div>
+          <div class="roadmap-filter-subtitle">选择后自动生效，刷新后保留展开状态</div>
         </div>
-        <div class="form-actions resource-filter-actions" style="margin-top:12px;">
-          <button class="button" type="submit">查询</button>
+        <button class="button secondary" type="button" id="resource-filter-toggle" aria-expanded="false">展开</button>
+      </div>
+      {% if filters.quick_filter %}
+      <input type="hidden" name="quick_filter" value="{{ filters.quick_filter }}">
+      {% endif %}
+      {% if filters.status_filter %}
+      <input type="hidden" name="status_filter" value="{{ filters.status_filter }}">
+      {% endif %}
+      <div class="form-grid form-grid-2 roadmap-filter-grid" id="resource-filter-body">
+        <label>人员类型
+          <select name="person_type">
+            <option value="">全部</option>
+            {% for item in filter_options.person_types %}
+            <option value="{{ item }}" {% if filters.person_type == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>部门
+          <select name="department_name">
+            <option value="">全部</option>
+            {% for item in filter_options.departments %}
+            <option value="{{ item }}" {% if filters.department_name == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>所属项目
+          <select name="project_name">
+            <option value="">全部</option>
+            {% for item in filter_options.projects %}
+            <option value="{{ item }}" {% if filters.project_name == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>工号 / 姓名
+          <input type="text" name="keyword" value="{{ filters.keyword or '' }}" placeholder="输入工号或姓名关键词">
+        </label>
+      </div>
+      <div class="filter-actions roadmap-filter-actions">
+        <div class="toolbar-actions">
           <a class="button secondary" href="{{ url_for('view_placeholder', view_key='project-budget-resource') }}">重置</a>
         </div>
-      </form>
-    </details>
+      </div>
+    </form>
 
     {% if department_summary or status_summary.status_items %}
     <div class="resource-visual-grid">
@@ -266,6 +271,54 @@
   </div>
   <script>
     (function () {
+      const resourceFilterForm = document.getElementById('resource-filter-form');
+      const resourceFilterToggle = document.getElementById('resource-filter-toggle');
+      const resourceFilterStateKey = 'bewin.resource.filter.expanded';
+      let resourceKeywordTimer = null;
+
+      function setResourceFilterExpanded(expanded, persist) {
+        if (!resourceFilterForm) return;
+        resourceFilterForm.classList.toggle('roadmap-filter-collapsed', !expanded);
+        if (resourceFilterToggle) {
+          resourceFilterToggle.textContent = expanded ? '收起' : '展开';
+          resourceFilterToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+        if (persist) {
+          try {
+            localStorage.setItem(resourceFilterStateKey, expanded ? '1' : '0');
+          } catch (error) {
+            // Ignore storage restrictions; the filter still works for this page view.
+          }
+        }
+      }
+
+      if (resourceFilterForm) {
+        let savedExpanded = false;
+        try {
+          savedExpanded = localStorage.getItem(resourceFilterStateKey) === '1';
+        } catch (error) {
+          savedExpanded = false;
+        }
+        setResourceFilterExpanded(savedExpanded, false);
+
+        resourceFilterForm.querySelectorAll('select').forEach((select) => {
+          select.addEventListener('change', () => resourceFilterForm.requestSubmit());
+        });
+        resourceFilterForm.querySelectorAll('input[type="text"]').forEach((input) => {
+          input.addEventListener('input', () => {
+            clearTimeout(resourceKeywordTimer);
+            resourceKeywordTimer = setTimeout(() => resourceFilterForm.requestSubmit(), 500);
+          });
+        });
+      }
+
+      if (resourceFilterToggle) {
+        resourceFilterToggle.addEventListener('click', () => {
+          const isExpanded = resourceFilterToggle.getAttribute('aria-expanded') === 'true';
+          setResourceFilterExpanded(!isExpanded, true);
+        });
+      }
+
       function enableSummarySort(tableId) {
         const table = document.getElementById(tableId);
         if (!table) return;
