@@ -263,10 +263,11 @@
 
       <script>
         (function () {
+          const form = document.getElementById('service-allocation-form');
           const table = document.getElementById('service-allocation-table');
           const addButton = document.getElementById('allocation-add');
           const total = document.getElementById('allocation-total');
-          if (!table || !addButton || !total) return;
+          if (!form || !table || !addButton || !total) return;
           const tbody = table.querySelector('tbody');
 
           function parseRatio(value) {
@@ -282,9 +283,13 @@
             return `${Number.isInteger(percent) ? percent.toFixed(0) : String(percent).replace(/0+$/, '').replace(/\.$/, '')}%`;
           }
 
-          function updateTotal() {
-            const value = Array.from(tbody.querySelectorAll('.allocation-ratio-input'))
+          function currentTotalRatio() {
+            return Array.from(tbody.querySelectorAll('.allocation-ratio-input'))
               .reduce((sum, input) => sum + parseRatio(input.value), 0);
+          }
+
+          function updateTotal() {
+            const value = currentTotalRatio();
             const hasRows = Array.from(tbody.querySelectorAll('tr')).some((row) => {
               return Array.from(row.querySelectorAll('input')).some((input) => input.value.trim());
             });
@@ -321,6 +326,13 @@
             tbody.appendChild(row);
             bindRow(row);
             updateTotal();
+          });
+          form.addEventListener('submit', (event) => {
+            const value = currentTotalRatio();
+            if (value > 1.0001) {
+              event.preventDefault();
+              alert(`L4 云服务投入百分比合计必须小于等于 100%，当前为 ${formatPercent(value)}，请返回修改`);
+            }
           });
           updateTotal();
         })();
