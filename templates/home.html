@@ -40,7 +40,7 @@
     </header>
 
     <form class="card home-global-filter-card" method="post" action="{{ url_for('update_global_smallest_department_filter') }}">
-      <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+      <input type="hidden" name="next" value="{{ url_for('index') }}">
       <div>
         <div class="home-global-filter-title">全局最小部门过滤</div>
         <div class="home-global-filter-note">选择后，项目、关键特性、资源、投资和云服务视图会按该最小部门过滤。</div>

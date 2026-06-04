@@ -320,6 +320,8 @@ def index():
 def update_global_smallest_department_filter():
     set_global_smallest_department_filter(request.form.get('smallest_department'))
     next_url = (request.form.get('next') or '').strip()
+    if next_url == '/' and request.script_root:
+        next_url = url_for('index')
     if not next_url or not next_url.startswith('/') or next_url.startswith('//'):
         next_url = url_for('index')
     return redirect(next_url)
