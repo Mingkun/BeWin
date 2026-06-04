@@ -120,43 +120,6 @@ header p {
   line-height: 1.5;
 }
 
-.home-global-filter-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px) auto;
-  align-items: end;
-  gap: 12px;
-  margin-bottom: 14px;
-  border-color: #fecaca;
-  background: #fff1f2;
-}
-
-.home-global-filter-title {
-  color: #7f1d1d;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.home-global-filter-note {
-  margin-top: 4px;
-  color: #991b1b;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.home-global-filter-control {
-  display: grid;
-  gap: 5px;
-  color: #7f1d1d;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.home-global-filter-control select {
-  min-height: 38px;
-  border-color: #fca5a5;
-  background: #ffffff;
-}
-
 .home-metric-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -592,10 +555,6 @@ body.theme-ios-dark .login-flash {
 }
 
 @media (max-width: 760px) {
-  .home-global-filter-card {
-    grid-template-columns: 1fr;
-  }
-
   .login-page {
     align-items: flex-start;
     padding: 20px;
@@ -645,7 +604,69 @@ body.theme-ios-dark .login-flash {
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: flex-end;
   overflow: visible;
+}
+
+.toolbar-global-filter {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.toolbar-global-filter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.toolbar-global-filter select {
+  width: 180px;
+  min-height: 32px;
+  padding: 5px 28px 5px 9px;
+  border: 1px solid #dbe3ee;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+}
+
+.toolbar-global-filter-clear {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 0;
+}
+
+.toolbar-global-filter-clear:hover {
+  color: #1d4ed8;
+}
+
+@media (max-width: 760px) {
+  .toolbar-global-filter {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .toolbar-global-filter label {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .toolbar-global-filter select {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
 }
 
 .button {

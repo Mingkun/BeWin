@@ -29,6 +29,7 @@
         {% else %}
           <a class="button secondary" href="{{ url_for('login_entry', next=request.path) }}">登录</a>
         {% endif %}
+        {% include '_global_department_filter.html' %}
       </div>
     </header>
 

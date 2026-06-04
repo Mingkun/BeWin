@@ -20,6 +20,7 @@
         {% if user_features.manage_service_resources %}
         <a class="button secondary" href="{{ url_for('data_management_page') }}#flow-project-resource">数据管理</a>
         {% endif %}
+        {% include '_global_department_filter.html' %}
       </div>
     </header>
 

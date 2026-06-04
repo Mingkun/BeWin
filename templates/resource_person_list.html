@@ -17,6 +17,7 @@
         <a class="button home-button" href="{{ url_for('index') }}">首页</a>
         <a class="button secondary" href="{{ url_for('data_management_page') }}#flow-project-resource">数据管理</a>
         <a class="button" href="{{ url_for('admin_resource_person_new') }}">新增人员</a>
+        {% include '_global_department_filter.html' %}
       </div>
     </header>
 
