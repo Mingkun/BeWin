@@ -333,11 +333,13 @@ def resource_people_service_allocations():
         return denied
     service_name = (request.args.get('service') or '').strip()
     records = load_person_service_allocations_for_service(service_name)
+    first_person_id = next((row.get('person_id') for row in records if row.get('person_id')), None)
     total_ratio = sum(parse_ratio_value(row.get('allocation_ratio')) for row in records)
     return render_template(
         'resource_service_allocation_people.html',
         service_name=service_name,
         records=records,
+        first_person_id=first_person_id,
         total_ratio_text=format_ratio_percent(total_ratio),
         **build_auth_context(),
     )
