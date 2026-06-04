@@ -102,7 +102,7 @@
 
             function filterPeople() {
               const keyword = normalize(keywordInput.value);
-              let visibleCount = 0;
+              const matchedOptions = [];
               Array.from(personSelect.options).forEach((option, index) => {
                 if (index === 0) {
                   option.hidden = false;
@@ -110,12 +110,14 @@
                 }
                 const matched = !keyword || normalize(option.dataset.search).includes(keyword);
                 option.hidden = !matched;
-                if (matched) visibleCount += 1;
+                if (matched) matchedOptions.push(option);
               });
-              if (personSelect.selectedOptions.length && personSelect.selectedOptions[0].hidden) {
+              if (matchedOptions.length === 1) {
+                personSelect.value = matchedOptions[0].value;
+              } else if (personSelect.selectedOptions.length && personSelect.selectedOptions[0].hidden) {
                 personSelect.value = '';
               }
-              emptyHint.hidden = visibleCount !== 0;
+              emptyHint.hidden = matchedOptions.length !== 0;
             }
 
             keywordInput.addEventListener('input', filterPeople);
