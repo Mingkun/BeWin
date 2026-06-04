@@ -3160,15 +3160,15 @@ a.resource-stack-seg:hover,
   gap: 12px;
   margin: 0 0 16px;
   padding: 10px 14px;
-  border: 1px solid #bfdbfe;
+  border: 1px solid #fca5a5;
   border-radius: 8px;
-  background: #eff6ff;
-  color: #1e3a8a;
+  background: #fee2e2;
+  color: #7f1d1d;
   font-size: 13px;
 }
 
 .resource-active-filter a {
-  color: #2563eb;
+  color: #991b1b;
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
