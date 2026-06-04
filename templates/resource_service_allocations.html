@@ -12,10 +12,10 @@
       <div>
         {% if allocation_view_mode == 'service' %}
         <h1>云服务人员分配</h1>
-        <p>L4云服务：{{ service_name or '未指定' }}</p>
+        <p>L4云服务：<span class="service-allocation-focus-text">{{ service_name or '未指定' }}</span></p>
         {% else %}
         <h1>L4云服务分配</h1>
-        <p>{{ record.employee_name or '未填写姓名' }}{% if record.employee_id %} / {{ record.employee_id }}{% endif %} · 最小部门：{{ record.smallest_department_name or '未填写' }}{% if focused_service %} · 来源服务：{{ focused_service }}{% endif %}</p>
+        <p><span class="service-allocation-focus-text">{{ record.employee_name or '未填写姓名' }}{% if record.employee_id %} / {{ record.employee_id }}{% endif %}</span> · 最小部门：{{ record.smallest_department_name or '未填写' }}{% if focused_service %} · 来源服务：{{ focused_service }}{% endif %}</p>
         {% endif %}
       </div>
       <div class="toolbar-actions">

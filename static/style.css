@@ -3394,6 +3394,19 @@ a.resource-stack-seg:hover,
   color: #92400e;
 }
 
+.service-allocation-focus-text {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 3px 7px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .service-allocation-editor-card {
   display: grid;
   gap: 16px;
