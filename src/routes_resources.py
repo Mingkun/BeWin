@@ -39,6 +39,13 @@ from src.app import (
 )
 
 
+def format_ratio_people_count(value):
+    count = round(value or 0.0, 2)
+    if float(count).is_integer():
+        return str(int(count))
+    return f"{count:.2f}".rstrip('0').rstrip('.')
+
+
 @app.route('/admin/service-resources')
 @login_required
 def admin_service_resources():
@@ -361,6 +368,7 @@ def resource_people_service_allocations():
         first_person_id=first_person_id,
         people_options=people_options,
         total_ratio_text=format_ratio_percent(total_ratio),
+        total_ratio_people_text=format_ratio_people_count(total_ratio),
         **build_auth_context(),
     )
 
