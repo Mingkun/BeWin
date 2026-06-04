@@ -49,7 +49,7 @@
     <div class="card import-panel" id="resource-service-allocation-import-panel" hidden>
       <form method="post" action="{{ url_for('admin_resource_person_service_allocations_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form import-panel-form">
         <div class="import-panel-title">导入人员 L4 云服务分配</div>
-        <div class="import-panel-desc">请选择 CSV 文件，按工号/姓名、最小部门和 L4 云服务匹配；同一人员同一最小部门下的投入百分比合计必须为 100%。</div>
+        <div class="import-panel-desc">请选择 CSV 文件，按工号/姓名、最小部门和 L4 云服务匹配；同一人员同一最小部门下的投入百分比合计必须小于等于 100%。</div>
         <div class="import-panel-actions">
           <input type="file" name="csv_file" accept=".csv" required>
           <button class="button warning" type="submit">确认导入</button>

@@ -333,7 +333,7 @@ def admin_resource_person_service_allocations(record_id):
         service_options=service_options,
         focused_service=source_service,
         total_ratio_text=format_ratio_percent(total_ratio),
-        total_ratio_complete=bool(allocations) and abs(total_ratio - 1.0) < 0.0001,
+        total_ratio_complete=bool(allocations) and total_ratio <= 1.0 + 0.0001,
         **build_auth_context(),
     )
 

@@ -1777,7 +1777,7 @@ def load_resource_people():
             item['service_allocation_total_ratio'] = total
             item['service_allocation_total_text'] = format_ratio_percent(total)
             item['service_allocation_label'] = f"{count} 个服务 / {format_ratio_percent(total)}" if count else "未分配"
-            item['service_allocation_complete'] = bool(count) and abs(total - 1.0) < 0.0001
+            item['service_allocation_complete'] = bool(count) and total <= 1.0 + 0.0001
         return result
 
 
@@ -1989,8 +1989,8 @@ def save_person_service_allocations(person, allocation_rows):
             'allocation_ratio': ratio_text,
             'remarks': remarks,
         })
-    if normalized_rows and abs(total_ratio - 1.0) > 0.0001:
-        raise ValueError(f'L4 云服务投入百分比合计必须为 100%，当前为 {format_ratio_percent(total_ratio)}')
+    if normalized_rows and total_ratio > 1.0 + 0.0001:
+        raise ValueError(f'L4 云服务投入百分比合计必须小于等于 100%，当前为 {format_ratio_percent(total_ratio)}，请返回修改')
     with get_conn() as conn:
         if employee_id:
             conn.execute(
@@ -2098,8 +2098,8 @@ def import_person_service_allocation_csv_file(file_storage, replace=True):
             conn.execute('DELETE FROM person_service_allocations')
         for key, group_rows in grouped.items():
             total_ratio = sum(parse_ratio_value(row.get('allocation_ratio')) for row in group_rows)
-            if abs(total_ratio - 1.0) > 0.0001:
-                raise ValueError(f'{key[1]} / {key[2] or "未填写最小部门"} 的 L4 投入合计必须为 100%，当前为 {format_ratio_percent(total_ratio)}')
+            if total_ratio > 1.0 + 0.0001:
+                raise ValueError(f'{key[1]} / {key[2] or "未填写最小部门"} 的 L4 投入合计必须小于等于 100%，当前为 {format_ratio_percent(total_ratio)}，请返回修改')
             service_names = [
                 (row.get('l4_cloud_service') or '').strip()
                 for row in group_rows

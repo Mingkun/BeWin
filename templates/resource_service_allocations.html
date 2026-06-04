@@ -146,7 +146,7 @@
         <div class="service-allocation-header">
           <div>
             <div class="section-title">分配明细</div>
-            <div class="section-subtitle">同一人员、同一最小部门下，所有 L4 云服务投入百分比合计必须为 100%。</div>
+            <div class="section-subtitle">同一人员、同一最小部门下，所有 L4 云服务投入百分比合计必须小于等于 100%。</div>
           </div>
           <div class="service-allocation-total {% if total_ratio_complete %}complete{% elif allocations %}warning{% endif %}" id="allocation-total">
             合计 {{ total_ratio_text }}
@@ -247,8 +247,8 @@
               return Array.from(row.querySelectorAll('input')).some((input) => input.value.trim());
             });
             total.textContent = `合计 ${formatPercent(value)}`;
-            total.classList.toggle('complete', hasRows && Math.abs(value - 1) < 0.0001);
-            total.classList.toggle('warning', hasRows && Math.abs(value - 1) >= 0.0001);
+            total.classList.toggle('complete', hasRows && value <= 1.0001);
+            total.classList.toggle('warning', hasRows && value > 1.0001);
           }
 
           function bindRow(row) {
