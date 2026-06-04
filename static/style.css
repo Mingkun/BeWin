@@ -3408,6 +3408,40 @@ a.resource-stack-seg:hover,
   box-sizing: border-box;
 }
 
+.service-allocation-add-form {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.service-allocation-person-fields {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(300px, 1.2fr);
+  gap: 12px;
+  flex: 1 1 620px;
+  max-width: 880px;
+}
+
+.service-allocation-person-fields input,
+.service-allocation-person-fields select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.service-allocation-filter-empty {
+  font-size: 13px;
+  color: #64748b;
+}
+
+@media (max-width: 760px) {
+  .service-allocation-person-fields {
+    grid-template-columns: 1fr;
+    flex-basis: 100%;
+  }
+}
+
 .service-allocation-header {
   display: flex;
   align-items: flex-start;
