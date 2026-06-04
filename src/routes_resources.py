@@ -281,6 +281,7 @@ def admin_resource_person_service_allocations(record_id):
     if not record:
         flash('人员记录不存在')
         return redirect(url_for('admin_resource_people'))
+    source_service = (request.args.get('service') or '').strip()
     service_options = sorted({
         (row.get('l4_cloud_service') or '').strip()
         for row in load_service_resources()
@@ -301,6 +302,8 @@ def admin_resource_person_service_allocations(record_id):
         try:
             count = save_person_service_allocations(record, allocation_rows)
             flash(f'L4 云服务分配已保存，共 {count} 条')
+            if source_service:
+                return redirect(url_for('resource_people_service_allocations', service=source_service))
             return redirect(url_for('admin_resource_people'))
         except ValueError as exc:
             flash(str(exc))
@@ -313,12 +316,16 @@ def admin_resource_person_service_allocations(record_id):
         for row in allocations
         if (row.get('l4_cloud_service') or '').strip()
     }
+    if source_service:
+        selected_services.add(source_service)
     service_options = sorted(set(service_options) | selected_services)
     return render_template(
-        'resource_person_service_allocations.html',
+        'resource_service_allocations.html',
+        allocation_view_mode='person',
         record=record,
         allocations=allocations,
         service_options=service_options,
+        focused_service=source_service,
         total_ratio_text=format_ratio_percent(total_ratio),
         total_ratio_complete=bool(allocations) and abs(total_ratio - 1.0) < 0.0001,
         **build_auth_context(),
@@ -336,7 +343,8 @@ def resource_people_service_allocations():
     first_person_id = next((row.get('person_id') for row in records if row.get('person_id')), None)
     total_ratio = sum(parse_ratio_value(row.get('allocation_ratio')) for row in records)
     return render_template(
-        'resource_service_allocation_people.html',
+        'resource_service_allocations.html',
+        allocation_view_mode='service',
         service_name=service_name,
         records=records,
         first_person_id=first_person_id,
