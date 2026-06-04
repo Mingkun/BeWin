@@ -258,7 +258,19 @@ def admin_roadmap_import_csv():
 def admin_projects_template_csv():
     content = '\ufeff' + ','.join(PROJECT_ALL_COLUMNS) + '\n'
     response = Response(content, mimetype='text/csv; charset=utf-8')
-    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('关键特性描述_导出模板.csv')}"
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('项目数据导入模板.csv')}"
+    return response
+
+
+@app.route('/admin/features/template-csv')
+@login_required
+def admin_features_template_csv():
+    denied = require_feature('import_export_data', '当前账号不能导出关键特性模板')
+    if denied:
+        return denied
+    content = '\ufeff' + ','.join(FEATURE_ALL_COLUMNS) + '\n'
+    response = Response(content, mimetype='text/csv; charset=utf-8')
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('关键特性导入模板.csv')}"
     return response
 
 

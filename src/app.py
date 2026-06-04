@@ -823,6 +823,7 @@ GUEST_ENDPOINT_FEATURES = {
     'admin_projects_template_csv': 'import_export_data',
     'admin_projects_export_csv': 'import_export_data',
     'admin_features_import_csv': 'import_export_data',
+    'admin_features_template_csv': 'import_export_data',
     'admin_features_export_csv': 'import_export_data',
     'admin_service_resources': 'manage_service_resources',
     'admin_departments': 'manage_service_resources',
