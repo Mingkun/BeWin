@@ -1,15 +1,21 @@
-<form class="toolbar-global-filter" method="post" action="{{ url_for('update_global_smallest_department_filter') }}">
-  <input type="hidden" name="next" value="{{ request.script_root }}{{ request.full_path if request.query_string else request.path }}">
-  <label>
-    <span>最小部门</span>
-    <select name="smallest_department" onchange="this.form.submit()">
-      <option value="">全部部门</option>
-      {% for item in global_smallest_department_options %}
-      <option value="{{ item }}" {% if global_smallest_department_filter == item %}selected{% endif %}>{{ item }}</option>
-      {% endfor %}
-    </select>
-  </label>
+<div class="toolbar-global-filter">
+  <form class="toolbar-global-filter-form" method="post" action="{{ url_for('update_global_smallest_department_filter') }}">
+    <input type="hidden" name="next" value="{{ request.script_root }}{{ request.full_path if request.query_string else request.path }}">
+    <label>
+      <span>最小部门</span>
+      <select name="smallest_department" onchange="this.form.submit()">
+        <option value="">全部部门</option>
+        {% for item in global_smallest_department_options %}
+        <option value="{{ item }}" {% if global_smallest_department_filter == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
   {% if global_smallest_department_filter %}
-  <button class="toolbar-global-filter-clear" type="submit" name="smallest_department" value="">清除</button>
+  <form method="post" action="{{ url_for('update_global_smallest_department_filter') }}">
+    <input type="hidden" name="next" value="{{ request.script_root }}{{ request.full_path if request.query_string else request.path }}">
+    <input type="hidden" name="smallest_department" value="">
+    <button class="toolbar-global-filter-clear" type="submit">清除</button>
+  </form>
   {% endif %}
-</form>
+</div>

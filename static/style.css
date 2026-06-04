@@ -617,6 +617,14 @@ body.theme-ios-dark .login-flash {
   margin-top: 2px;
 }
 
+.toolbar-global-filter form {
+  margin: 0;
+}
+
+.toolbar-global-filter-form {
+  display: inline-flex;
+}
+
 .toolbar-global-filter label {
   display: inline-flex;
   align-items: center;
@@ -655,6 +663,11 @@ body.theme-ios-dark .login-flash {
   .toolbar-global-filter {
     justify-content: flex-start;
     width: 100%;
+  }
+
+  .toolbar-global-filter-form {
+    flex: 1;
+    min-width: 0;
   }
 
   .toolbar-global-filter label {
