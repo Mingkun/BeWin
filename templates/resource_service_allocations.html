@@ -56,89 +56,91 @@
         </div>
       </div>
 
-      {% if service_name and user_features.manage_service_resources %}
-      <section class="card service-allocation-editor-card">
-        <div class="service-allocation-header">
-          <div>
-            <div class="section-title">新增分配人员</div>
-            <div class="section-subtitle">选择人员后进入编辑模式，当前 L4 云服务会自动带入待分配明细。</div>
+      <div class="service-allocation-stack">
+        {% if service_name and user_features.manage_service_resources %}
+        <section class="card service-allocation-editor-card">
+          <div class="service-allocation-header">
+            <div>
+              <div class="section-title">新增分配人员</div>
+              <div class="section-subtitle">选择人员后进入编辑模式，当前 L4 云服务会自动带入待分配明细。</div>
+            </div>
           </div>
-        </div>
-        {% if people_options %}
-        <form method="get" action="{{ url_for('resource_people_service_allocation_add') }}" class="inline-upload-form import-panel-form">
-          <input type="hidden" name="service" value="{{ service_name }}">
-          <select name="person_id" required>
-            <option value="">选择人员</option>
-            {% for person in people_options %}
-            <option value="{{ person.id }}">
-              {{ person.employee_name or '未填写姓名' }}{% if person.employee_id %} / {{ person.employee_id }}{% endif %} · {{ person.smallest_department_name or '未填写最小部门' }}{% if person.project_name %} · {{ person.project_name }}{% endif %}
-            </option>
-            {% endfor %}
-          </select>
-          <button class="button" type="submit">新增分配人员</button>
-        </form>
-        {% else %}
-        <div style="font-size:13px; color:#64748b;">人员资源库中已有人员都已分配到当前 L4 云服务。</div>
-        {% endif %}
-      </section>
-      {% endif %}
-
-      {% if service_name and records %}
-      <section class="card service-allocation-editor-card">
-        <div class="service-allocation-header">
-          <div>
-            <div class="section-title">分配人员</div>
-            <div class="section-subtitle">点击具体人员的 L4 云服务分配，可进入同一个页面的人员编辑模式。</div>
-          </div>
-        </div>
-        <div class="table-wrap service-allocation-table-wrap">
-          <table class="data-table service-allocation-people-table" id="service-allocation-people-table">
-            <thead>
-              <tr>
-                <th>工号</th>
-                <th>姓名</th>
-                <th>最小部门</th>
-                <th>人员类型</th>
-                <th>所属项目</th>
-                <th>状态</th>
-                <th>投入比例</th>
-                <th>备注</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for record in records %}
-              <tr>
-                <td>{{ record.employee_id or '' }}</td>
-                <td>{{ record.employee_name or '' }}</td>
-                <td>{{ record.smallest_department_name or '' }}</td>
-                <td>{{ record.person_type or '' }}</td>
-                <td>{{ record.project_name or '' }}</td>
-                <td>{{ record.status or '' }}</td>
-                <td>
-                  <span class="service-allocation-pill complete">{{ record.allocation_ratio_text }}</span>
-                </td>
-                <td>{{ record.remarks or '' }}</td>
-                <td>
-                  {% if record.person_id and user_features.manage_service_resources %}
-                  <a class="button tiny secondary" href="{{ url_for('admin_resource_person_service_allocations', record_id=record.person_id, service=service_name) }}">L4云服务分配</a>
-                  {% elif record.person_id %}
-                  <span class="ios-preview-subtitle">仅查看</span>
-                  {% else %}
-                  <span class="ios-preview-subtitle">未匹配人员库</span>
-                  {% endif %}
-                </td>
-              </tr>
+          {% if people_options %}
+          <form method="get" action="{{ url_for('resource_people_service_allocation_add') }}" class="inline-upload-form import-panel-form">
+            <input type="hidden" name="service" value="{{ service_name }}">
+            <select name="person_id" required>
+              <option value="">选择人员</option>
+              {% for person in people_options %}
+              <option value="{{ person.id }}">
+                {{ person.employee_name or '未填写姓名' }}{% if person.employee_id %} / {{ person.employee_id }}{% endif %} · {{ person.smallest_department_name or '未填写最小部门' }}{% if person.project_name %} · {{ person.project_name }}{% endif %}
+              </option>
               {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      {% elif service_name %}
-        <div class="empty">当前没有人员分配到这个 L4 云服务。</div>
-      {% else %}
-        <div class="empty">请从云服务视图选择一个 L4 云服务查看人员分配。</div>
-      {% endif %}
+            </select>
+            <button class="button" type="submit">新增分配人员</button>
+          </form>
+          {% else %}
+          <div style="font-size:13px; color:#64748b;">人员资源库中已有人员都已分配到当前 L4 云服务。</div>
+          {% endif %}
+        </section>
+        {% endif %}
+
+        {% if service_name and records %}
+        <section class="card service-allocation-editor-card">
+          <div class="service-allocation-header">
+            <div>
+              <div class="section-title">分配人员</div>
+              <div class="section-subtitle">点击具体人员的 L4 云服务分配，可进入同一个页面的人员编辑模式。</div>
+            </div>
+          </div>
+          <div class="table-wrap service-allocation-table-wrap">
+            <table class="data-table service-allocation-people-table" id="service-allocation-people-table">
+              <thead>
+                <tr>
+                  <th>工号</th>
+                  <th>姓名</th>
+                  <th>最小部门</th>
+                  <th>人员类型</th>
+                  <th>所属项目</th>
+                  <th>状态</th>
+                  <th>投入比例</th>
+                  <th>备注</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for record in records %}
+                <tr>
+                  <td>{{ record.employee_id or '' }}</td>
+                  <td>{{ record.employee_name or '' }}</td>
+                  <td>{{ record.smallest_department_name or '' }}</td>
+                  <td>{{ record.person_type or '' }}</td>
+                  <td>{{ record.project_name or '' }}</td>
+                  <td>{{ record.status or '' }}</td>
+                  <td>
+                    <span class="service-allocation-pill complete">{{ record.allocation_ratio_text }}</span>
+                  </td>
+                  <td>{{ record.remarks or '' }}</td>
+                  <td>
+                    {% if record.person_id and user_features.manage_service_resources %}
+                    <a class="button tiny secondary" href="{{ url_for('admin_resource_person_service_allocations', record_id=record.person_id, service=service_name) }}">L4云服务分配</a>
+                    {% elif record.person_id %}
+                    <span class="ios-preview-subtitle">仅查看</span>
+                    {% else %}
+                    <span class="ios-preview-subtitle">未匹配人员库</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        {% elif service_name %}
+          <div class="empty service-allocation-empty">当前没有人员分配到这个 L4 云服务。</div>
+        {% else %}
+          <div class="empty service-allocation-empty">请从云服务视图选择一个 L4 云服务查看人员分配。</div>
+        {% endif %}
+      </div>
     {% else %}
       <section class="card service-allocation-editor-card">
         <div class="service-allocation-header">

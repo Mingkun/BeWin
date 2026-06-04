@@ -3399,6 +3399,15 @@ a.resource-stack-seg:hover,
   gap: 16px;
 }
 
+.service-allocation-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.service-allocation-empty {
+  box-sizing: border-box;
+}
+
 .service-allocation-header {
   display: flex;
   align-items: flex-start;
