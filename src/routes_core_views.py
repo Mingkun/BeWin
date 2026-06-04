@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import jsonify, render_template, request, url_for
+from flask import jsonify, redirect, render_template, request, url_for
 
 from src.app import (
     MILESTONE_COLUMNS,
@@ -11,6 +11,8 @@ from src.app import (
     build_project_gantt,
     build_roadmap_feature_list,
     can_access,
+    filter_projects_by_global_smallest_department,
+    filter_rows_by_global_smallest_department,
     get_branding,
     get_current_user,
     get_visible_home_cards,
@@ -22,6 +24,7 @@ from src.app import (
     load_user_feature_orders,
     login_required,
     require_feature,
+    set_global_smallest_department_filter,
 )
 
 
@@ -38,10 +41,10 @@ HOME_SECTION_ORDER = ['项目作战', '资源经营', '服务运营']
 
 
 def build_home_dashboard_summary(user=None):
-    projects = load_projects()
-    features = load_project_features()
-    resource_people = load_resource_people()
-    service_resources = load_service_resources()
+    projects = filter_projects_by_global_smallest_department(load_projects())
+    features = filter_rows_by_global_smallest_department(load_project_features(), keys=("five_level_department",))
+    resource_people = filter_rows_by_global_smallest_department(load_resource_people(), keys=("smallest_department_name", "department_full_name"))
+    service_resources = filter_rows_by_global_smallest_department(load_service_resources(), keys=("five_level_department",))
 
     closed_statuses = {'完成', '已完成', '关闭', '已关闭', '终止', '已终止', '取消', '已取消'}
     active_projects = [
@@ -312,14 +315,24 @@ def index():
     )
 
 
+@app.route('/global-smallest-department-filter', methods=['POST'])
+@login_required
+def update_global_smallest_department_filter():
+    set_global_smallest_department_filter(request.form.get('smallest_department'))
+    next_url = (request.form.get('next') or '').strip()
+    if not next_url or not next_url.startswith('/') or next_url.startswith('//'):
+        next_url = url_for('index')
+    return redirect(next_url)
+
+
 @app.route('/roadmap')
 @login_required
 def roadmap():
     denied = require_feature('view_features', '当前账号不能查看关键特性视图')
     if denied:
         return denied
-    project_rows = load_projects()
-    feature_rows = load_project_features()
+    project_rows = filter_projects_by_global_smallest_department(load_projects())
+    feature_rows = filter_rows_by_global_smallest_department(load_project_features(), keys=("five_level_department",))
     filters = get_roadmap_filters()
     filter_options = build_roadmap_filter_options(project_rows, feature_rows)
     filtered_features = filter_roadmap_features(feature_rows, filters)

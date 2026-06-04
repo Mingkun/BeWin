@@ -13,8 +13,11 @@ from src.app import (
     build_resource_people_summary,
     build_resource_status_summary,
     build_service_resource_summary,
+    filter_investment_records_by_global_smallest_department,
+    filter_projects_by_global_smallest_department,
     filter_resource_people,
     filter_service_resources,
+    filter_rows_by_global_smallest_department,
     format_number,
     get_branding,
     get_conn,
@@ -249,7 +252,7 @@ def view_placeholder(view_key):
         department_keyword = (request.args.get('department') or '').strip()
         service_keyword = (request.args.get('service') or '').strip()
         leader_keyword = (request.args.get('leader') or '').strip()
-        rows = load_service_resources()
+        rows = filter_rows_by_global_smallest_department(load_service_resources(), keys=("five_level_department",))
         filtered_rows = filter_service_resources(
             rows,
             department_keyword=department_keyword,
@@ -266,7 +269,7 @@ def view_placeholder(view_key):
         )
 
     if view_key == 'department-budget-resource':
-        investment_records = load_investment_records()
+        investment_records = filter_investment_records_by_global_smallest_department(load_investment_records())
         investment_rows, investment_summary = build_investment_rows(investment_records)
         return render_template(
             'investment_view.html',
@@ -277,9 +280,9 @@ def view_placeholder(view_key):
         )
 
     if view_key == 'department-pipeline-load':
-        project_rows = load_projects()
+        project_rows = filter_projects_by_global_smallest_department(load_projects())
         project_feature_counts = defaultdict(int)
-        for row in load_project_features():
+        for row in filter_rows_by_global_smallest_department(load_project_features(), keys=("five_level_department",)):
             project_name = (row.get('project_name') or '').strip() or '未命名项目'
             project_feature_counts[project_name] += 1
         project_name_filter = (request.args.get('project_name') or '').strip()
@@ -309,7 +312,7 @@ def view_placeholder(view_key):
         )
 
     if view_key == 'project-budget-resource':
-        rows = load_resource_people()
+        rows = filter_rows_by_global_smallest_department(load_resource_people(), keys=("smallest_department_name", "department_full_name"))
         person_type = (request.args.get('person_type') or '').strip()
         department_name = (request.args.get('department_name') or '').strip()
         project_name = (request.args.get('project_name') or '').strip()

@@ -111,6 +111,104 @@ HOME_CARD_VIEW_FEATURES = {
     "project-budget-resource": "view_resource_people",
 }
 
+GLOBAL_SMALLEST_DEPARTMENT_SESSION_KEY = "global_smallest_department_filter"
+
+
+def get_global_smallest_department_filter():
+    return (session.get(GLOBAL_SMALLEST_DEPARTMENT_SESSION_KEY) or "").strip()
+
+
+def set_global_smallest_department_filter(value):
+    value = (value or "").strip()
+    if value:
+        session[GLOBAL_SMALLEST_DEPARTMENT_SESSION_KEY] = value
+    else:
+        session.pop(GLOBAL_SMALLEST_DEPARTMENT_SESSION_KEY, None)
+
+
+def _normalize_department_text(value):
+    return " ".join((value or "").strip().lower().replace("／", "/").split())
+
+
+def department_value_matches_global_filter(value, selected=None):
+    selected = _normalize_department_text(selected if selected is not None else get_global_smallest_department_filter())
+    if not selected:
+        return True
+    value = _normalize_department_text(value)
+    if not value:
+        return False
+    parts = [
+        part.strip()
+        for sep in ("/", ">", "｜", "|", "\\", ",", "，")
+        for part in value.split(sep)
+    ]
+    return value == selected or selected in value or any(part == selected for part in parts if part)
+
+
+def get_global_smallest_department_options():
+    departments = []
+    for item in load_departments():
+        leaf = (item.get("level_2_department") or "").strip() or (item.get("level_1_department") or "").strip()
+        if leaf:
+            departments.append(leaf)
+    return sorted(set(departments))
+
+
+def filter_rows_by_global_smallest_department(rows, keys=None):
+    selected = get_global_smallest_department_filter()
+    if not selected:
+        return rows
+    keys = keys or (
+        "smallest_department_name",
+        "five_level_department",
+        "department_full_name",
+        "level_2_department",
+        "level_1_department",
+    )
+    return [
+        row for row in rows
+        if any(department_value_matches_global_filter(row.get(key), selected) for key in keys)
+    ]
+
+
+def get_global_department_project_names():
+    selected = get_global_smallest_department_filter()
+    if not selected:
+        return None
+    project_names = {
+        (row.get("project_name") or "").strip()
+        for row in load_project_features()
+        if (row.get("project_name") or "").strip()
+        and department_value_matches_global_filter(row.get("five_level_department"), selected)
+    }
+    project_names.update({
+        (row.get("project_name") or "").strip()
+        for row in load_resource_people()
+        if (row.get("project_name") or "").strip()
+        and department_value_matches_global_filter(row.get("smallest_department_name"), selected)
+    })
+    return project_names
+
+
+def filter_projects_by_global_smallest_department(rows):
+    project_names = get_global_department_project_names()
+    if project_names is None:
+        return rows
+    return [
+        row for row in rows
+        if (row.get("project_name") or "").strip() in project_names
+    ]
+
+
+def filter_investment_records_by_global_smallest_department(rows):
+    project_names = get_global_department_project_names()
+    if project_names is None:
+        return rows
+    return [
+        row for row in rows
+        if (row.get("invested_project") or "").strip() in project_names
+    ]
+
 
 def _build_default_home_cards():
     cards = []
@@ -653,6 +751,8 @@ def build_auth_context():
         'user_features': get_current_user_features(user),
         'login_source_label': 'SSO' if auth_type == 'oauth2' else '本地' if auth_type == 'local' else '',
         'role_label': '管理员' if 'admin' in role_labels else 'Guest' if 'guest' in role_labels else '用户' if 'user' in role_labels else '',
+        'global_smallest_department_filter': get_global_smallest_department_filter(),
+        'global_smallest_department_options': get_global_smallest_department_options(),
     }
 
 

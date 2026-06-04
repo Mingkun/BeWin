@@ -39,6 +39,26 @@
       </div>
     </header>
 
+    <form class="card home-global-filter-card" method="post" action="{{ url_for('update_global_smallest_department_filter') }}">
+      <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+      <div>
+        <div class="home-global-filter-title">全局最小部门过滤</div>
+        <div class="home-global-filter-note">选择后，项目、关键特性、资源、投资和云服务视图会按该最小部门过滤。</div>
+      </div>
+      <label class="home-global-filter-control">
+        <span>最小部门</span>
+        <select name="smallest_department" onchange="this.form.submit()">
+          <option value="">全部部门</option>
+          {% for item in global_smallest_department_options %}
+          <option value="{{ item }}" {% if global_smallest_department_filter == item %}selected{% endif %}>{{ item }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% if global_smallest_department_filter %}
+      <button class="button secondary" type="submit" name="smallest_department" value="">清除</button>
+      {% endif %}
+    </form>
+
     {% if dashboard_metrics %}
     <section class="home-metric-grid" aria-label="业务总览">
       {% for metric in dashboard_metrics %}

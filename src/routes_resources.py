@@ -11,6 +11,7 @@ from src.app import (
     build_service_resource_summary,
     filter_resource_people_admin,
     filter_service_resources,
+    filter_rows_by_global_smallest_department,
     format_ratio_percent,
     form_to_department_data,
     form_to_resource_person_data,
@@ -52,7 +53,7 @@ def admin_service_resources():
     denied = require_feature('manage_service_resources', '当前账号不能管理云服务数据')
     if denied:
         return denied
-    rows = load_service_resources()
+    rows = filter_rows_by_global_smallest_department(load_service_resources(), keys=("five_level_department",))
     department_keyword = (request.args.get('department_keyword') or '').strip()
     service_keyword = (request.args.get('service_keyword') or '').strip()
     leader_keyword = (request.args.get('leader_keyword') or '').strip()
@@ -158,7 +159,7 @@ def admin_resource_people():
     denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
     if denied:
         return denied
-    rows = load_resource_people()
+    rows = filter_rows_by_global_smallest_department(load_resource_people(), keys=("smallest_department_name", "department_full_name"))
     department_options = load_departments()
     project_options = load_project_options()
     keyword = (request.args.get('keyword') or '').strip()

@@ -120,6 +120,43 @@ header p {
   line-height: 1.5;
 }
 
+.home-global-filter-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px) auto;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 14px;
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
+.home-global-filter-title {
+  color: #7f1d1d;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.home-global-filter-note {
+  margin-top: 4px;
+  color: #991b1b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.home-global-filter-control {
+  display: grid;
+  gap: 5px;
+  color: #7f1d1d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.home-global-filter-control select {
+  min-height: 38px;
+  border-color: #fca5a5;
+  background: #ffffff;
+}
+
 .home-metric-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -555,6 +592,10 @@ body.theme-ios-dark .login-flash {
 }
 
 @media (max-width: 760px) {
+  .home-global-filter-card {
+    grid-template-columns: 1fr;
+  }
+
   .login-page {
     align-items: flex-start;
     padding: 20px;
