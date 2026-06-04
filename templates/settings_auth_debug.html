@@ -60,6 +60,7 @@
               <th>登录方式</th>
               <th>角色</th>
               <th>登录时间</th>
+              <th>最近活跃</th>
               <th>最近IP</th>
             </tr>
           </thead>
@@ -70,7 +71,8 @@
               <td>{{ item.email or '-' }}</td>
               <td>{{ item.auth_type or '-' }}</td>
               <td>{{ item.role_text or '-' }}</td>
-              <td>{{ item.login_at or '-' }}</td>
+              <td>{{ item.login_at_text or item.login_at or '-' }}</td>
+              <td>{{ item.last_seen_at_text or item.last_seen_at or '-' }}</td>
               <td>{{ item.login_ip or '-' }}</td>
             </tr>
             {% endfor %}

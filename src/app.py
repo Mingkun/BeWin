@@ -719,7 +719,17 @@ def list_recent_active_logins(hours=24):
     with get_conn() as conn:
         rows = conn.execute(
             """
-            SELECT user_id, user_name, email, auth_type, role_text, login_ip, login_at, last_seen_at
+            SELECT
+                user_id,
+                user_name,
+                email,
+                auth_type,
+                role_text,
+                login_ip,
+                login_at,
+                last_seen_at,
+                datetime(login_at, '+8 hours') AS login_at_text,
+                datetime(last_seen_at, '+8 hours') AS last_seen_at_text
             FROM login_audit
             WHERE datetime(last_seen_at) >= datetime('now', ?)
             ORDER BY datetime(last_seen_at) DESC, id DESC
@@ -728,6 +738,24 @@ def list_recent_active_logins(hours=24):
             (f'-{int(hours)} hours',),
         ).fetchall()
         return [dict(row) for row in rows]
+
+
+def update_current_login_activity():
+    session_token = (session.get('login_audit_token') or '').strip()
+    if not session_token or not get_current_user():
+        return
+    init_db()
+    with get_conn() as conn:
+        conn.execute(
+            """
+            UPDATE login_audit
+            SET last_seen_at = CURRENT_TIMESTAMP,
+                login_ip = ?
+            WHERE session_token = ?
+            """,
+            (get_request_client_ip(), session_token),
+        )
+        conn.commit()
 
 
 def get_releaseplan_root_path():
@@ -838,6 +866,14 @@ def get_guest_endpoint_feature(endpoint):
         view_key = (request.view_args or {}).get('view_key')
         return GUEST_VIEW_FEATURES.get(view_key)
     return GUEST_ENDPOINT_FEATURES.get(endpoint)
+
+
+@app.before_request
+def refresh_login_activity():
+    if request.endpoint == 'static':
+        return None
+    update_current_login_activity()
+    return None
 
 
 @app.before_request
