@@ -64,6 +64,22 @@ def settings_general_page():
     )
 
 
+@app.route('/admin/data-management')
+@login_required
+def data_management_page():
+    features = get_current_user_features()
+    if not (features.get('import_export_data') or features.get('manage_service_resources')):
+        flash('当前账号不能访问数据管理中心')
+        return redirect(url_for('index'))
+    return render_template(
+        'data_management.html',
+        branding=get_branding(),
+        page_title='数据管理中心',
+        page_desc='按业务流程集中管理模板导出、数据导入和数据导出。',
+        **build_auth_context(),
+    )
+
+
 @app.route('/settings/permissions', methods=['GET', 'POST'])
 @login_required
 def settings_permissions_page():

@@ -16,9 +16,7 @@
       <div class="toolbar-actions">
         <a class="button home-button" href="{{ url_for('index') }}">首页</a>
         {% if user_features.import_export_data %}
-        <a class="button secondary" href="{{ url_for('admin_service_resources_template_csv') }}">导出模板</a>
-        <a class="button secondary" href="{{ url_for('admin_service_resources_export_csv') }}">导出数据</a>
-        <button class="button warning" type="button" id="show-service-import" onclick="document.getElementById('service-import-panel').hidden = false;">导入数据</button>
+        <a class="button secondary" href="{{ url_for('data_management_page') }}#flow-cloud-resource">数据管理</a>
         {% endif %}
         {% if current_user %}
           <span class="logout-wrap">

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="theme-{{ branding.theme }}">
+  <div class="page settings-page data-management-page">
+    <header class="toolbar">
+      <div>
+        <h1>{{ page_title }}</h1>
+        <p>{{ page_desc }}</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+        {% if user_features.view_system %}
+        <a class="button secondary" href="{{ url_for('settings_general_page') }}">系统设置</a>
+        {% endif %}
+        {% if current_user %}
+          <span class="logout-wrap">
+            <span class="user-chip" aria-label="当前登录用户" title="当前登录用户"></span>
+            <span class="logout-popover">
+              <span class="logout-user-name">{{ login_source_label }}{% if role_label %} · {{ role_label }}{% endif %}</span>
+              <a class="button secondary" href="{{ url_for('logout') }}">退出登录</a>
+            </span>
+          </span>
+        {% endif %}
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="flash-stack">
+        {% for message in messages %}
+          <div class="flash-success">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="data-flow-grid">
+      {% if user_features.import_export_data %}
+      <article class="card data-flow-card" id="flow-project-feature">
+        <div class="data-flow-kicker">投资 -> 项目 -> 关键特性</div>
+        <div class="data-flow-title">项目与关键特性数据</div>
+        <div class="data-flow-desc">用于维护项目主数据、关键特性路标图，以及投资视图到项目/关键特性的基础链路。</div>
+        <div class="data-action-grid">
+          <a class="button secondary" href="{{ url_for('admin_projects_template_csv') }}">导出模板</a>
+          <a class="button secondary" href="{{ url_for('admin_projects_export_csv') }}">导出项目数据</a>
+          <a class="button secondary" href="{{ url_for('admin_features_export_csv') }}">导出关键特性</a>
+        </div>
+        <form method="post" action="{{ url_for('admin_roadmap_import_csv') }}" enctype="multipart/form-data" class="data-import-form" id="data-roadmap-import-form">
+          <input type="hidden" name="return_to" value="data_management">
+          <div class="data-import-title">导入项目/关键特性 CSV</div>
+          <div class="data-import-desc">系统会自动识别项目 CSV 或关键特性 CSV。项目按编码/名称匹配，关键特性按项目、部门和特性匹配。</div>
+          <div class="import-preview-result" id="data-roadmap-import-preview" hidden></div>
+          <div class="data-import-actions">
+            <input type="file" name="csv_file" accept=".csv" required id="data-roadmap-import-file">
+            <button class="button secondary" type="button" id="data-roadmap-import-preview-button">预检查</button>
+            <button class="button warning" type="submit">确认导入</button>
+          </div>
+        </form>
+      </article>
+      {% endif %}
+
+      {% if user_features.manage_service_resources %}
+      <article class="card data-flow-card" id="flow-project-resource">
+        <div class="data-flow-kicker">项目 -> 资源分配</div>
+        <div class="data-flow-title">人员资源库</div>
+        <div class="data-flow-desc">用于维护人员主数据、部门归属、所属项目和资源视图中的项目投入关系。</div>
+        <div class="data-action-grid">
+          <a class="button secondary" href="{{ url_for('admin_resource_people_template_csv') }}">导出模板</a>
+          <a class="button secondary" href="{{ url_for('admin_resource_people_export_csv') }}">导出人员数据</a>
+          <a class="button secondary" href="{{ url_for('admin_resource_people') }}">进入人员资源库</a>
+        </div>
+        <form method="post" action="{{ url_for('admin_resource_people_import_csv') }}" enctype="multipart/form-data" class="data-import-form">
+          <input type="hidden" name="return_to" value="data_management">
+          <div class="data-import-title">导入人员资源数据</div>
+          <div class="data-import-desc">按工号/姓名、所属项目和部门匹配；已有记录更新，未匹配记录新增。</div>
+          <div class="data-import-actions">
+            <input type="file" name="csv_file" accept=".csv" required>
+            <button class="button warning" type="submit">确认导入</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="card data-flow-card" id="flow-l4-allocation">
+        <div class="data-flow-kicker">云服务 -> 资源</div>
+        <div class="data-flow-title">人员 L4 云服务分配</div>
+        <div class="data-flow-desc">用于维护人员到 L4 云服务的投入比例。同一人员、同一最小部门下，投入百分比合计必须小于等于 100%。</div>
+        <div class="data-action-grid">
+          <a class="button secondary" href="{{ url_for('admin_resource_person_service_allocations_template_csv') }}">导出模板</a>
+          <a class="button secondary" href="{{ url_for('admin_resource_person_service_allocations_export_csv') }}">导出分配数据</a>
+          <a class="button secondary" href="{{ url_for('admin_resource_people') }}">查看人员分配</a>
+        </div>
+        <form method="post" action="{{ url_for('admin_resource_person_service_allocations_import_csv') }}" enctype="multipart/form-data" class="data-import-form">
+          <input type="hidden" name="return_to" value="data_management">
+          <div class="data-import-title">导入人员 L4 云服务分配</div>
+          <div class="data-import-desc">按工号/姓名、最小部门和 L4 云服务匹配；超额投入会在导入时拦截。</div>
+          <div class="data-import-actions">
+            <input type="file" name="csv_file" accept=".csv" required>
+            <button class="button warning" type="submit">确认导入</button>
+          </div>
+        </form>
+      </article>
+      {% endif %}
+
+      {% if user_features.import_export_data %}
+      <article class="card data-flow-card" id="flow-cloud-resource">
+        <div class="data-flow-kicker">云服务 -> 资源</div>
+        <div class="data-flow-title">云服务资源数据</div>
+        <div class="data-flow-desc">用于维护云服务的人力投入、HC、HCS 和服务负责人，是云服务视图与资源分配分析的基础数据。</div>
+        <div class="data-action-grid">
+          <a class="button secondary" href="{{ url_for('admin_service_resources_template_csv') }}">导出模板</a>
+          <a class="button secondary" href="{{ url_for('admin_service_resources_export_csv') }}">导出云服务数据</a>
+          <a class="button secondary" href="{{ url_for('view_placeholder', view_key='cloud-service-view') }}">进入云服务视图</a>
+        </div>
+        <form method="post" action="{{ url_for('admin_service_resources_import_csv') }}" enctype="multipart/form-data" class="data-import-form">
+          <input type="hidden" name="return_to" value="data_management">
+          <div class="data-import-title">导入云服务资源数据</div>
+          <div class="data-import-desc">按五层部门和 L4 云服务匹配；已有记录更新，未匹配记录新增。</div>
+          <div class="data-import-actions">
+            <input type="file" name="csv_file" accept=".csv" required>
+            <button class="button warning" type="submit">确认导入</button>
+          </div>
+        </form>
+      </article>
+      {% endif %}
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const form = document.getElementById('data-roadmap-import-form');
+      const fileInput = document.getElementById('data-roadmap-import-file');
+      const previewButton = document.getElementById('data-roadmap-import-preview-button');
+      const previewBox = document.getElementById('data-roadmap-import-preview');
+      if (!form || !fileInput || !previewButton || !previewBox) return;
+      previewButton.addEventListener('click', async () => {
+        if (!fileInput.files || !fileInput.files.length) {
+          previewBox.hidden = false;
+          previewBox.textContent = '请选择 CSV 文件';
+          return;
+        }
+        const data = new FormData();
+        data.append('csv_file', fileInput.files[0]);
+        previewButton.disabled = true;
+        previewBox.hidden = false;
+        previewBox.textContent = '正在预检查...';
+        try {
+          const response = await fetch("{{ url_for('admin_roadmap_import_preview_csv') }}", {
+            method: 'POST',
+            body: data,
+          });
+          const result = await response.json();
+          if (!response.ok || !result.ok) {
+            previewBox.textContent = result.message || '预检查失败';
+            return;
+          }
+          previewBox.textContent = [
+            `类型：${result.type_label || 'CSV'}`,
+            `总行数：${result.total || 0}`,
+            `将更新：${result.updates || 0}`,
+            `将新增：${result.creates || 0}`,
+            `缺少关键字段：${result.invalid || 0}`,
+            `未知项目：${result.unknown_projects || 0}`,
+          ].join(' / ');
+        } catch (error) {
+          previewBox.textContent = '预检查失败';
+        } finally {
+          previewButton.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

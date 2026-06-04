@@ -18,9 +18,7 @@
         <a class="button secondary" href="{{ url_for('admin_feature_new') }}">新增关键特性</a>
         {% endif %}
         {% if user_features.import_export_data %}
-        <a class="button secondary" href="{{ url_for('admin_projects_template_csv') }}">导出模板</a>
-        <a class="button secondary" href="{{ url_for('admin_features_export_csv') }}">导出数据</a>
-        <button class="button warning" type="button" id="show-project-import" onclick="document.getElementById('project-import-panel').hidden = false;">导入数据</button>
+        <a class="button secondary" href="{{ url_for('data_management_page') }}#flow-project-feature">数据管理</a>
         {% endif %}
         {% if current_user %}
           <span class="logout-wrap">

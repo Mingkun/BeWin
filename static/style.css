@@ -3324,6 +3324,67 @@ a.resource-stack-seg:hover,
   margin: 0;
 }
 
+.data-management-page {
+  max-width: 1180px;
+}
+
+.data-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.data-flow-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.data-flow-kicker {
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.data-flow-title {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.data-flow-desc,
+.data-import-desc {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.data-action-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.data-import-form {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.data-import-title {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.data-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
 
 .system-page-card {
   padding: 24px;

@@ -21,12 +21,7 @@
         <a class="button" href="{{ url_for('admin_service_resource_new') }}">新增记录</a>
         {% endif %}
         {% if user_features.import_export_data %}
-        <a class="button secondary" href="{{ url_for('admin_service_resources_template_csv') }}">下载 CSV 模板</a>
-        <a class="button secondary" href="{{ url_for('admin_service_resources_export_csv') }}">导出当前 CSV</a>
-        <form method="post" action="{{ url_for('admin_service_resources_import_csv') }}" enctype="multipart/form-data" class="inline-upload-form">
-          <input type="file" name="csv_file" accept=".csv" required>
-          <button class="button warning" type="submit">从 CSV 导入</button>
-        </form>
+        <a class="button secondary" href="{{ url_for('data_management_page') }}#flow-cloud-resource">数据管理</a>
         {% endif %}
         {% if current_user %}
           <span class="logout-wrap">

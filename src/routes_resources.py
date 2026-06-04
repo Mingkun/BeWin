@@ -495,6 +495,8 @@ def admin_resource_people_import_csv():
     file = request.files.get('csv_file')
     if file and file.filename:
         import_resource_people_csv_file(file, replace=False)
+    if (request.form.get('return_to') or '').strip() == 'data_management':
+        return redirect(url_for('data_management_page'))
     return redirect(url_for('admin_resource_people'))
 
 
@@ -511,6 +513,8 @@ def admin_resource_person_service_allocations_import_csv():
             flash(f'人员 L4 云服务分配已导入，共 {count} 条')
         except ValueError as exc:
             flash(f'导入失败：{exc}')
+    if (request.form.get('return_to') or '').strip() == 'data_management':
+        return redirect(url_for('data_management_page'))
     return redirect(url_for('admin_resource_people'))
 
 
@@ -523,6 +527,8 @@ def admin_service_resources_import_csv():
     file = request.files.get('csv_file')
     if file and file.filename:
         import_service_resource_csv_file(file, replace=False)
+    if (request.form.get('return_to') or '').strip() == 'data_management':
+        return redirect(url_for('data_management_page'))
     return redirect(url_for('view_placeholder', view_key='cloud-service-view'))
 
 

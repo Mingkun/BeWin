@@ -21,6 +21,9 @@
         {% if user_features.view_system %}
         <span class="settings-menu-wrap"><span class="button secondary settings-button home-round-button"><span class="settings-icon">⚙</span><span class="home-round-button-text">系统</span></span><span class="settings-menu-popover"><a class="button secondary" href="{{ url_for('settings_general_page') }}">设置</a><a class="button secondary" href="{{ url_for('settings_permissions_page') }}">权限配置</a><a class="button secondary" href="{{ url_for('settings_backups_page') }}">备份</a></span></span>
         {% endif %}
+        {% if user_features.import_export_data or user_features.manage_service_resources %}
+        <a class="button secondary home-round-button" href="{{ url_for('data_management_page') }}" title="数据管理中心" aria-label="数据管理中心"><span>数据</span></a>
+        {% endif %}
         {% if current_user %}
           <span class="logout-wrap">
             <span class="user-chip home-round-button" aria-label="当前登录用户" title="当前登录用户"></span>

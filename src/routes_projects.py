@@ -208,6 +208,8 @@ def admin_projects_import_csv():
     file = request.files.get('csv_file')
     if file and file.filename:
         import_project_csv_file(file, replace=False)
+    if (request.form.get('return_to') or '').strip() == 'data_management':
+        return redirect(url_for('data_management_page'))
     return redirect(url_for('roadmap'))
 
 
@@ -246,6 +248,8 @@ def admin_roadmap_import_csv():
             f"更新 {summary['updates']}，新增 {summary['creates']}，"
             f"缺少关键字段 {summary['invalid']}，未知项目 {summary['unknown_projects']}"
         )
+    if (request.form.get('return_to') or '').strip() == 'data_management':
+        return redirect(url_for('data_management_page'))
     return redirect(url_for('roadmap'))
 
 

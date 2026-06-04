@@ -15,6 +15,9 @@
       </div>
       <div class="toolbar-actions">
         <a class="button home-button" href="{{ url_for('index') }}">首页</a>
+        {% if user_features.import_export_data %}
+        <a class="button secondary" href="{{ url_for('data_management_page') }}#flow-project-feature">数据管理</a>
+        {% endif %}
         {% if user_features.manage_projects %}
         <a class="button" href="{{ url_for('admin_project_new') }}">新增项目</a>
         {% endif %}
