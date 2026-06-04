@@ -310,6 +310,12 @@ def admin_resource_person_service_allocations(record_id):
             allocations = allocation_rows
     else:
         allocations = load_person_service_allocations_for_person(record)
+        if source_service and not any((row.get('l4_cloud_service') or '').strip() == source_service for row in allocations):
+            allocations.append({
+                'l4_cloud_service': source_service,
+                'allocation_ratio': '',
+                'remarks': '',
+            })
     total_ratio = sum(parse_ratio_value(row.get('allocation_ratio')) for row in allocations)
     selected_services = {
         (row.get('l4_cloud_service') or '').strip()
@@ -341,6 +347,11 @@ def resource_people_service_allocations():
     service_name = (request.args.get('service') or '').strip()
     records = load_person_service_allocations_for_service(service_name)
     first_person_id = next((row.get('person_id') for row in records if row.get('person_id')), None)
+    assigned_person_ids = {row.get('person_id') for row in records if row.get('person_id')}
+    people_options = [
+        row for row in load_resource_people()
+        if row.get('id') not in assigned_person_ids
+    ]
     total_ratio = sum(parse_ratio_value(row.get('allocation_ratio')) for row in records)
     return render_template(
         'resource_service_allocations.html',
@@ -348,9 +359,27 @@ def resource_people_service_allocations():
         service_name=service_name,
         records=records,
         first_person_id=first_person_id,
+        people_options=people_options,
         total_ratio_text=format_ratio_percent(total_ratio),
         **build_auth_context(),
     )
+
+
+@app.route('/views/service-allocation-people/add')
+@login_required
+def resource_people_service_allocation_add():
+    denied = require_feature('manage_service_resources', '当前账号不能管理资源视图基础数据')
+    if denied:
+        return denied
+    service_name = (request.args.get('service') or '').strip()
+    person_id = request.args.get('person_id', type=int)
+    if not person_id:
+        flash('请选择要新增分配的人员')
+        return redirect(url_for('resource_people_service_allocations', service=service_name))
+    if not load_resource_person(person_id):
+        flash('人员记录不存在')
+        return redirect(url_for('resource_people_service_allocations', service=service_name))
+    return redirect(url_for('admin_resource_person_service_allocations', record_id=person_id, service=service_name))
 
 
 @app.route('/admin/service-resources/new', methods=['GET', 'POST'])
