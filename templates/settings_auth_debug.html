@@ -47,9 +47,9 @@
       {% endif %}
     </div>
 
-    {% if can_view_system_debug %}
+    {% if can_view_active_logins %}
     <div class="card system-page-card" style="padding:16px; margin-bottom:16px;">
-      <div style="font-size:16px; font-weight:700; margin-bottom:10px;">最近活跃登录用户（24小时）</div>
+      <div style="font-size:16px; font-weight:700; margin-bottom:10px;">最近活跃登录用户（最近一周）</div>
       {% if active_logins %}
       <div class="table-wrap">
         <table class="data-table">

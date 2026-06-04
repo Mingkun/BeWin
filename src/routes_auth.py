@@ -14,6 +14,7 @@ from src.app import (
     get_current_user_features,
     get_current_user_roles,
     get_request_client_ip,
+    is_admin_user,
     list_recent_active_logins,
     local_admin_enabled,
     login_required,
@@ -158,6 +159,7 @@ def logout():
 def settings_auth_debug_page():
     current_user = get_current_user() or {}
     can_view_system_debug = can_access('view_system')
+    can_view_active_logins = is_admin_user(current_user)
     oauth_raw = current_user.get('raw') if isinstance(current_user.get('raw'), dict) else {}
     oauth_log_path_obj = get_oauth_debug_log_path()
     oauth_log_exists = oauth_log_path_obj.exists()
@@ -182,12 +184,13 @@ def settings_auth_debug_page():
         page_title='系统调试',
         page_desc='查看当前登录会话。系统管理员可查看 OAuth 调试日志和最近活跃登录记录。',
         can_view_system_debug=can_view_system_debug,
+        can_view_active_logins=can_view_active_logins,
         current_roles=get_current_user_roles(),
         current_features=get_current_user_features(),
         oauth_debug_summary=oauth_debug_summary,
         current_user_pretty=json.dumps(current_user, ensure_ascii=False, indent=2) if can_view_system_debug else '',
         oauth_raw_pretty=json.dumps(oauth_raw, ensure_ascii=False, indent=2) if can_view_system_debug else '',
-        active_logins=list_recent_active_logins(24) if can_view_system_debug else [],
+        active_logins=list_recent_active_logins(24 * 7) if can_view_active_logins else [],
         oauth_log_path=str(oauth_log_path_obj),
         oauth_log_default_path=str(DEFAULT_OAUTH_DEBUG_LOG_PATH),
         oauth_log_exists=oauth_log_exists,
