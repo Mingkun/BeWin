@@ -40,6 +40,23 @@
       {% endif %}
     {% endwith %}
 
+    <section class="card data-flow-card" id="flow-unified-excel" style="margin-bottom:16px;">
+      <div class="data-flow-kicker">统一导入</div>
+      <div class="data-flow-title">数据管理统一 Excel</div>
+      <div class="data-flow-desc">一个 Excel 文件可包含多个 sheet：项目、关键特性、人员资源、L4云服务分配、云服务资源。只填写需要导入的 sheet 即可，空 sheet 会自动跳过。</div>
+      <div class="data-action-grid">
+        <a class="button secondary" href="{{ url_for('admin_data_management_template_xlsx') }}">导出统一 Excel 模板</a>
+      </div>
+      <form method="post" action="{{ url_for('admin_data_management_import_xlsx') }}" enctype="multipart/form-data" class="data-import-form">
+        <div class="data-import-title">导入统一 Excel</div>
+        <div class="data-import-desc">按 sheet 名称自动识别并导入对应数据，已有记录按各业务原规则更新，未匹配记录新增。</div>
+        <div class="data-import-actions">
+          <input type="file" name="xlsx_file" accept=".xlsx" required>
+          <button class="button warning" type="submit">确认导入</button>
+        </div>
+      </form>
+    </section>
+
     <section class="data-flow-grid">
       {% if user_features.import_export_data %}
       <article class="card data-flow-card" id="flow-project-feature">

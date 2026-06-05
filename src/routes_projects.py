@@ -16,9 +16,13 @@ from src.app import (
     form_to_project_data,
     get_branding,
     get_conn,
+    get_current_user_features,
     get_project_options,
+    import_person_service_allocation_csv_file,
     import_project_csv_file,
+    import_resource_people_csv_file,
     import_roadmap_csv_content,
+    import_service_resource_csv_file,
     load_project,
     load_project_feature,
     load_project_features,
@@ -31,6 +35,114 @@ from src.app import (
     require_feature,
     save_feature_csv_content,
 )
+from src.excel_workbook import build_xlsx_workbook, read_xlsx_sheets, rows_to_csv_content
+
+
+RESOURCE_PEOPLE_COLUMNS = ['工号', '姓名', '人员类型', '上层部门', '最小部门', '所属项目', '投入比例', '角色', '状态', '备注']
+PERSON_SERVICE_ALLOCATION_COLUMNS = ['工号', '姓名', '最小部门', 'L4云服务', '投入百分比', '备注']
+SERVICE_RESOURCE_COLUMNS = ['五层部门', 'L4云服务', '功能和用途简介', '服务Leader', 'HC（自有）', 'HC（OD）', 'HC（TM）', 'HCS（自有）', 'HCS（OD）', 'HCS（TM）', '汇总（自有）', '汇总（OD）', '汇总（TM）']
+
+
+class _MemoryCsvFile:
+    def __init__(self, content):
+        self._content = content
+
+    def read(self):
+        return self._content.encode('utf-8-sig')
+
+
+def _data_workbook_sheet_configs(features):
+    configs = []
+    if features.get('import_export_data'):
+        configs.extend([
+            {
+                'sheet': '项目',
+                'label': '项目数据',
+                'columns': PROJECT_ALL_COLUMNS,
+                'importer': lambda content: import_roadmap_csv_content(content, replace=False)['imported'],
+            },
+            {
+                'sheet': '关键特性',
+                'label': '关键特性数据',
+                'columns': FEATURE_ALL_COLUMNS,
+                'importer': lambda content: import_roadmap_csv_content(content, replace=False)['imported'],
+            },
+            {
+                'sheet': '云服务资源',
+                'label': '云服务资源数据',
+                'columns': SERVICE_RESOURCE_COLUMNS,
+                'importer': lambda content: import_service_resource_csv_file(_MemoryCsvFile(content), replace=False),
+            },
+        ])
+    if features.get('manage_service_resources'):
+        configs.extend([
+            {
+                'sheet': '人员资源',
+                'label': '人员资源数据',
+                'columns': RESOURCE_PEOPLE_COLUMNS,
+                'importer': lambda content: import_resource_people_csv_file(_MemoryCsvFile(content), replace=False),
+            },
+            {
+                'sheet': 'L4云服务分配',
+                'label': '人员 L4 云服务分配',
+                'columns': PERSON_SERVICE_ALLOCATION_COLUMNS,
+                'importer': lambda content: import_person_service_allocation_csv_file(_MemoryCsvFile(content), replace=False),
+            },
+        ])
+    return configs
+
+
+@app.route('/admin/data-management/template-xlsx')
+@login_required
+def admin_data_management_template_xlsx():
+    features = get_current_user_features()
+    sheet_configs = _data_workbook_sheet_configs(features)
+    if not sheet_configs:
+        flash('当前账号不能导出数据管理 Excel 模板')
+        return redirect(url_for('index'))
+    workbook = build_xlsx_workbook([
+        (config['sheet'], [config['columns']])
+        for config in sheet_configs
+    ])
+    response = Response(
+        workbook,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{quote('数据管理统一导入模板.xlsx')}"
+    return response
+
+
+@app.route('/admin/data-management/import-xlsx', methods=['POST'])
+@login_required
+def admin_data_management_import_xlsx():
+    features = get_current_user_features()
+    sheet_configs = _data_workbook_sheet_configs(features)
+    if not sheet_configs:
+        flash('当前账号不能导入数据管理 Excel')
+        return redirect(url_for('index'))
+
+    file = request.files.get('xlsx_file')
+    if not file or not file.filename:
+        flash('请选择 Excel 文件')
+        return redirect(url_for('data_management_page'))
+
+    try:
+        sheets = read_xlsx_sheets(file.read())
+        import_results = []
+        for config in sheet_configs:
+            rows = sheets.get(config['sheet'])
+            content = rows_to_csv_content(rows)
+            if not content:
+                continue
+            imported = config['importer'](content)
+            import_results.append(f"{config['label']} {imported} 行")
+        if import_results:
+            flash('统一 Excel 导入完成：' + '，'.join(import_results))
+        else:
+            flash('统一 Excel 未发现可导入的数据，请确认 sheet 名称和模板一致')
+    except Exception as exc:
+        flash(f'统一 Excel 导入失败：{exc}')
+    return redirect(url_for('data_management_page'))
 
 
 @app.route('/admin/projects/new', methods=['GET', 'POST'])
