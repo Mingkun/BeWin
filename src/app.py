@@ -868,6 +868,20 @@ def get_releaseplan_root_path():
     return '/'
 
 
+APP_INTERNAL_PATH_PREFIXES = (
+    '/admin/',
+    '/auth/',
+    '/global-smallest-department-filter',
+    '/login',
+    '/milestone-condolence',
+    '/requirements',
+    '/roadmap',
+    '/settings/',
+    '/static/',
+    '/views/',
+)
+
+
 def normalize_next_url(next_url):
     default_path = get_releaseplan_root_path()
     value = (next_url or '').strip()
@@ -877,6 +891,9 @@ def normalize_next_url(next_url):
         return default_path
     if not value.startswith('/'):
         return default_path
+    if default_path != '/' and value != default_path and not value.startswith(default_path + '/'):
+        if any(value == prefix.rstrip('/') or value.startswith(prefix) for prefix in APP_INTERNAL_PATH_PREFIXES):
+            return default_path + value
     return value
 
 
